@@ -6,6 +6,8 @@
 #include <QPlainTextEdit>
 #include <QToolBar>
 #include <QAction>
+#include <QPushButton>
+#include <QLineEdit>
 #include "../Communication/SerialPortController.h"
 
 QT_BEGIN_NAMESPACE
