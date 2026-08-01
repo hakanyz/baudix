@@ -13,6 +13,7 @@
 #include <QListWidget>
 #include <QTabWidget>
 #include <QTimer>
+#include <QLabel>
 #include <QFile>
 #include <QTextStream>
 #include "../Communication/SerialPortController.h"
