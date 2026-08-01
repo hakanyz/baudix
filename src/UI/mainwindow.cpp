@@ -116,10 +116,16 @@ void MainWindow::setupDockWidgets()
     
     QHBoxLayout *inputLayout = new QHBoxLayout();
     inputLayout->addWidget(new QLabel("Input"));
-    inputLayout->addWidget(new QLineEdit(""));
-    QPushButton *sendBtn = new QPushButton("Send");
-    sendBtn->setStyleSheet("background-color: #2b5c92; color: white; font-weight: bold;");
-    inputLayout->addWidget(sendBtn);
+    
+    m_inputField = new QLineEdit("");
+    inputLayout->addWidget(m_inputField);
+    
+    m_sendButton = new QPushButton("Send");
+    m_sendButton->setStyleSheet("background-color: #2b5c92; color: white; font-weight: bold;");
+    inputLayout->addWidget(m_sendButton);
+    
+    connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendClicked);
+    connect(m_inputField, &QLineEdit::returnPressed, this, &MainWindow::onSendClicked); // Pressing Enter also sends
     
     sendLayout->addLayout(inputLayout);
     
@@ -220,5 +226,27 @@ void MainWindow::onConnectionStateChanged(bool isOpen, const QString& errorMsg)
         if (!errorMsg.isEmpty()) {
             QMessageBox::warning(this, "Connection Error", errorMsg);
         }
+    }
+}
+
+void MainWindow::onSendClicked()
+{
+    if (!m_serialController->isOpen()) {
+        QMessageBox::warning(this, "Not Connected", "Please connect to a device first.");
+        return;
+    }
+
+    QString text = m_inputField->text();
+    if (text.isEmpty()) return;
+
+    QByteArray data = text.toUtf8(); // Just UTF-8 string for now
+    if (m_serialController->writeData(data)) {
+        QString timestamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+        m_terminalOutput->appendPlainText(QString("[%1] > TX: %2").arg(timestamp, text));
+        
+        // Optional: Select text so user can just type to overwrite, or clear it
+        m_inputField->selectAll();
+    } else {
+        QMessageBox::critical(this, "Send Error", "Failed to write data to serial port.");
     }
 }

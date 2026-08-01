@@ -25,6 +25,7 @@ private slots:
     void onDisconnectClicked();
     void onDataReceived(const QByteArray& data);
     void onConnectionStateChanged(bool isOpen, const QString& errorMsg);
+    void onSendClicked();
 
 private:
     Ui::MainWindow *ui;
@@ -40,6 +41,9 @@ private:
     QComboBox* m_parityCombo;
     QComboBox* m_flowControlCombo;
     QPlainTextEdit* m_terminalOutput;
+    
+    QLineEdit* m_inputField;
+    QPushButton* m_sendButton;
     
     QAction* m_actionConnect;
     QAction* m_actionDisconnect;
