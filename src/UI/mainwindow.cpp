@@ -448,8 +448,6 @@ void MainWindow::setupDockWidgets()
     viewMenu->addAction(sendDock->toggleViewAction());
     viewMenu->addAction(toolsDock->toggleViewAction());
 
-    connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendClicked);
-    connect(m_inputField, &QLineEdit::returnPressed, this, &MainWindow::onSendClicked);
 }
 
 void MainWindow::refreshPorts()
