@@ -1,11 +1,18 @@
 #include "UI/mainwindow.h"
 #include <QApplication>
-#include <QStyleFactory>
-#include <QPalette>
+#include <QFile>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    // Load QSS
+    QFile styleFile(":/style.qss");
+    if (styleFile.open(QFile::ReadOnly)) {
+        QString style = QLatin1String(styleFile.readAll());
+        a.setStyleSheet(style);
+        styleFile.close();
+    }
     
     // Set Fusion style
     qApp->setStyle(QStyleFactory::create("Fusion"));

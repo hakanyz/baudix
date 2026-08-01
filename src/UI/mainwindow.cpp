@@ -121,7 +121,7 @@ void MainWindow::setupDockWidgets()
     inputLayout->addWidget(m_inputField);
     
     m_sendButton = new QPushButton("Send");
-    m_sendButton->setStyleSheet("background-color: #2b5c92; color: white; font-weight: bold;");
+    m_sendButton->setObjectName("sendButton");
     inputLayout->addWidget(m_sendButton);
     
     connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendClicked);

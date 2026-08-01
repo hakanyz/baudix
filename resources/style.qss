@@ -1,0 +1,115 @@
+/* General Application Style */
+QWidget {
+    background-color: #1e1e1e;
+    color: #cccccc;
+    font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+    font-size: 13px;
+}
+
+/* Main Window and Docks */
+QMainWindow::separator {
+    background: #333333;
+    width: 2px;
+    height: 2px;
+}
+
+QDockWidget {
+    font-weight: bold;
+    color: #ffffff;
+}
+
+QDockWidget::title {
+    background-color: #2d2d30;
+    padding: 6px;
+    margin-top: 2px;
+    border-bottom: 1px solid #3e3e42;
+}
+
+/* Inputs and Combos */
+QLineEdit, QComboBox, QPlainTextEdit {
+    background-color: #252526;
+    border: 1px solid #3e3e42;
+    border-radius: 4px;
+    padding: 4px;
+    selection-background-color: #007acc;
+    color: #d4d4d4;
+}
+
+QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus {
+    border: 1px solid #007acc;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left: 1px solid #3e3e42;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #252526;
+    border: 1px solid #3e3e42;
+    selection-background-color: #007acc;
+}
+
+/* Buttons */
+QPushButton {
+    background-color: #3e3e42;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: #ffffff;
+}
+
+QPushButton:hover {
+    background-color: #4e4e52;
+}
+
+QPushButton:pressed {
+    background-color: #007acc;
+    border-color: #007acc;
+}
+
+/* Special styling for the Send button */
+QPushButton#sendButton {
+    background-color: #007acc;
+    border: 1px solid #005f9e;
+    color: white;
+    font-weight: bold;
+}
+
+QPushButton#sendButton:hover {
+    background-color: #0098ff;
+}
+
+QPushButton#sendButton:pressed {
+    background-color: #005f9e;
+}
+
+/* Toolbar */
+QToolBar {
+    background-color: #2d2d30;
+    border-bottom: 1px solid #3e3e42;
+    spacing: 5px;
+}
+
+QToolButton {
+    background-color: transparent;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+QToolButton:hover {
+    background-color: #3e3e42;
+}
+
+/* Terminal Screen */
+QPlainTextEdit#terminalOutput {
+    background-color: #0d0d0d;
+    color: #4af626; /* Hacker Green for RX */
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 14px;
+    border: none;
+    border-top: 1px solid #3e3e42;
+}
