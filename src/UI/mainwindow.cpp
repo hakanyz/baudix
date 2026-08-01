@@ -375,7 +375,7 @@ void MainWindow::setupDockWidgets()
     searchLayout->setSpacing(4);
     searchLayout->addWidget(m_searchBox);
 
-    QPushButton* btnFindPrev = new QPushButton("<");
+    QPushButton* btnFindPrev = new QPushButton("▲");
     btnFindPrev->setFixedWidth(28);
     btnFindPrev->setToolTip("Find Previous");
     connect(btnFindPrev, &QPushButton::clicked, [this](){
@@ -383,7 +383,7 @@ void MainWindow::setupDockWidgets()
     });
     searchLayout->addWidget(btnFindPrev);
 
-    QPushButton* btnFindNext = new QPushButton(">");
+    QPushButton* btnFindNext = new QPushButton("▼");
     btnFindNext->setFixedWidth(28);
     btnFindNext->setToolTip("Find Next");
     connect(btnFindNext, &QPushButton::clicked, [this](){
