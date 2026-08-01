@@ -299,28 +299,6 @@ void MainWindow::setupDockWidgets()
 
     toolsLayout->addSpacing(8);
 
-    // --- Macro List ---
-    QLabel* macroListTitle = new QLabel("Macro List");
-    macroListTitle->setStyleSheet("color: #abb2bf; font-size: 13px;");
-    toolsLayout->addWidget(macroListTitle);
-
-    QHBoxLayout* macroBtns = new QHBoxLayout();
-    macroBtns->setSpacing(4);
-    QPushButton* btnReset = new QPushButton("Reset");
-    connect(btnReset, &QPushButton::clicked, this, &MainWindow::onMacroResetClicked);
-    macroBtns->addWidget(btnReset);
-
-    QPushButton* btnBoot = new QPushButton("Boot");
-    connect(btnBoot, &QPushButton::clicked, this, &MainWindow::onMacroBootClicked);
-    macroBtns->addWidget(btnBoot);
-
-    QPushButton* btnVer = new QPushButton("Ver");
-    connect(btnVer, &QPushButton::clicked, this, &MainWindow::onMacroVerClicked);
-    macroBtns->addWidget(btnVer);
-    toolsLayout->addLayout(macroBtns);
-
-    toolsLayout->addSpacing(8);
-
     // --- Macros ---
     QLabel* macroTitle = new QLabel("Macros");
     macroTitle->setStyleSheet("color: #abb2bf; font-size: 13px;");
@@ -352,6 +330,14 @@ void MainWindow::setupDockWidgets()
         }
     });
     toolsLayout->addWidget(m_macrosList, 1); // stretch = 1 so it grows
+    
+    // Send Selected button
+    QPushButton* macroSendBtn = new QPushButton("Send Selected");
+    connect(macroSendBtn, &QPushButton::clicked, [this](){
+        QListWidgetItem* sel = m_macrosList->currentItem();
+        if (sel && !sel->text().isEmpty()) performSend(sel->text());
+    });
+    toolsLayout->addWidget(macroSendBtn);
 
     toolsLayout->addSpacing(8);
 
