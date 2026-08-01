@@ -42,18 +42,11 @@ void MainWindow::setupToolBar()
     QToolBar *toolBar = addToolBar("Main ToolBar");
     toolBar->setMovable(false);
 
-    QToolButton* connectBtn = new QToolButton();
-    connectBtn->setText("Connect");
-    connectBtn->setObjectName("connectBtn");
-    connectBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    m_actionConnect = toolBar->addWidget(connectBtn);
-    
-    QToolButton* disconnectBtn = new QToolButton();
-    disconnectBtn->setText("Disconnect");
-    disconnectBtn->setObjectName("disconnectBtn");
-    disconnectBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    m_actionDisconnect = toolBar->addWidget(disconnectBtn);
-    m_actionDisconnect->setEnabled(false);
+    m_btnConnect = new QToolButton();
+    m_btnConnect->setText("Connect");
+    m_btnConnect->setObjectName("connectBtn");
+    m_btnConnect->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_actionConnectToggle = toolBar->addWidget(m_btnConnect);
 
     toolBar->addSeparator();
 
@@ -64,8 +57,7 @@ void MainWindow::setupToolBar()
     toolBar->addAction(QIcon(), "Find");
     toolBar->addAction(QIcon(), "Macro");
 
-    connect(connectBtn, &QToolButton::clicked, this, &MainWindow::onConnectClicked);
-    connect(disconnectBtn, &QToolButton::clicked, this, &MainWindow::onDisconnectClicked);
+    connect(m_btnConnect, &QToolButton::clicked, this, &MainWindow::onToggleConnectClicked);
 }
 
 void MainWindow::setupCentralWidget()
@@ -170,7 +162,7 @@ void MainWindow::setupDockWidgets()
     formatCombo->addItems({"TXT+HEX", "TXT", "CSV"});
     logLayout->addRow("Format", formatCombo);
     
-    logLayout->addRow("Status", new QLabel("Recording..."));
+    logLayout->addRow("Status", new QLabel("Idle"));
     logWidget->setLayout(logLayout);
     logDock->setWidget(logWidget);
     addDockWidget(Qt::LeftDockWidgetArea, logDock);
@@ -285,23 +277,22 @@ void MainWindow::refreshPorts()
     m_portCombo->addItems(m_serialController->getAvailablePorts());
 }
 
-void MainWindow::onConnectClicked()
+void MainWindow::onToggleConnectClicked()
 {
-    QString port = m_portCombo->currentText();
-    if(port.isEmpty()) return;
-    
-    int baud = m_baudCombo->currentText().toInt();
-    QSerialPort::DataBits dataBits = static_cast<QSerialPort::DataBits>(m_dataBitsCombo->currentText().toInt());
-    QSerialPort::StopBits stopBits = QSerialPort::OneStop;
-    QSerialPort::Parity parity = QSerialPort::NoParity;
-    QSerialPort::FlowControl flowControl = QSerialPort::NoFlowControl;
-    
-    m_serialController->connectDevice(port, baud, dataBits, parity, stopBits, flowControl);
-}
-
-void MainWindow::onDisconnectClicked()
-{
-    m_serialController->disconnectDevice();
+    if (m_serialController->isOpen()) {
+        m_serialController->disconnectDevice();
+    } else {
+        QString port = m_portCombo->currentText();
+        if(port.isEmpty()) return;
+        
+        int baud = m_baudCombo->currentText().toInt();
+        QSerialPort::DataBits dataBits = static_cast<QSerialPort::DataBits>(m_dataBitsCombo->currentText().toInt());
+        QSerialPort::StopBits stopBits = QSerialPort::OneStop;
+        QSerialPort::Parity parity = QSerialPort::NoParity;
+        QSerialPort::FlowControl flowControl = QSerialPort::NoFlowControl;
+        
+        m_serialController->connectDevice(port, baud, dataBits, parity, stopBits, flowControl);
+    }
 }
 
 void MainWindow::appendToTerminal(const QString& prefix, const QByteArray& data, const QString& color)
@@ -375,15 +366,26 @@ void MainWindow::onClearTerminalClicked()
 
 void MainWindow::onConnectionStateChanged(bool isOpen, const QString& errorMsg)
 {
-    m_actionConnect->setEnabled(!isOpen);
-    m_actionDisconnect->setEnabled(isOpen);
-    m_portCombo->setEnabled(!isOpen);
-
     if (isOpen) {
+        if (m_btnConnect) {
+            m_btnConnect->setText("Disconnect");
+            m_btnConnect->setObjectName("disconnectBtn");
+            m_btnConnect->style()->unpolish(m_btnConnect);
+            m_btnConnect->style()->polish(m_btnConnect);
+        }
+        m_portCombo->setEnabled(false);
         setWindowTitle(QString("Baudix | %1 - %2 Connected").arg(m_portCombo->currentText().split(" - ").first(), m_baudCombo->currentText()));
     } else {
+        if (m_btnConnect) {
+            m_btnConnect->setText("Connect");
+            m_btnConnect->setObjectName("connectBtn");
+            m_btnConnect->style()->unpolish(m_btnConnect);
+            m_btnConnect->style()->polish(m_btnConnect);
+        }
+        m_portCombo->setEnabled(true);
         setWindowTitle("Baudix | Disconnected");
         refreshPorts();
+        
         if (!errorMsg.isEmpty()) {
             QMessageBox::warning(this, "Connection Error", errorMsg);
         }

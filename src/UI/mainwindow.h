@@ -27,8 +27,7 @@ public:
     ~MainWindow();
 
 private slots:
-    void onConnectClicked();
-    void onDisconnectClicked();
+    void onToggleConnectClicked();
     void onDataReceived(const QByteArray& data);
     void onConnectionStateChanged(bool isOpen, const QString& errorMsg);
     void onSendClicked();
@@ -47,8 +46,8 @@ private:
 
     // --- UI Elements ---
     // ToolBar Actions
-    QAction* m_actionConnect;
-    QAction* m_actionDisconnect;
+    QAction* m_actionConnectToggle;
+    QToolButton* m_btnConnect;
 
     // Connection Dock
     QComboBox* m_portCombo;

@@ -99,22 +99,22 @@ QPushButton#sendButton:pressed {
 
 /* Connect / Disconnect Buttons in Toolbar */
 QToolButton#connectBtn {
-    background-color: #98c379;
-    color: #282c34;
+    background-color: #3a3f4b;
+    color: #98c379; /* Subtle green text */
     font-weight: bold;
     border-radius: 4px;
     padding: 4px 10px;
 }
-QToolButton#connectBtn:hover { background-color: #b5e890; }
+QToolButton#connectBtn:hover { background-color: #4b5363; }
 
 QToolButton#disconnectBtn {
-    background-color: #e06c75;
-    color: #282c34;
+    background-color: #3a3f4b;
+    color: #e06c75; /* Subtle red text */
     font-weight: bold;
     border-radius: 4px;
     padding: 4px 10px;
 }
-QToolButton#disconnectBtn:hover { background-color: #ff7b85; }
+QToolButton#disconnectBtn:hover { background-color: #4b5363; }
 
 /* Toolbar */
 QToolBar {
