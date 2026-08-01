@@ -1,115 +1,184 @@
-/* General Application Style */
+/* General Application Style - Baudix Professional Theme */
 QWidget {
-    background-color: #1e1e1e;
-    color: #cccccc;
+    background-color: #282c34;
+    color: #abb2bf;
     font-family: "Segoe UI", "Helvetica Neue", sans-serif;
     font-size: 13px;
 }
 
 /* Main Window and Docks */
 QMainWindow::separator {
-    background: #333333;
+    background: #181a1f;
     width: 2px;
     height: 2px;
 }
 
 QDockWidget {
     font-weight: bold;
-    color: #ffffff;
+    color: #abb2bf;
 }
 
 QDockWidget::title {
-    background-color: #2d2d30;
+    background-color: #21252b;
     padding: 6px;
     margin-top: 2px;
-    border-bottom: 1px solid #3e3e42;
+    border-bottom: 1px solid #181a1f;
+}
+
+QWidget#dockContent {
+    background-color: #21252b;
 }
 
 /* Inputs and Combos */
-QLineEdit, QComboBox, QPlainTextEdit {
-    background-color: #252526;
-    border: 1px solid #3e3e42;
+QLineEdit, QComboBox, QPlainTextEdit, QSpinBox {
+    background-color: #1e2227;
+    border: 1px solid #181a1f;
     border-radius: 4px;
     padding: 4px;
-    selection-background-color: #007acc;
-    color: #d4d4d4;
+    selection-background-color: #61afef;
+    color: #abb2bf;
 }
 
-QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus {
-    border: 1px solid #007acc;
+QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus, QSpinBox:focus {
+    border: 1px solid #61afef;
 }
 
 QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;
     width: 20px;
-    border-left: 1px solid #3e3e42;
+    border-left: 1px solid #181a1f;
 }
 
 QComboBox QAbstractItemView {
-    background-color: #252526;
-    border: 1px solid #3e3e42;
-    selection-background-color: #007acc;
+    background-color: #1e2227;
+    border: 1px solid #181a1f;
+    selection-background-color: #61afef;
 }
 
 /* Buttons */
 QPushButton {
-    background-color: #3e3e42;
-    border: 1px solid #555555;
+    background-color: #3a3f4b;
+    border: 1px solid #181a1f;
     border-radius: 4px;
     padding: 6px 12px;
-    color: #ffffff;
+    color: #abb2bf;
 }
 
 QPushButton:hover {
-    background-color: #4e4e52;
+    background-color: #4b5363;
 }
 
 QPushButton:pressed {
-    background-color: #007acc;
-    border-color: #007acc;
+    background-color: #61afef;
+    border-color: #61afef;
+    color: #ffffff;
+}
+
+/* Segmented Control Buttons (like ASCII / HEX / Both) */
+QPushButton:checked {
+    background-color: #61afef;
+    color: #ffffff;
 }
 
 /* Special styling for the Send button */
 QPushButton#sendButton {
-    background-color: #007acc;
-    border: 1px solid #005f9e;
+    background-color: #61afef;
+    border: 1px solid #4d8fcc;
     color: white;
     font-weight: bold;
 }
 
 QPushButton#sendButton:hover {
-    background-color: #0098ff;
+    background-color: #79c0ff;
 }
 
 QPushButton#sendButton:pressed {
-    background-color: #005f9e;
+    background-color: #4d8fcc;
 }
+
+/* Connect / Disconnect Buttons in Toolbar */
+QToolButton#connectBtn {
+    background-color: #98c379;
+    color: #282c34;
+    font-weight: bold;
+    border-radius: 4px;
+    padding: 4px 10px;
+}
+QToolButton#connectBtn:hover { background-color: #b5e890; }
+
+QToolButton#disconnectBtn {
+    background-color: #e06c75;
+    color: #282c34;
+    font-weight: bold;
+    border-radius: 4px;
+    padding: 4px 10px;
+}
+QToolButton#disconnectBtn:hover { background-color: #ff7b85; }
 
 /* Toolbar */
 QToolBar {
-    background-color: #2d2d30;
-    border-bottom: 1px solid #3e3e42;
+    background-color: #21252b;
+    border-bottom: 1px solid #181a1f;
     spacing: 5px;
+    padding: 4px;
 }
 
 QToolButton {
     background-color: transparent;
     border: none;
-    padding: 4px;
+    padding: 4px 8px;
     border-radius: 4px;
+    color: #abb2bf;
 }
 
 QToolButton:hover {
-    background-color: #3e3e42;
+    background-color: #3a3f4b;
+}
+
+/* iOS Style Toggle Checkbox */
+QCheckBox::indicator {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+}
+QCheckBox::indicator:unchecked {
+    background-color: #3a3f4b;
+    border: 1px solid #181a1f;
+}
+QCheckBox::indicator:checked {
+    background-color: #61afef;
+    border: 1px solid #4d8fcc;
 }
 
 /* Terminal Screen */
-QPlainTextEdit#terminalOutput {
-    background-color: #0d0d0d;
-    color: #4af626; /* Hacker Green for RX */
+QTabWidget::pane {
+    border: 1px solid #181a1f;
+    background: #21252b;
+}
+QTabBar::tab {
+    background: #282c34;
+    border: 1px solid #181a1f;
+    padding: 6px 12px;
+    color: #8a919e;
+}
+QTabBar::tab:selected {
+    background: #21252b;
+    border-bottom-color: #21252b; /* Hide bottom border to merge with pane */
+    color: #abb2bf;
+}
+
+QTextEdit#terminalOutput {
+    background-color: #1e2227;
+    color: #abb2bf;
     font-family: "Consolas", "Courier New", monospace;
     font-size: 14px;
-    border: none;
-    border-top: 1px solid #3e3e42;
+    border: 1px solid #181a1f;
+    border-radius: 4px;
+}
+
+/* StatusBar */
+QStatusBar {
+    background-color: #21252b;
+    border-top: 1px solid #181a1f;
 }

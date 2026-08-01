@@ -3,11 +3,15 @@
 
 #include <QMainWindow>
 #include <QComboBox>
-#include <QPlainTextEdit>
+#include <QTextEdit>
 #include <QToolBar>
 #include <QAction>
 #include <QPushButton>
 #include <QLineEdit>
+#include <QSpinBox>
+#include <QCheckBox>
+#include <QListWidget>
+#include <QTabWidget>
 #include "../Communication/SerialPortController.h"
 
 QT_BEGIN_NAMESPACE
@@ -28,29 +32,53 @@ private slots:
     void onDataReceived(const QByteArray& data);
     void onConnectionStateChanged(bool isOpen, const QString& errorMsg);
     void onSendClicked();
+    void onClearTerminalClicked();
 
 private:
     Ui::MainWindow *ui;
     void setupDockWidgets();
     void setupToolBar();
+    void setupCentralWidget();
     void refreshPorts();
+    void appendToTerminal(const QString& prefix, const QByteArray& data, const QString& color);
 
-    // UI Members
+    // Core Controller
+    SerialPortController* m_serialController;
+
+    // --- UI Elements ---
+    // ToolBar Actions
+    QAction* m_actionConnect;
+    QAction* m_actionDisconnect;
+
+    // Connection Dock
     QComboBox* m_portCombo;
     QComboBox* m_baudCombo;
     QComboBox* m_dataBitsCombo;
     QComboBox* m_stopBitsCombo;
     QComboBox* m_parityCombo;
     QComboBox* m_flowControlCombo;
-    QPlainTextEdit* m_terminalOutput;
-    
+    QCheckBox* m_autoRecCb;
+
+    // Send Dock
     QLineEdit* m_inputField;
     QPushButton* m_sendButton;
-    
-    QAction* m_actionConnect;
-    QAction* m_actionDisconnect;
+    QComboBox* m_sendAsCombo;
+    QComboBox* m_historyCombo;
+    QCheckBox* m_periodicSendCb;
+    QSpinBox* m_periodicMsBox;
+    QSpinBox* m_burstBox;
 
-    // Controller
-    SerialPortController* m_serialController;
+    // Terminal (Central)
+    QTextEdit* m_terminalOutput;
+    QCheckBox* m_timestampCb;
+    QPushButton* m_btnAscii;
+    QPushButton* m_btnHex;
+    QPushButton* m_btnBoth;
+
+    // Tools Dock
+    QLineEdit* m_hlHeader;
+    QLineEdit* m_hlPayload;
+    QListWidget* m_macrosList;
+    QLineEdit* m_searchBox;
 };
 #endif // MAINWINDOW_H
