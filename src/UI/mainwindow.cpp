@@ -16,6 +16,8 @@
 #include <QListWidget>
 #include <QMenuBar>
 #include <QMenu>
+#include <QFileDialog>
+#include <QInputDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -180,13 +182,27 @@ void MainWindow::setupDockWidgets()
     logWidget->setObjectName("dockContent");
     QFormLayout *logLayout = new QFormLayout(logWidget);
     
+    // Filename + browse button
+    QHBoxLayout* fileRowLayout = new QHBoxLayout();
     m_logFilename = new QLineEdit("baudix_log.txt");
-    logLayout->addRow("Filename", m_logFilename);
+    fileRowLayout->addWidget(m_logFilename, 1);
+    QPushButton* browseBtn = new QPushButton("...");
+    browseBtn->setFixedWidth(28);
+    browseBtn->setToolTip("Choose save location");
+    connect(browseBtn, &QPushButton::clicked, this, [this](){
+        QString filename = QFileDialog::getSaveFileName(
+            this, "Save Log File", m_logFilename->text(),
+            "Text Files (*.txt);;CSV Files (*.csv);;All Files (*)"
+        );
+        if (!filename.isEmpty()) m_logFilename->setText(filename);
+    });
+    fileRowLayout->addWidget(browseBtn);
+    logLayout->addRow("Save to", fileRowLayout);
     
     m_logFormat = new QComboBox();
     m_logFormat->addItems({"TXT+HEX", "TXT", "CSV"});
     logLayout->addRow("Format", m_logFormat);
-    // Status is shown via Log button color in toolbar
+    // Log is started/stopped via the Log button in the toolbar
     
     logWidget->setLayout(logLayout);
     logDock->setWidget(logWidget);
@@ -277,54 +293,57 @@ void MainWindow::setupDockWidgets()
     QFormLayout* highlightLayout = new QFormLayout();
     highlightLayout->setSpacing(4);
     m_hlHeader = new QLineEdit("0xAA");
-    m_hlHeader->setToolTip("Packets starting with this byte will be highlighted in yellow");
+    m_hlHeader->setToolTip("Lines starting with this byte will be highlighted");
     m_hlHeader->setMaximumHeight(26);
     highlightLayout->addRow("Header", m_hlHeader);
     m_hlPayload = new QLineEdit("0xCC");
-    m_hlPayload->setToolTip("Payload marker byte");
+    m_hlPayload->setToolTip("Secondary marker byte");
     m_hlPayload->setMaximumHeight(26);
     highlightLayout->addRow("Payload", m_hlPayload);
     toolsLayout->addLayout(highlightLayout);
 
     toolsLayout->addSpacing(8);
 
-    // --- Quick Commands ---
-    QLabel* qcTitle = new QLabel("Quick Commands");
-    qcTitle->setStyleSheet("color: #61afef; font-weight: bold; font-size: 12px;");
-    toolsLayout->addWidget(qcTitle);
+    // --- Macros ---
+    QLabel* macroTitle = new QLabel("Macros");
+    macroTitle->setStyleSheet("color: #61afef; font-weight: bold; font-size: 12px;");
+    toolsLayout->addWidget(macroTitle);
 
-    // Reset / Boot / Ver quick-fire buttons
-    QHBoxLayout* macroBtns = new QHBoxLayout();
-    macroBtns->setSpacing(4);
-
-    QPushButton* btnReset = new QPushButton("Reset");
-    btnReset->setToolTip("AT+RESET\\r\\n");
-    connect(btnReset, &QPushButton::clicked, this, &MainWindow::onMacroResetClicked);
-    macroBtns->addWidget(btnReset);
-
-    QPushButton* btnBoot = new QPushButton("Boot");
-    btnBoot->setToolTip("0x00 0xFF 0x55 0xAA (HEX)");
-    connect(btnBoot, &QPushButton::clicked, this, &MainWindow::onMacroBootClicked);
-    macroBtns->addWidget(btnBoot);
-
-    QPushButton* btnVer = new QPushButton("Ver");
-    btnVer->setToolTip("AT+GMR\\r\\n");
-    connect(btnVer, &QPushButton::clicked, this, &MainWindow::onMacroVerClicked);
-    macroBtns->addWidget(btnVer);
-    toolsLayout->addLayout(macroBtns);
-
-    // Saved macros list (double-click to send)
     m_macrosList = new QListWidget();
-    m_macrosList->setToolTip("Double-click any macro to send it to the device");
-    m_macrosList->setMaximumHeight(120);
-    m_macrosList->addItem("AT+RESET\r\n");
-    m_macrosList->addItem("AT+GMR\r\n");
-    m_macrosList->addItem("AT+CWMODE=1\r\n");
-    m_macrosList->addItem("AA BB CC DD (HEX)");
+    m_macrosList->setToolTip("Double-click to send. Right-click for options.");
+    m_macrosList->setContextMenuPolicy(Qt::CustomContextMenu);
+    // Start with a couple of empty example macros - user will edit these
+    m_macrosList->addItem("");
+    m_macrosList->addItem("");
+    m_macrosList->item(0)->setFlags(m_macrosList->item(0)->flags() | Qt::ItemIsEditable);
+    m_macrosList->item(1)->setFlags(m_macrosList->item(1)->flags() | Qt::ItemIsEditable);
+    
+    // Double-click sends
     connect(m_macrosList, &QListWidget::itemDoubleClicked, [this](QListWidgetItem* item){
-        performSend(item->text());
+        QString cmd = item->text();
+        if (!cmd.isEmpty()) performSend(cmd);
     });
-    toolsLayout->addWidget(m_macrosList);
+    // Single-click to edit the text inline
+    connect(m_macrosList, &QListWidget::itemClicked, [this](QListWidgetItem* item){
+        m_macrosList->editItem(item);
+    });
+    // Right-click context menu
+    connect(m_macrosList, &QListWidget::customContextMenuRequested, [this](const QPoint& pos){
+        QMenu menu(this);
+        QAction* addAction = menu.addAction("+ Add Macro");
+        QAction* removeAction = menu.addAction("- Remove Selected");
+        QAction* chosen = menu.exec(m_macrosList->mapToGlobal(pos));
+        if (chosen == addAction) {
+            QListWidgetItem* newItem = new QListWidgetItem("");
+            newItem->setFlags(newItem->flags() | Qt::ItemIsEditable);
+            m_macrosList->addItem(newItem);
+            m_macrosList->editItem(newItem);
+        } else if (chosen == removeAction) {
+            QListWidgetItem* sel = m_macrosList->currentItem();
+            if (sel) delete sel;
+        }
+    });
+    toolsLayout->addWidget(m_macrosList, 1);
 
     toolsLayout->addSpacing(8);
 
@@ -338,8 +357,6 @@ void MainWindow::setupDockWidgets()
     m_searchBox->setMaximumHeight(26);
     connect(m_searchBox, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
     toolsLayout->addWidget(m_searchBox);
-
-    toolsLayout->addStretch(); // Push everything to the top
 
     toolsWidget->setLayout(toolsLayout);
     toolsDock->setWidget(toolsWidget);
