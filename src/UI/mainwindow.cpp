@@ -265,51 +265,81 @@ void MainWindow::setupDockWidgets()
     QWidget *toolsWidget = new QWidget(toolsDock);
     toolsWidget->setObjectName("dockContent");
     QVBoxLayout *toolsLayout = new QVBoxLayout(toolsWidget);
-    
-    toolsLayout->addWidget(new QLabel("Highlight Rules"));
+    toolsLayout->setSpacing(8);
+    toolsLayout->setContentsMargins(8, 8, 8, 8);
+
+    // --- Highlight Rules ---
+    QLabel* hlTitle = new QLabel("Highlight Rules");
+    hlTitle->setStyleSheet("color: #61afef; font-weight: bold; font-size: 12px;");
+    toolsLayout->addWidget(hlTitle);
+
     QFormLayout* highlightLayout = new QFormLayout();
+    highlightLayout->setSpacing(4);
     m_hlHeader = new QLineEdit("0xAA");
+    m_hlHeader->setToolTip("Packets starting with this byte will be highlighted in yellow");
+    m_hlHeader->setMaximumHeight(26);
     highlightLayout->addRow("Header", m_hlHeader);
     m_hlPayload = new QLineEdit("0xCC");
+    m_hlPayload->setToolTip("Payload marker byte");
+    m_hlPayload->setMaximumHeight(26);
     highlightLayout->addRow("Payload", m_hlPayload);
     toolsLayout->addLayout(highlightLayout);
-    
-    toolsLayout->addWidget(new QLabel("Macro List"));
+
+    toolsLayout->addSpacing(8);
+
+    // --- Quick Commands ---
+    QLabel* qcTitle = new QLabel("Quick Commands");
+    qcTitle->setStyleSheet("color: #61afef; font-weight: bold; font-size: 12px;");
+    toolsLayout->addWidget(qcTitle);
+
+    // Reset / Boot / Ver quick-fire buttons
     QHBoxLayout* macroBtns = new QHBoxLayout();
-    
+    macroBtns->setSpacing(4);
+
     QPushButton* btnReset = new QPushButton("Reset");
-    btnReset->setToolTip("Send: AT+RESET\\r\\n");
+    btnReset->setToolTip("AT+RESET\\r\\n");
     connect(btnReset, &QPushButton::clicked, this, &MainWindow::onMacroResetClicked);
     macroBtns->addWidget(btnReset);
-    
+
     QPushButton* btnBoot = new QPushButton("Boot");
-    btnBoot->setToolTip("Send: 0x00 0xFF 0x55 0xAA");
+    btnBoot->setToolTip("0x00 0xFF 0x55 0xAA (HEX)");
     connect(btnBoot, &QPushButton::clicked, this, &MainWindow::onMacroBootClicked);
     macroBtns->addWidget(btnBoot);
-    
+
     QPushButton* btnVer = new QPushButton("Ver");
-    btnVer->setToolTip("Send: AT+GMR\\r\\n");
+    btnVer->setToolTip("AT+GMR\\r\\n");
     connect(btnVer, &QPushButton::clicked, this, &MainWindow::onMacroVerClicked);
     macroBtns->addWidget(btnVer);
-    
     toolsLayout->addLayout(macroBtns);
-    
-    toolsLayout->addWidget(new QLabel("Macros (double-click to send)"));
+
+    // Saved macros list (double-click to send)
     m_macrosList = new QListWidget();
-    m_macrosList->setToolTip("Double-click a macro to send it directly to the device");
+    m_macrosList->setToolTip("Double-click any macro to send it to the device");
+    m_macrosList->setMaximumHeight(120);
     m_macrosList->addItem("AT+RESET\r\n");
     m_macrosList->addItem("AT+GMR\r\n");
-    m_macrosList->addItem("AA BB CC (HEX test)");
+    m_macrosList->addItem("AT+CWMODE=1\r\n");
+    m_macrosList->addItem("AA BB CC DD (HEX)");
     connect(m_macrosList, &QListWidget::itemDoubleClicked, [this](QListWidgetItem* item){
         performSend(item->text());
     });
-    
+    toolsLayout->addWidget(m_macrosList);
+
+    toolsLayout->addSpacing(8);
+
+    // --- Search ---
+    QLabel* searchTitle = new QLabel("Search Terminal");
+    searchTitle->setStyleSheet("color: #61afef; font-weight: bold; font-size: 12px;");
+    toolsLayout->addWidget(searchTitle);
+
     m_searchBox = new QLineEdit();
-    m_searchBox->setPlaceholderText("Find text/HEX");
+    m_searchBox->setPlaceholderText("Find text or HEX...");
+    m_searchBox->setMaximumHeight(26);
     connect(m_searchBox, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
-    toolsLayout->addWidget(new QLabel("Search"));
     toolsLayout->addWidget(m_searchBox);
-    
+
+    toolsLayout->addStretch(); // Push everything to the top
+
     toolsWidget->setLayout(toolsLayout);
     toolsDock->setWidget(toolsWidget);
     addDockWidget(Qt::RightDockWidgetArea, toolsDock);

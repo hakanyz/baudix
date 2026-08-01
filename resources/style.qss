@@ -193,3 +193,26 @@ QStatusBar {
     background-color: #21252b;
     border-top: 1px solid #181a1f;
 }
+
+/* Macros list */
+QListWidget {
+    background-color: #1e2227;
+    border: 1px solid #3e3e42;
+    border-radius: 4px;
+    color: #abb2bf;
+    outline: none;
+}
+
+QListWidget::item {
+    padding: 4px 6px;
+    border-radius: 3px;
+}
+
+QListWidget::item:hover {
+    background-color: #3a3f4b;
+}
+
+QListWidget::item:selected {
+    background-color: #007acc;
+    color: #ffffff;
+}
