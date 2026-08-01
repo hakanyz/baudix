@@ -93,7 +93,9 @@ void MainWindow::setupCentralWidget()
     topBar->addWidget(m_btnHex);
     topBar->addWidget(m_btnBoth);
     
+    topBar->addSpacing(15);
     QPushButton* clearBtn = new QPushButton("Clear");
+    clearBtn->setObjectName("clearTerminalBtn");
     connect(clearBtn, &QPushButton::clicked, this, &MainWindow::onClearTerminalClicked);
     topBar->addWidget(clearBtn);
     
@@ -305,6 +307,23 @@ void MainWindow::appendToTerminal(const QString& prefix, const QByteArray& data,
                        .arg(QDateTime::currentDateTime().toString("hh:mm:ss.zzz"));
     }
 
+    // Check Highlight Rules
+    QString headerRule = m_hlHeader->text().trimmed();
+    QString payloadRule = m_hlPayload->text().trimmed();
+    
+    QString finalColor = color;
+    QString bgColor = "transparent";
+
+    // Very basic highlight logic: if data starts with the header byte
+    if (!headerRule.isEmpty() && data.size() > 0) {
+        bool ok;
+        int headerByte = headerRule.toInt(&ok, 16); // e.g. "0xAA" -> 170
+        if (ok && (quint8)data.at(0) == (quint8)headerByte) {
+            bgColor = "#3e4452"; // Highlight background slightly
+            finalColor = "#e5c07b"; // Highlight text yellow
+        }
+    }
+
     // Prepare HEX
     QString hexStr;
     for (char c : data) {
@@ -327,8 +346,8 @@ void MainWindow::appendToTerminal(const QString& prefix, const QByteArray& data,
         finalDataStr = asciiStr;
     }
 
-    QString htmlLine = QString("%1<span style='color:%2;'>%3 %4</span>")
-                       .arg(timestampStr, color, prefix, finalDataStr.toHtmlEscaped());
+    QString htmlLine = QString("%1<span style='background-color:%2; color:%3;'>%4 %5</span>")
+                       .arg(timestampStr, bgColor, finalColor, prefix, finalDataStr.toHtmlEscaped());
 
     m_terminalOutput->append(htmlLine);
 }

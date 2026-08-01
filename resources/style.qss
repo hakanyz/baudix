@@ -97,6 +97,17 @@ QPushButton#sendButton:pressed {
     background-color: #4d8fcc;
 }
 
+/* Clear Terminal Button */
+QPushButton#clearTerminalBtn {
+    background-color: transparent;
+    border: 1px solid #e06c75;
+    color: #e06c75;
+}
+QPushButton#clearTerminalBtn:hover {
+    background-color: #e06c75;
+    color: #282c34;
+}
+
 /* Connect / Disconnect Buttons in Toolbar */
 QToolButton#connectBtn {
     background-color: #3a3f4b;
