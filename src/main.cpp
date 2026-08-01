@@ -1,6 +1,8 @@
 #include "UI/mainwindow.h"
 #include <QApplication>
 #include <QFile>
+#include <QStyleFactory>
+#include <QFile>
 
 int main(int argc, char *argv[])
 {
