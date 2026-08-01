@@ -12,6 +12,7 @@
 #include <QCheckBox>
 #include <QListWidget>
 #include <QTabWidget>
+#include <QTimer>
 #include "../Communication/SerialPortController.h"
 
 QT_BEGIN_NAMESPACE
@@ -32,6 +33,14 @@ private slots:
     void onConnectionStateChanged(bool isOpen, const QString& errorMsg);
     void onSendClicked();
     void onClearTerminalClicked();
+    
+    // Core Feature Slots
+    void onPeriodicSendToggled(bool checked);
+    void onPeriodicTimerTimeout();
+    void onMacroResetClicked();
+    void onMacroBootClicked();
+    void onMacroVerClicked();
+    void onSearchTextChanged(const QString &text);
 
 private:
     Ui::MainWindow *ui;
@@ -40,9 +49,11 @@ private:
     void setupCentralWidget();
     void refreshPorts();
     void appendToTerminal(const QString& prefix, const QByteArray& data, const QString& color);
+    void performSend(const QString& text); // Helper
 
     // Core Controller
     SerialPortController* m_serialController;
+    QTimer* m_periodicTimer;
 
     // --- UI Elements ---
     // ToolBar Actions

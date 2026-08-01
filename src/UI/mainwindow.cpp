@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     
     m_serialController = new SerialPortController(this);
+    m_periodicTimer = new QTimer(this);
 
     setupToolBar();
     setupCentralWidget();
@@ -227,6 +228,8 @@ void MainWindow::setupDockWidgets()
     bottomLayout->addWidget(m_burstBox);
     
     m_periodicSendCb = new QCheckBox("");
+    connect(m_periodicSendCb, &QCheckBox::toggled, this, &MainWindow::onPeriodicSendToggled);
+    connect(m_periodicTimer, &QTimer::timeout, this, &MainWindow::onPeriodicTimerTimeout);
     bottomLayout->addWidget(m_periodicSendCb);
     
     sendLayout->addLayout(bottomLayout);
@@ -251,17 +254,30 @@ void MainWindow::setupDockWidgets()
     
     toolsLayout->addWidget(new QLabel("Macro List"));
     QHBoxLayout* macroBtns = new QHBoxLayout();
-    macroBtns->addWidget(new QPushButton("Reset"));
-    macroBtns->addWidget(new QPushButton("Boot"));
-    macroBtns->addWidget(new QPushButton("Ver"));
+    
+    QPushButton* btnReset = new QPushButton("Reset");
+    connect(btnReset, &QPushButton::clicked, this, &MainWindow::onMacroResetClicked);
+    macroBtns->addWidget(btnReset);
+    
+    QPushButton* btnBoot = new QPushButton("Boot");
+    connect(btnBoot, &QPushButton::clicked, this, &MainWindow::onMacroBootClicked);
+    macroBtns->addWidget(btnBoot);
+    
+    QPushButton* btnVer = new QPushButton("Ver");
+    connect(btnVer, &QPushButton::clicked, this, &MainWindow::onMacroVerClicked);
+    macroBtns->addWidget(btnVer);
+    
     toolsLayout->addLayout(macroBtns);
     
     toolsLayout->addWidget(new QLabel("Macros"));
     m_macrosList = new QListWidget();
+    m_macrosList->addItem("AT+RESET");
+    m_macrosList->addItem("0xAA 0xBB 0xCC (Test)");
     toolsLayout->addWidget(m_macrosList, 1);
     
     m_searchBox = new QLineEdit();
     m_searchBox->setPlaceholderText("Find text/HEX");
+    connect(m_searchBox, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
     toolsLayout->addWidget(new QLabel("Search"));
     toolsLayout->addWidget(m_searchBox);
     
@@ -358,21 +374,97 @@ void MainWindow::onDataReceived(const QByteArray& data)
     appendToTerminal("&lt; RX:", data, "#98c379");
 }
 
+void MainWindow::performSend(const QString& text)
+{
+    if (!m_serialController->isOpen() || text.isEmpty()) return;
+
+    QByteArray data;
+    bool isHex = (m_sendAsCombo->currentText() == "HEX" || m_sendAsCombo->currentText() == "HEX | ASCII");
+
+    if (isHex) {
+        // Parse HEX string (e.g. "AA BB 0xCC")
+        QString cleanText = text;
+        cleanText.replace("0x", "", Qt::CaseInsensitive);
+        cleanText.remove(QRegularExpression("\\s+")); // Remove all spaces
+        
+        if (cleanText.length() % 2 != 0) {
+            cleanText.prepend("0"); // Pad if odd number of characters
+        }
+        
+        for (int i = 0; i < cleanText.length(); i += 2) {
+            bool ok;
+            uint byteVal = cleanText.mid(i, 2).toUInt(&ok, 16);
+            if (ok) {
+                data.append((char)byteVal);
+            }
+        }
+    } else {
+        data = text.toUtf8();
+    }
+
+    if (data.isEmpty()) return; // Invalid parsing
+
+    if (m_serialController->writeData(data)) {
+        appendToTerminal("&gt; TX:", data, "#61afef");
+    }
+}
+
 void MainWindow::onSendClicked()
 {
-    if (!m_serialController->isOpen()) return;
-
     QString text = m_inputField->text();
     if (text.isEmpty()) return;
 
-    QByteArray data = text.toUtf8();
-    if (m_serialController->writeData(data)) {
-        // #61afef is blue for TX
-        appendToTerminal("&gt; TX:", data, "#61afef");
-        m_inputField->selectAll();
-        if (m_historyCombo->findText(text) == -1) {
-            m_historyCombo->insertItem(1, text);
+    performSend(text);
+    
+    m_inputField->selectAll();
+    if (m_historyCombo->findText(text) == -1) {
+        m_historyCombo->insertItem(1, text);
+    }
+}
+
+void MainWindow::onPeriodicSendToggled(bool checked)
+{
+    if (checked) {
+        m_periodicTimer->start(m_periodicMsBox->value());
+    } else {
+        m_periodicTimer->stop();
+    }
+}
+
+void MainWindow::onPeriodicTimerTimeout()
+{
+    int bursts = m_burstBox->value();
+    for(int i=0; i<bursts; i++) {
+        QString text = m_inputField->text();
+        if (!text.isEmpty()) {
+            performSend(text);
         }
+    }
+}
+
+void MainWindow::onMacroResetClicked()
+{
+    performSend("AT+RESET\\r\\n"); // Or whatever default the user wants later
+}
+
+void MainWindow::onMacroBootClicked()
+{
+    performSend("0x00 0xFF 0x55 0xAA"); // Default HEX test for Boot
+}
+
+void MainWindow::onMacroVerClicked()
+{
+    performSend("AT+GMR\\r\\n"); // Version standard command
+}
+
+void MainWindow::onSearchTextChanged(const QString &text)
+{
+    if (!m_terminalOutput) return;
+    
+    // Find functionality
+    m_terminalOutput->moveCursor(QTextCursor::Start);
+    if (!text.isEmpty()) {
+        m_terminalOutput->find(text); // Basic find, moves cursor to match
     }
 }
 
