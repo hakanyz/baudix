@@ -243,49 +243,43 @@ void MainWindow::setupDockWidgets()
     sendWidget->setObjectName("dockContent");
     QVBoxLayout *sendLayout = new QVBoxLayout(sendWidget);
     
-    // Top Row: Input + Format + Send Button
+    // Top Row: Input (History Combo) + History Controls + Format + Send
     QHBoxLayout *inputLayout = new QHBoxLayout();
     inputLayout->addWidget(new QLabel("Input"));
     
-    m_inputField = new QLineEdit("");
-    m_inputField->setPlaceholderText("Type text or HEX bytes (e.g. AA BB CC)");
-    inputLayout->addWidget(m_inputField, 1);
+    m_inputCombo = new QComboBox();
+    m_inputCombo->setEditable(true);
+    m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes (e.g. AA BB CC)");
+    m_inputCombo->addItem(""); // Default empty
+    // Enter sends the command
+    connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &MainWindow::onSendClicked);
+    inputLayout->addWidget(m_inputCombo, 1);
     
-    // Single format selector
-    m_sendAsCombo = new QComboBox();
-    m_sendAsCombo->addItems({"ASCII", "HEX"});
-    m_sendAsCombo->setToolTip("ASCII: send as plain text\nHEX: parse as hex bytes (e.g. AA BB CC)");
-    inputLayout->addWidget(m_sendAsCombo);
-    
-    m_sendButton = new QPushButton("Send");
-    m_sendButton->setObjectName("sendButton");
-    inputLayout->addWidget(m_sendButton);
-    
-    sendLayout->addLayout(inputLayout);
-    
-    // Middle Row: History + History Controls
-    QHBoxLayout *historyLayout = new QHBoxLayout();
-    historyLayout->addWidget(new QLabel("History"));
-    m_historyCombo = new QComboBox();
-    m_historyCombo->addItem("-- Previous commands --");
-    connect(m_historyCombo, QOverload<int>::of(&QComboBox::activated), [this](int idx){
-        if (idx > 0) m_inputField->setText(m_historyCombo->itemText(idx));
-    });
-    historyLayout->addWidget(m_historyCombo, 1);
-    
-    QCheckBox* cbHistoryOn = new QCheckBox("ON");
-    cbHistoryOn->setChecked(true);
-    historyLayout->addWidget(cbHistoryOn);
+    m_cbHistoryOn = new QCheckBox("ON");
+    m_cbHistoryOn->setChecked(true);
+    m_cbHistoryOn->setToolTip("Save sent commands to history");
+    inputLayout->addWidget(m_cbHistoryOn);
     
     QPushButton* btnClearHistory = new QPushButton("Clear");
     btnClearHistory->setObjectName("iconBtn"); // keep it small
     connect(btnClearHistory, &QPushButton::clicked, [this](){
-        m_historyCombo->clear();
-        m_historyCombo->addItem("-- Previous commands --");
+        m_inputCombo->clear();
+        m_inputCombo->addItem("");
     });
-    historyLayout->addWidget(btnClearHistory);
+    inputLayout->addWidget(btnClearHistory);
     
-    sendLayout->addLayout(historyLayout);
+    // Single format selector
+    m_sendAsCombo = new QComboBox();
+    m_sendAsCombo->addItems({"ASCII", "HEX"});
+    m_sendAsCombo->setToolTip("ASCII: send as plain text\nHEX: parse as hex bytes");
+    inputLayout->addWidget(m_sendAsCombo);
+    
+    m_sendButton = new QPushButton("Send");
+    m_sendButton->setObjectName("sendButton");
+    connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendClicked);
+    inputLayout->addWidget(m_sendButton);
+    
+    sendLayout->addLayout(inputLayout);
     
     // Bottom Row: Periodic Send
     QHBoxLayout *bottomLayout = new QHBoxLayout();
@@ -587,14 +581,17 @@ void MainWindow::performSend(const QString& text)
 
 void MainWindow::onSendClicked()
 {
-    QString text = m_inputField->text();
+    QString text = m_inputCombo->currentText();
     if (text.isEmpty()) return;
 
     performSend(text);
     
-    m_inputField->selectAll();
-    if (m_historyCombo->findText(text) == -1) {
-        m_historyCombo->insertItem(1, text);
+    m_inputCombo->lineEdit()->selectAll();
+    
+    if (m_cbHistoryOn->isChecked()) {
+        if (m_inputCombo->findText(text) == -1) {
+            m_inputCombo->insertItem(1, text);
+        }
     }
 }
 
@@ -611,7 +608,7 @@ void MainWindow::onPeriodicTimerTimeout()
 {
     int bursts = m_burstBox->value();
     for(int i=0; i<bursts; i++) {
-        QString text = m_inputField->text();
+        QString text = m_inputCombo->currentText();
         if (!text.isEmpty()) {
             performSend(text);
         }

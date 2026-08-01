@@ -80,10 +80,10 @@ private:
     QTextStream* m_logStream;
 
     // Send Dock
-    QLineEdit* m_inputField;
+    QComboBox* m_inputCombo;
+    QCheckBox* m_cbHistoryOn;
     QPushButton* m_sendButton;
     QComboBox* m_sendAsCombo;
-    QComboBox* m_historyCombo;
     QCheckBox* m_periodicSendCb;
     QSpinBox* m_periodicMsBox;
     QSpinBox* m_burstBox;
