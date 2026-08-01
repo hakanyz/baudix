@@ -116,8 +116,12 @@ void MainWindow::setupCentralWidget()
 
 void MainWindow::setupDockWidgets()
 {
+    // Common features for all docks: No Close Button
+    QDockWidget::DockWidgetFeatures dockFeatures = QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable;
+
     // --- Connection Dock ---
     QDockWidget *connDock = new QDockWidget("Connection", this);
+    connDock->setFeatures(dockFeatures);
     QWidget *connWidget = new QWidget(connDock);
     connWidget->setObjectName("dockContent");
     QFormLayout *connLayout = new QFormLayout(connWidget);
@@ -158,14 +162,26 @@ void MainWindow::setupDockWidgets()
 
     // --- Logging Dock ---
     QDockWidget *logDock = new QDockWidget("Logging", this);
+    logDock->setFeatures(dockFeatures);
     QWidget *logWidget = new QWidget(logDock);
     logWidget->setObjectName("dockContent");
     QFormLayout *logLayout = new QFormLayout(logWidget);
-    logLayout->addRow("Filename", new QLineEdit("baudix_log.txt"));
+    
+    QHBoxLayout* fileLayout = new QHBoxLayout();
+    fileLayout->addWidget(new QLineEdit("baudix_log.txt"));
+    QPushButton* browseBtn = new QPushButton("...");
+    browseBtn->setFixedWidth(30);
+    fileLayout->addWidget(browseBtn);
+    logLayout->addRow("Filename", fileLayout);
     
     QComboBox* formatCombo = new QComboBox();
     formatCombo->addItems({"TXT+HEX", "TXT", "CSV"});
     logLayout->addRow("Format", formatCombo);
+    
+    QHBoxLayout* actionLayout = new QHBoxLayout();
+    actionLayout->addWidget(new QPushButton("Import"));
+    actionLayout->addWidget(new QPushButton("Export"));
+    logLayout->addRow("Action", actionLayout);
     
     logLayout->addRow("Status", new QLabel("Idle"));
     logWidget->setLayout(logLayout);
@@ -174,6 +190,7 @@ void MainWindow::setupDockWidgets()
 
     // --- Send Dock ---
     QDockWidget *sendDock = new QDockWidget("Send", this);
+    sendDock->setFeatures(dockFeatures);
     QWidget *sendWidget = new QWidget(sendDock);
     sendWidget->setObjectName("dockContent");
     QVBoxLayout *sendLayout = new QVBoxLayout(sendWidget);
@@ -242,6 +259,7 @@ void MainWindow::setupDockWidgets()
 
     // --- Tools Dock ---
     QDockWidget *toolsDock = new QDockWidget("Tools", this);
+    toolsDock->setFeatures(dockFeatures);
     QWidget *toolsWidget = new QWidget(toolsDock);
     toolsWidget->setObjectName("dockContent");
     QVBoxLayout *toolsLayout = new QVBoxLayout(toolsWidget);
