@@ -98,8 +98,7 @@ QPushButton:pressed {
 QPushButton:checked {
     background-color: #61afef;
     border: 1px solid #4d8fcc;
-    color: #282c34;
-    font-weight: bold;
+    color: #ffffff;
 }
 
 /* Toggle style buttons (Auto Reconnect, Timestamp) - same as regular checkable buttons */
