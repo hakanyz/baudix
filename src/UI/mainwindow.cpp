@@ -367,7 +367,31 @@ void MainWindow::setupDockWidgets()
     m_searchBox = new QLineEdit();
     m_searchBox->setPlaceholderText("Find text/HEX");
     connect(m_searchBox, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
-    toolsLayout->addWidget(m_searchBox);
+    connect(m_searchBox, &QLineEdit::returnPressed, [this](){
+        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text());
+    });
+
+    QHBoxLayout* searchLayout = new QHBoxLayout();
+    searchLayout->setSpacing(4);
+    searchLayout->addWidget(m_searchBox);
+
+    QPushButton* btnFindPrev = new QPushButton("<");
+    btnFindPrev->setFixedWidth(28);
+    btnFindPrev->setToolTip("Find Previous");
+    connect(btnFindPrev, &QPushButton::clicked, [this](){
+        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text(), QTextDocument::FindBackward);
+    });
+    searchLayout->addWidget(btnFindPrev);
+
+    QPushButton* btnFindNext = new QPushButton(">");
+    btnFindNext->setFixedWidth(28);
+    btnFindNext->setToolTip("Find Next");
+    connect(btnFindNext, &QPushButton::clicked, [this](){
+        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text());
+    });
+    searchLayout->addWidget(btnFindNext);
+
+    toolsLayout->addLayout(searchLayout);
 
     toolsWidget->setLayout(toolsLayout);
     toolsDock->setWidget(toolsWidget);
