@@ -19,6 +19,8 @@ set(PROJECT_SOURCES
         src/UI/mainwindow.ui
         src/Core/Updater.cpp
         src/Core/Updater.h
+        src/Communication/SerialPortController.cpp
+        src/Communication/SerialPortController.h
         resources/resources.qrc
 )
 

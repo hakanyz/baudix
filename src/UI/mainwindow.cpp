@@ -9,18 +9,52 @@
 #include <QCheckBox>
 #include <QLabel>
 #include <QHBoxLayout>
+#include <QMessageBox>
+#include <QDateTime>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    
+    // Find the terminal output created in UI file
+    m_terminalOutput = this->findChild<QPlainTextEdit*>("terminalOutput");
+    if (!m_terminalOutput) {
+        m_terminalOutput = new QPlainTextEdit(this);
+        m_terminalOutput->setReadOnly(true);
+        setCentralWidget(m_terminalOutput);
+    }
+
+    m_serialController = new SerialPortController(this);
+
+    setupToolBar();
     setupDockWidgets();
+
+    // Connect controller signals
+    connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
+    connect(m_serialController, &SerialPortController::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::setupToolBar()
+{
+    QToolBar *toolBar = addToolBar("Main ToolBar");
+    toolBar->setMovable(false);
+
+    m_actionConnect = new QAction(QIcon(":/baudix_icon.svg"), "Connect", this);
+    m_actionDisconnect = new QAction("Disconnect", this);
+    m_actionDisconnect->setEnabled(false); // Initially disabled
+
+    toolBar->addAction(m_actionConnect);
+    toolBar->addAction(m_actionDisconnect);
+
+    connect(m_actionConnect, &QAction::triggered, this, &MainWindow::onConnectClicked);
+    connect(m_actionDisconnect, &QAction::triggered, this, &MainWindow::onDisconnectClicked);
 }
 
 void MainWindow::setupDockWidgets()
@@ -30,19 +64,31 @@ void MainWindow::setupDockWidgets()
     QWidget *connWidget = new QWidget(connDock);
     QFormLayout *connLayout = new QFormLayout(connWidget);
     
-    QComboBox* portCombo = new QComboBox();
-    portCombo->addItem("COM3 - Connected"); // Placeholder
-    connLayout->addRow("COM Port", portCombo);
+    m_portCombo = new QComboBox();
+    refreshPorts();
+    connLayout->addRow("COM Port", m_portCombo);
     
-    QComboBox* baudCombo = new QComboBox();
-    baudCombo->addItems({"9600", "115200", "921600"});
-    baudCombo->setCurrentText("115200");
-    connLayout->addRow("Baud Rate", baudCombo);
+    m_baudCombo = new QComboBox();
+    m_baudCombo->addItems({"9600", "19200", "38400", "57600", "115200", "921600"});
+    m_baudCombo->setCurrentText("115200");
+    connLayout->addRow("Baud Rate", m_baudCombo);
     
-    connLayout->addRow("Data Bits", new QComboBox());
-    connLayout->addRow("Stop Bits", new QComboBox());
-    connLayout->addRow("Parity", new QComboBox());
-    connLayout->addRow("Flow Control", new QComboBox());
+    m_dataBitsCombo = new QComboBox();
+    m_dataBitsCombo->addItems({"5", "6", "7", "8"});
+    m_dataBitsCombo->setCurrentText("8");
+    connLayout->addRow("Data Bits", m_dataBitsCombo);
+    
+    m_stopBitsCombo = new QComboBox();
+    m_stopBitsCombo->addItems({"1", "1.5", "2"});
+    connLayout->addRow("Stop Bits", m_stopBitsCombo);
+    
+    m_parityCombo = new QComboBox();
+    m_parityCombo->addItems({"None", "Even", "Odd", "Space", "Mark"});
+    connLayout->addRow("Parity", m_parityCombo);
+    
+    m_flowControlCombo = new QComboBox();
+    m_flowControlCombo->addItems({"None", "Hardware", "Software"});
+    connLayout->addRow("Flow Control", m_flowControlCombo);
     
     QCheckBox* autoRecCb = new QCheckBox("Auto Reconnect");
     autoRecCb->setChecked(true);
@@ -108,4 +154,71 @@ void MainWindow::setupDockWidgets()
     toolsWidget->setLayout(toolsLayout);
     toolsDock->setWidget(toolsWidget);
     addDockWidget(Qt::RightDockWidgetArea, toolsDock);
+}
+
+void MainWindow::refreshPorts()
+{
+    m_portCombo->clear();
+    m_portCombo->addItems(m_serialController->getAvailablePorts());
+}
+
+void MainWindow::onConnectClicked()
+{
+    QString port = m_portCombo->currentText();
+    if(port.isEmpty()) {
+        QMessageBox::warning(this, "Error", "Please select a valid COM port.");
+        return;
+    }
+    
+    int baud = m_baudCombo->currentText().toInt();
+    
+    QSerialPort::DataBits dataBits = static_cast<QSerialPort::DataBits>(m_dataBitsCombo->currentText().toInt());
+    QSerialPort::StopBits stopBits = QSerialPort::OneStop;
+    if (m_stopBitsCombo->currentText() == "2") stopBits = QSerialPort::TwoStop;
+    else if (m_stopBitsCombo->currentText() == "1.5") stopBits = QSerialPort::OneAndHalfStop;
+    
+    QSerialPort::Parity parity = QSerialPort::NoParity;
+    if (m_parityCombo->currentText() == "Even") parity = QSerialPort::EvenParity;
+    else if (m_parityCombo->currentText() == "Odd") parity = QSerialPort::OddParity;
+    
+    QSerialPort::FlowControl flowControl = QSerialPort::NoFlowControl;
+    if (m_flowControlCombo->currentText() == "Hardware") flowControl = QSerialPort::HardwareControl;
+    else if (m_flowControlCombo->currentText() == "Software") flowControl = QSerialPort::SoftwareControl;
+
+    m_serialController->connectDevice(port, baud, dataBits, parity, stopBits, flowControl);
+}
+
+void MainWindow::onDisconnectClicked()
+{
+    m_serialController->disconnectDevice();
+}
+
+void MainWindow::onDataReceived(const QByteArray& data)
+{
+    if (m_terminalOutput) {
+        QString timestamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+        // Convert to ASCII representation for basic text log
+        QString text = QString("[%1] < RX: %2").arg(timestamp, QString::fromLocal8Bit(data));
+        m_terminalOutput->appendPlainText(text);
+    }
+}
+
+void MainWindow::onConnectionStateChanged(bool isOpen, const QString& errorMsg)
+{
+    if (isOpen) {
+        m_actionConnect->setEnabled(false);
+        m_actionDisconnect->setEnabled(true);
+        m_portCombo->setEnabled(false); // Lock port selection
+        setWindowTitle(QString("Baudix | %1 - %2 Connected").arg(m_portCombo->currentText().split(" - ").first(), m_baudCombo->currentText()));
+    } else {
+        m_actionConnect->setEnabled(true);
+        m_actionDisconnect->setEnabled(false);
+        m_portCombo->setEnabled(true);
+        setWindowTitle("Baudix | Disconnected");
+        refreshPorts(); // Refresh list on disconnect in case devices changed
+        
+        if (!errorMsg.isEmpty()) {
+            QMessageBox::warning(this, "Connection Error", errorMsg);
+        }
+    }
 }
