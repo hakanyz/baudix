@@ -18,6 +18,7 @@
 #include <QMenu>
 #include <QFileDialog>
 #include <QInputDialog>
+#include <QGroupBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -283,27 +284,49 @@ void MainWindow::setupDockWidgets()
     toolsLayout->setSpacing(8);
     toolsLayout->setContentsMargins(8, 8, 8, 8);
 
-    // --- Highlight Rules (QGroupBox) ---
-    QGroupBox* hlGroup = new QGroupBox("Highlight Rules");
-    QFormLayout* hlLayout = new QFormLayout(hlGroup);
-    hlLayout->setContentsMargins(6, 6, 6, 6);
-    hlLayout->setSpacing(4);
-    m_hlHeader = new QLineEdit("0xAA");
-    m_hlHeader->setToolTip("Lines starting with this byte will be highlighted");
-    hlLayout->addRow("Header", m_hlHeader);
-    m_hlPayload = new QLineEdit("0xCC");
-    m_hlPayload->setToolTip("Secondary marker byte");
-    hlLayout->addRow("Payload", m_hlPayload);
-    toolsLayout->addWidget(hlGroup);
+    // --- Highlight Rules ---
+    QLabel* hlTitle = new QLabel("Highlight Rules");
+    hlTitle->setStyleSheet("color: #abb2bf; font-size: 13px;");
+    toolsLayout->addWidget(hlTitle);
 
-    // --- Macros (QGroupBox) ---
-    QGroupBox* macroGroup = new QGroupBox("Macros");
-    QVBoxLayout* macroLayout = new QVBoxLayout(macroGroup);
-    macroLayout->setContentsMargins(6, 6, 6, 6);
-    macroLayout->setSpacing(4);
+    QFormLayout* highlightLayout = new QFormLayout();
+    highlightLayout->setSpacing(4);
+    m_hlHeader = new QLineEdit("0xAA");
+    highlightLayout->addRow("Header", m_hlHeader);
+    m_hlPayload = new QLineEdit("0xCC");
+    highlightLayout->addRow("Payload", m_hlPayload);
+    toolsLayout->addLayout(highlightLayout);
+
+    toolsLayout->addSpacing(8);
+
+    // --- Macro List ---
+    QLabel* macroListTitle = new QLabel("Macro List");
+    macroListTitle->setStyleSheet("color: #abb2bf; font-size: 13px;");
+    toolsLayout->addWidget(macroListTitle);
+
+    QHBoxLayout* macroBtns = new QHBoxLayout();
+    macroBtns->setSpacing(4);
+    QPushButton* btnReset = new QPushButton("Reset");
+    connect(btnReset, &QPushButton::clicked, this, &MainWindow::onMacroResetClicked);
+    macroBtns->addWidget(btnReset);
+
+    QPushButton* btnBoot = new QPushButton("Boot");
+    connect(btnBoot, &QPushButton::clicked, this, &MainWindow::onMacroBootClicked);
+    macroBtns->addWidget(btnBoot);
+
+    QPushButton* btnVer = new QPushButton("Ver");
+    connect(btnVer, &QPushButton::clicked, this, &MainWindow::onMacroVerClicked);
+    macroBtns->addWidget(btnVer);
+    toolsLayout->addLayout(macroBtns);
+
+    toolsLayout->addSpacing(8);
+
+    // --- Macros ---
+    QLabel* macroTitle = new QLabel("Macros");
+    macroTitle->setStyleSheet("color: #abb2bf; font-size: 13px;");
+    toolsLayout->addWidget(macroTitle);
 
     m_macrosList = new QListWidget();
-    m_macrosList->setToolTip("Select then click Send, or double-click to send");
     m_macrosList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_macrosList->setWordWrap(true);
 
@@ -328,25 +351,19 @@ void MainWindow::setupDockWidgets()
             delete sel;
         }
     });
-    macroLayout->addWidget(m_macrosList);
+    toolsLayout->addWidget(m_macrosList, 1); // stretch = 1 so it grows
 
-    QPushButton* macroSendBtn = new QPushButton("Send Selected");
-    connect(macroSendBtn, &QPushButton::clicked, [this](){
-        QListWidgetItem* sel = m_macrosList->currentItem();
-        if (sel && !sel->text().isEmpty()) performSend(sel->text());
-    });
-    macroLayout->addWidget(macroSendBtn);
-    toolsLayout->addWidget(macroGroup, 1); // stretch = 1 so it grows
+    toolsLayout->addSpacing(8);
 
-    // --- Search (QGroupBox) ---
-    QGroupBox* searchGroup = new QGroupBox("Search Terminal");
-    QVBoxLayout* searchLayout = new QVBoxLayout(searchGroup);
-    searchLayout->setContentsMargins(6, 6, 6, 6);
+    // --- Search ---
+    QLabel* searchTitle = new QLabel("Search");
+    searchTitle->setStyleSheet("color: #abb2bf; font-size: 13px;");
+    toolsLayout->addWidget(searchTitle);
+
     m_searchBox = new QLineEdit();
-    m_searchBox->setPlaceholderText("Find text or HEX...");
+    m_searchBox->setPlaceholderText("Find text/HEX");
     connect(m_searchBox, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
-    searchLayout->addWidget(m_searchBox);
-    toolsLayout->addWidget(searchGroup);
+    toolsLayout->addWidget(m_searchBox);
 
     toolsWidget->setLayout(toolsLayout);
     toolsDock->setWidget(toolsWidget);
