@@ -31,7 +31,6 @@ MainWindow::MainWindow(QWidget *parent)
     m_logFile = nullptr;
     m_logStream = nullptr;
 
-    setupToolBar();
     setupCentralWidget();
     setupDockWidgets();
 
@@ -45,35 +44,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::setupToolBar()
-{
-    QToolBar *toolBar = addToolBar("Main ToolBar");
-    toolBar->setMovable(false);
-
-    m_btnConnect = new QToolButton();
-    m_btnConnect->setText("Connect");
-    m_btnConnect->setObjectName("connectBtn");
-    m_btnConnect->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    m_actionConnectToggle = toolBar->addWidget(m_btnConnect);
-
-    toolBar->addSeparator();
-
-    // Placeholder actions
-    toolBar->addAction(QIcon(), "Settings");
-    
-    m_btnLog = new QToolButton();
-    m_btnLog->setText("Log");
-    m_btnLog->setCheckable(true);
-    m_btnLog->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    toolBar->addWidget(m_btnLog);
-    connect(m_btnLog, &QToolButton::toggled, this, &MainWindow::onToggleLogging);
-    
-    toolBar->addAction(QIcon(), "Clear");
-    toolBar->addAction(QIcon(), "Find");
-    toolBar->addAction(QIcon(), "Macro");
-
-    connect(m_btnConnect, &QToolButton::clicked, this, &MainWindow::onToggleConnectClicked);
-}
 
 void MainWindow::setupCentralWidget()
 {
@@ -172,6 +142,14 @@ void MainWindow::setupDockWidgets()
     // No objectName - uses same blue :checked style as other buttons
     connLayout->addRow(m_autoRecCb);
     
+    connLayout->addItem(new QSpacerItem(0, 10, QSizePolicy::Minimum, QSizePolicy::Fixed));
+
+    m_btnConnect = new QPushButton("Connect");
+    m_btnConnect->setObjectName("connectBtn");
+    m_btnConnect->setMinimumHeight(30);
+    connect(m_btnConnect, &QPushButton::clicked, this, &MainWindow::onToggleConnectClicked);
+    connLayout->addRow(m_btnConnect);
+
     connWidget->setLayout(connLayout);
     connDock->setWidget(connWidget);
     addDockWidget(Qt::LeftDockWidgetArea, connDock);
@@ -201,8 +179,16 @@ void MainWindow::setupDockWidgets()
     m_logFormat = new QComboBox();
     m_logFormat->addItems({"TXT+HEX", "TXT", "CSV"});
     logLayout->addRow("Format", m_logFormat);
-    // Log is started/stopped via the Log button in the toolbar
     
+    logLayout->addItem(new QSpacerItem(0, 10, QSizePolicy::Minimum, QSizePolicy::Fixed));
+
+    m_btnLog = new QPushButton("Start Logging");
+    m_btnLog->setCheckable(true);
+    m_btnLog->setMinimumHeight(30);
+    // Will style based on check state
+    connect(m_btnLog, &QPushButton::toggled, this, &MainWindow::onToggleLogging);
+    logLayout->addRow(m_btnLog);
+
     logWidget->setLayout(logLayout);
     logDock->setWidget(logWidget);
     addDockWidget(Qt::LeftDockWidgetArea, logDock);

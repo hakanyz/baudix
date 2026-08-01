@@ -130,44 +130,24 @@ QPushButton#clearTerminalBtn:hover {
     color: #282c34;
 }
 
-/* Connect / Disconnect Buttons in Toolbar - same base style, text color differs */
-QToolButton#connectBtn {
+/* Connect / Disconnect Buttons in Connection Dock */
+QPushButton#connectBtn {
     background-color: #3a3f4b;
     color: #98c379;
     font-weight: bold;
     border-radius: 4px;
-    padding: 4px 10px;
+    padding: 6px 10px;
 }
-QToolButton#connectBtn:hover { background-color: #4b5363; }
+QPushButton#connectBtn:hover { background-color: #4b5363; }
 
-QToolButton#disconnectBtn {
+QPushButton#disconnectBtn {
     background-color: #3a3f4b;
     color: #e06c75;
     font-weight: bold;
     border-radius: 4px;
-    padding: 4px 10px;
+    padding: 6px 10px;
 }
-QToolButton#disconnectBtn:hover { background-color: #4b5363; }
-
-/* Toolbar */
-QToolBar {
-    background-color: #21252b;
-    border-bottom: 1px solid #181a1f;
-    spacing: 5px;
-    padding: 4px;
-}
-
-QToolButton {
-    background-color: transparent;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 4px;
-    color: #abb2bf;
-}
-
-QToolButton:hover {
-    background-color: #3a3f4b;
-}
+QPushButton#disconnectBtn:hover { background-color: #4b5363; }
 
 /* iOS Style Toggle Checkbox */
 QCheckBox::indicator {

@@ -60,10 +60,8 @@ private:
     QTimer* m_periodicTimer;
 
     // --- UI Elements ---
-    // ToolBar Actions
-    QAction* m_actionConnectToggle;
-    QToolButton* m_btnConnect;
-    QToolButton* m_btnLog;
+    QPushButton* m_btnConnect;
+    QPushButton* m_btnLog;
 
     // Connection Dock
     QComboBox* m_portCombo;
