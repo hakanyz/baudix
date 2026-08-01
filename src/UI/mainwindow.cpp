@@ -69,11 +69,11 @@ void MainWindow::setupCentralWidget()
     
     m_btnAscii = new QPushButton("ASCII");
     m_btnAscii->setCheckable(true);
+    m_btnAscii->setChecked(true); // Default
     m_btnHex = new QPushButton("HEX");
     m_btnHex->setCheckable(true);
     m_btnBoth = new QPushButton("Both");
     m_btnBoth->setCheckable(true);
-    m_btnBoth->setChecked(true); // Default
     
     connect(m_btnAscii, &QPushButton::clicked, [this](){ m_btnHex->setChecked(false); m_btnBoth->setChecked(false); });
     connect(m_btnHex, &QPushButton::clicked, [this](){ m_btnAscii->setChecked(false); m_btnBoth->setChecked(false); });
