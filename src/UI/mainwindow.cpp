@@ -90,7 +90,7 @@ void MainWindow::setupCentralWidget()
     m_timestampCb = new QPushButton("Timestamp");
     m_timestampCb->setCheckable(true);
     m_timestampCb->setChecked(true);
-    m_timestampCb->setObjectName("toggleBtn");
+    // No objectName - uses same blue :checked style as ASCII/HEX/Both buttons
     topBar->addWidget(m_timestampCb);
     
     m_btnAscii = new QPushButton("ASCII");
@@ -310,37 +310,41 @@ void MainWindow::setupDockWidgets()
     toolsLayout->addWidget(macroTitle);
 
     m_macrosList = new QListWidget();
-    m_macrosList->setToolTip("Double-click to send. Right-click for options.");
+    m_macrosList->setToolTip("Double-click to send. Right-click to add/edit/remove.");
     m_macrosList->setContextMenuPolicy(Qt::CustomContextMenu);
-    // Start with a couple of empty example macros - user will edit these
-    m_macrosList->addItem("");
-    m_macrosList->addItem("");
-    m_macrosList->item(0)->setFlags(m_macrosList->item(0)->flags() | Qt::ItemIsEditable);
-    m_macrosList->item(1)->setFlags(m_macrosList->item(1)->flags() | Qt::ItemIsEditable);
-    
-    // Double-click sends
+    // Start empty - user fills their own commands
+    auto addMacro = [this](const QString& text){
+        QListWidgetItem* item = new QListWidgetItem(text);
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
+        m_macrosList->addItem(item);
+    };
+    addMacro("");
+    addMacro("");
+
+    // Double-click = SEND
     connect(m_macrosList, &QListWidget::itemDoubleClicked, [this](QListWidgetItem* item){
         QString cmd = item->text();
         if (!cmd.isEmpty()) performSend(cmd);
     });
-    // Single-click to edit the text inline
-    connect(m_macrosList, &QListWidget::itemClicked, [this](QListWidgetItem* item){
-        m_macrosList->editItem(item);
-    });
-    // Right-click context menu
-    connect(m_macrosList, &QListWidget::customContextMenuRequested, [this](const QPoint& pos){
+
+    // Right-click context menu: Add / Edit / Remove
+    connect(m_macrosList, &QListWidget::customContextMenuRequested, [this, addMacro](const QPoint& pos){
+        QListWidgetItem* sel = m_macrosList->currentItem();
         QMenu menu(this);
-        QAction* addAction = menu.addAction("+ Add Macro");
-        QAction* removeAction = menu.addAction("- Remove Selected");
+        QAction* actAdd    = menu.addAction("Add Macro");
+        QAction* actEdit   = sel ? menu.addAction("Edit")   : nullptr;
+        QAction* actRemove = sel ? menu.addAction("Remove") : nullptr;
         QAction* chosen = menu.exec(m_macrosList->mapToGlobal(pos));
-        if (chosen == addAction) {
+        if (chosen == actAdd) {
             QListWidgetItem* newItem = new QListWidgetItem("");
             newItem->setFlags(newItem->flags() | Qt::ItemIsEditable);
             m_macrosList->addItem(newItem);
+            m_macrosList->scrollToItem(newItem);
             m_macrosList->editItem(newItem);
-        } else if (chosen == removeAction) {
-            QListWidgetItem* sel = m_macrosList->currentItem();
-            if (sel) delete sel;
+        } else if (actEdit && chosen == actEdit) {
+            m_macrosList->editItem(sel);
+        } else if (actRemove && chosen == actRemove) {
+            delete sel;
         }
     });
     toolsLayout->addWidget(m_macrosList, 1);
