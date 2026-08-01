@@ -14,6 +14,8 @@
 #include <QTabWidget>
 #include <QToolButton>
 #include <QListWidget>
+#include <QMenuBar>
+#include <QMenu>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -284,6 +286,13 @@ void MainWindow::setupDockWidgets()
     toolsWidget->setLayout(toolsLayout);
     toolsDock->setWidget(toolsWidget);
     addDockWidget(Qt::RightDockWidgetArea, toolsDock);
+
+    // --- View Menu for Docks ---
+    QMenu *viewMenu = menuBar()->addMenu("View");
+    viewMenu->addAction(connDock->toggleViewAction());
+    viewMenu->addAction(logDock->toggleViewAction());
+    viewMenu->addAction(sendDock->toggleViewAction());
+    viewMenu->addAction(toolsDock->toggleViewAction());
 
     connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendClicked);
     connect(m_inputField, &QLineEdit::returnPressed, this, &MainWindow::onSendClicked);
