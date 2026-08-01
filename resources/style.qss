@@ -141,37 +141,32 @@ QPushButton#iconBtn {
 
 /* Connect / Disconnect Buttons in Connection Dock */
 QPushButton#connectBtn {
-    background-color: #3a3f4b;
-    color: #98c379;
+    background-color: #98c379;
+    color: #282c34;
     font-weight: bold;
     border-radius: 4px;
     padding: 6px 10px;
 }
-QPushButton#connectBtn:hover { background-color: #4b5363; }
+QPushButton#connectBtn:hover { background-color: #b5e890; }
 
 QPushButton#disconnectBtn {
-    background-color: #3a3f4b;
-    color: #e06c75;
+    background-color: #e06c75;
+    color: #282c34;
     font-weight: bold;
     border-radius: 4px;
     padding: 6px 10px;
 }
-QPushButton#disconnectBtn:hover { background-color: #4b5363; }
+QPushButton#disconnectBtn:hover { background-color: #fcaeb5; }
 
-/* Clean Dark Theme Checkbox */
-QCheckBox {
-    color: #abb2bf;
-    spacing: 6px;
-}
+/* iOS Style Toggle Checkbox */
 QCheckBox::indicator {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    background-color: #1e2227;
-    border: 1px solid #3e4451;
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
 }
-QCheckBox::indicator:hover {
-    border: 1px solid #61afef;
+QCheckBox::indicator:unchecked {
+    background-color: #3a3f4b;
+    border: 1px solid #181a1f;
 }
 QCheckBox::indicator:checked {
     background-color: #61afef;
