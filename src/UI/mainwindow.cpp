@@ -206,7 +206,7 @@ void MainWindow::setupDockWidgets()
 
     logLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
 
-    QPushButton* btnExportTxt = new QPushButton("📥 Save All (TXT)");
+    QPushButton* btnExportTxt = new QPushButton("📥 Save All");
     btnExportTxt->setMinimumHeight(28);
     connect(btnExportTxt, &QPushButton::clicked, [this](){
         QString filename = QFileDialog::getSaveFileName(this, "Save Terminal Buffer", "terminal_export.txt", "Text Files (*.txt)");
