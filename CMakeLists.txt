@@ -17,6 +17,9 @@ set(PROJECT_SOURCES
         src/UI/mainwindow.cpp
         src/UI/mainwindow.h
         src/UI/mainwindow.ui
+        src/Core/Updater.cpp
+        src/Core/Updater.h
+        resources/resources.qrc
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
