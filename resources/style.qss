@@ -158,15 +158,20 @@ QPushButton#disconnectBtn {
 }
 QPushButton#disconnectBtn:hover { background-color: #4b5363; }
 
-/* iOS Style Toggle Checkbox */
-QCheckBox::indicator {
-    width: 36px;
-    height: 20px;
-    border-radius: 10px;
+/* Clean Dark Theme Checkbox */
+QCheckBox {
+    color: #abb2bf;
+    spacing: 6px;
 }
-QCheckBox::indicator:unchecked {
-    background-color: #3a3f4b;
-    border: 1px solid #181a1f;
+QCheckBox::indicator {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background-color: #1e2227;
+    border: 1px solid #3e4451;
+}
+QCheckBox::indicator:hover {
+    border: 1px solid #61afef;
 }
 QCheckBox::indicator:checked {
     background-color: #61afef;
