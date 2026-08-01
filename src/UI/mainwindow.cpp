@@ -113,6 +113,11 @@ void MainWindow::setupCentralWidget()
 
 void MainWindow::setupDockWidgets()
 {
+    // Configure dock corners so side docks extend all the way to the bottom,
+    // squishing the bottom Send dock into the center perfectly underneath the terminal.
+    setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
+    setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+
     // Common features for all docks: No Close Button
     QDockWidget::DockWidgetFeatures dockFeatures = QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable;
 
