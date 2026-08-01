@@ -168,7 +168,7 @@ void MainWindow::setupDockWidgets()
     m_autoRecCb = new QPushButton("Auto Reconnect");
     m_autoRecCb->setCheckable(true);
     m_autoRecCb->setChecked(true);
-    m_autoRecCb->setObjectName("toggleBtn");
+    // No objectName - uses same blue :checked style as other buttons
     connLayout->addRow(m_autoRecCb);
     
     connWidget->setLayout(connLayout);
@@ -321,7 +321,8 @@ void MainWindow::setupDockWidgets()
     addMacro("");
     addMacro("");
 
-    // Double-click = SEND
+    m_macrosList->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_macrosList->setWordWrap(true); // Wrap long text
     connect(m_macrosList, &QListWidget::itemDoubleClicked, [this](QListWidgetItem* item){
         QString cmd = item->text();
         if (!cmd.isEmpty()) performSend(cmd);
@@ -348,6 +349,16 @@ void MainWindow::setupDockWidgets()
         }
     });
     toolsLayout->addWidget(m_macrosList, 1);
+
+    // Send button for selected macro
+    QPushButton* macroSendBtn = new QPushButton("Send Selected Macro");
+    connect(macroSendBtn, &QPushButton::clicked, [this](){
+        QListWidgetItem* sel = m_macrosList->currentItem();
+        if (sel && !sel->text().isEmpty()) {
+            performSend(sel->text());
+        }
+    });
+    toolsLayout->addWidget(macroSendBtn);
 
     toolsLayout->addSpacing(8);
 

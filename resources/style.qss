@@ -81,39 +81,25 @@ QPushButton:checked {
     color: #ffffff;
 }
 
-/* Toggle style buttons (Auto Reconnect, Timestamp) */
-QPushButton#toggleBtn {
-    background-color: #3a3f4b;
-    border: 1px solid #555;
-    border-radius: 4px;
-    padding: 4px 10px;
-    color: #abb2bf;
-}
+/* Toggle style buttons (Auto Reconnect, Timestamp) - same as regular checkable buttons */
+/* No special rule needed - uses QPushButton:checked which is blue already */
 
-QPushButton#toggleBtn:checked {
-    background-color: #2d5a27;
-    border: 1px solid #98c379;
-    color: #98c379;
-}
-
-QPushButton#toggleBtn:hover {
-    background-color: #4b5363;
-}
-
-/* Special styling for the Send button */
+/* Special styling for the Send button - same base, slightly accented */
 QPushButton#sendButton {
-    background-color: #61afef;
-    border: 1px solid #4d8fcc;
-    color: white;
+    background-color: #2c4a6e;
+    border: 1px solid #61afef;
+    color: #61afef;
     font-weight: bold;
 }
 
 QPushButton#sendButton:hover {
-    background-color: #79c0ff;
+    background-color: #3a5f8a;
+    color: #ffffff;
 }
 
 QPushButton#sendButton:pressed {
-    background-color: #4d8fcc;
+    background-color: #61afef;
+    color: #282c34;
 }
 
 /* Clear Terminal Button */
@@ -127,10 +113,10 @@ QPushButton#clearTerminalBtn:hover {
     color: #282c34;
 }
 
-/* Connect / Disconnect Buttons in Toolbar */
+/* Connect / Disconnect Buttons in Toolbar - same base style, text color differs */
 QToolButton#connectBtn {
     background-color: #3a3f4b;
-    color: #98c379; /* Subtle green text */
+    color: #98c379;
     font-weight: bold;
     border-radius: 4px;
     padding: 4px 10px;
@@ -139,7 +125,7 @@ QToolButton#connectBtn:hover { background-color: #4b5363; }
 
 QToolButton#disconnectBtn {
     background-color: #3a3f4b;
-    color: #e06c75; /* Subtle red text */
+    color: #e06c75;
     font-weight: bold;
     border-radius: 4px;
     padding: 4px 10px;
