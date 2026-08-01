@@ -198,26 +198,23 @@ void MainWindow::setupDockWidgets()
     sendWidget->setObjectName("dockContent");
     QVBoxLayout *sendLayout = new QVBoxLayout(sendWidget);
     
-    // Top Row: Input, Send Button, Selectors
+    // Top Row: Input + Format + Send Button
     QHBoxLayout *inputLayout = new QHBoxLayout();
     inputLayout->addWidget(new QLabel("Input"));
     
     m_inputField = new QLineEdit("");
+    m_inputField->setPlaceholderText("Type text or HEX bytes (e.g. AA BB CC)");
     inputLayout->addWidget(m_inputField, 1);
     
-    inputLayout->addWidget(new QLabel("Selected:"));
-    QComboBox* selCombo = new QComboBox();
-    selCombo->addItems({"HEX", "ASCII"});
-    inputLayout->addWidget(selCombo);
+    // Single format selector
+    m_sendAsCombo = new QComboBox();
+    m_sendAsCombo->addItems({"ASCII", "HEX"});
+    m_sendAsCombo->setToolTip("ASCII: send as plain text\nHEX: parse as hex bytes (e.g. AA BB CC)");
+    inputLayout->addWidget(m_sendAsCombo);
     
     m_sendButton = new QPushButton("Send");
     m_sendButton->setObjectName("sendButton");
     inputLayout->addWidget(m_sendButton);
-    
-    inputLayout->addWidget(new QLabel("Send As:"));
-    m_sendAsCombo = new QComboBox();
-    m_sendAsCombo->addItems({"HEX | ASCII", "HEX", "ASCII"});
-    inputLayout->addWidget(m_sendAsCombo);
     
     sendLayout->addLayout(inputLayout);
     
@@ -225,35 +222,37 @@ void MainWindow::setupDockWidgets()
     QHBoxLayout *historyLayout = new QHBoxLayout();
     historyLayout->addWidget(new QLabel("History"));
     m_historyCombo = new QComboBox();
-    m_historyCombo->addItem("Previous commands");
+    m_historyCombo->addItem("-- Previous commands --");
+    connect(m_historyCombo, QOverload<int>::of(&QComboBox::activated), [this](int idx){
+        if (idx > 0) m_inputField->setText(m_historyCombo->itemText(idx));
+    });
     historyLayout->addWidget(m_historyCombo, 1);
     sendLayout->addLayout(historyLayout);
     
-    // Bottom Row: Periodic Send & Send File
+    // Bottom Row: Periodic Send
     QHBoxLayout *bottomLayout = new QHBoxLayout();
-    QCheckBox* sendFileCb = new QCheckBox("Send File...");
-    bottomLayout->addWidget(sendFileCb);
     
-    bottomLayout->addStretch();
+    m_periodicSendCb = new QCheckBox("Periodic Send");
+    m_periodicSendCb->setToolTip("Automatically send the input at a fixed interval");
+    connect(m_periodicSendCb, &QCheckBox::toggled, this, &MainWindow::onPeriodicSendToggled);
+    connect(m_periodicTimer, &QTimer::timeout, this, &MainWindow::onPeriodicTimerTimeout);
+    bottomLayout->addWidget(m_periodicSendCb);
     
-    bottomLayout->addWidget(new QLabel("Periodic Send"));
     m_periodicMsBox = new QSpinBox();
     m_periodicMsBox->setRange(1, 10000);
     m_periodicMsBox->setValue(100);
-    m_periodicMsBox->setSuffix("ms");
+    m_periodicMsBox->setSuffix(" ms");
+    m_periodicMsBox->setToolTip("Interval between sends");
     bottomLayout->addWidget(m_periodicMsBox);
     
     bottomLayout->addWidget(new QLabel("Burst:"));
     m_burstBox = new QSpinBox();
     m_burstBox->setRange(1, 100);
     m_burstBox->setValue(1);
+    m_burstBox->setToolTip("How many times to send per interval");
     bottomLayout->addWidget(m_burstBox);
     
-    m_periodicSendCb = new QCheckBox("");
-    connect(m_periodicSendCb, &QCheckBox::toggled, this, &MainWindow::onPeriodicSendToggled);
-    connect(m_periodicTimer, &QTimer::timeout, this, &MainWindow::onPeriodicTimerTimeout);
-    bottomLayout->addWidget(m_periodicSendCb);
-    
+    bottomLayout->addStretch();
     sendLayout->addLayout(bottomLayout);
     
     sendWidget->setLayout(sendLayout);
@@ -279,24 +278,31 @@ void MainWindow::setupDockWidgets()
     QHBoxLayout* macroBtns = new QHBoxLayout();
     
     QPushButton* btnReset = new QPushButton("Reset");
+    btnReset->setToolTip("Send: AT+RESET\\r\\n");
     connect(btnReset, &QPushButton::clicked, this, &MainWindow::onMacroResetClicked);
     macroBtns->addWidget(btnReset);
     
     QPushButton* btnBoot = new QPushButton("Boot");
+    btnBoot->setToolTip("Send: 0x00 0xFF 0x55 0xAA");
     connect(btnBoot, &QPushButton::clicked, this, &MainWindow::onMacroBootClicked);
     macroBtns->addWidget(btnBoot);
     
     QPushButton* btnVer = new QPushButton("Ver");
+    btnVer->setToolTip("Send: AT+GMR\\r\\n");
     connect(btnVer, &QPushButton::clicked, this, &MainWindow::onMacroVerClicked);
     macroBtns->addWidget(btnVer);
     
     toolsLayout->addLayout(macroBtns);
     
-    toolsLayout->addWidget(new QLabel("Macros"));
+    toolsLayout->addWidget(new QLabel("Macros (double-click to send)"));
     m_macrosList = new QListWidget();
-    m_macrosList->addItem("AT+RESET");
-    m_macrosList->addItem("0xAA 0xBB 0xCC (Test)");
-    toolsLayout->addWidget(m_macrosList, 1);
+    m_macrosList->setToolTip("Double-click a macro to send it directly to the device");
+    m_macrosList->addItem("AT+RESET\r\n");
+    m_macrosList->addItem("AT+GMR\r\n");
+    m_macrosList->addItem("AA BB CC (HEX test)");
+    connect(m_macrosList, &QListWidget::itemDoubleClicked, [this](QListWidgetItem* item){
+        performSend(item->text());
+    });
     
     m_searchBox = new QLineEdit();
     m_searchBox->setPlaceholderText("Find text/HEX");
@@ -416,30 +422,28 @@ void MainWindow::performSend(const QString& text)
     if (!m_serialController->isOpen() || text.isEmpty()) return;
 
     QByteArray data;
-    bool isHex = (m_sendAsCombo->currentText() == "HEX" || m_sendAsCombo->currentText() == "HEX | ASCII");
+    // Check if HEX mode is selected
+    bool isHex = (m_sendAsCombo->currentText() == "HEX");
 
     if (isHex) {
-        // Parse HEX string (e.g. "AA BB 0xCC")
+        // Parse HEX: "AA BB 0xCC" -> bytes
         QString cleanText = text;
         cleanText.replace("0x", "", Qt::CaseInsensitive);
-        cleanText.remove(QRegularExpression("\\s+")); // Remove all spaces
+        cleanText.remove(QRegularExpression("[^0-9a-fA-F]"));
         
-        if (cleanText.length() % 2 != 0) {
-            cleanText.prepend("0"); // Pad if odd number of characters
-        }
+        if (cleanText.length() % 2 != 0) cleanText.prepend("0");
         
         for (int i = 0; i < cleanText.length(); i += 2) {
             bool ok;
             uint byteVal = cleanText.mid(i, 2).toUInt(&ok, 16);
-            if (ok) {
-                data.append((char)byteVal);
-            }
+            if (ok) data.append((char)byteVal);
         }
     } else {
+        // ASCII mode: send as plain UTF-8
         data = text.toUtf8();
     }
 
-    if (data.isEmpty()) return; // Invalid parsing
+    if (data.isEmpty()) return;
 
     if (m_serialController->writeData(data)) {
         appendToTerminal("&gt; TX:", data, "#61afef");
