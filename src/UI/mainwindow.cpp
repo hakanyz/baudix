@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent)
     
     m_serialController = new SerialPortController(this);
     m_periodicTimer = new QTimer(this);
+    m_logFile = nullptr;
+    m_logStream = nullptr;
 
     setupToolBar();
     setupCentralWidget();
@@ -55,7 +57,14 @@ void MainWindow::setupToolBar()
 
     // Placeholder actions
     toolBar->addAction(QIcon(), "Settings");
-    toolBar->addAction(QIcon(), "Log");
+    
+    m_btnLog = new QToolButton();
+    m_btnLog->setText("Log");
+    m_btnLog->setCheckable(true);
+    m_btnLog->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    toolBar->addWidget(m_btnLog);
+    connect(m_btnLog, &QToolButton::toggled, this, &MainWindow::onToggleLogging);
+    
     toolBar->addAction(QIcon(), "Clear");
     toolBar->addAction(QIcon(), "Find");
     toolBar->addAction(QIcon(), "Macro");
@@ -167,23 +176,17 @@ void MainWindow::setupDockWidgets()
     logWidget->setObjectName("dockContent");
     QFormLayout *logLayout = new QFormLayout(logWidget);
     
-    QHBoxLayout* fileLayout = new QHBoxLayout();
-    fileLayout->addWidget(new QLineEdit("baudix_log.txt"));
-    QPushButton* browseBtn = new QPushButton("...");
-    browseBtn->setFixedWidth(30);
-    fileLayout->addWidget(browseBtn);
-    logLayout->addRow("Filename", fileLayout);
+    m_logFilename = new QLineEdit("baudix_log.txt");
+    logLayout->addRow("Filename", m_logFilename);
     
-    QComboBox* formatCombo = new QComboBox();
-    formatCombo->addItems({"TXT+HEX", "TXT", "CSV"});
-    logLayout->addRow("Format", formatCombo);
+    m_logFormat = new QComboBox();
+    m_logFormat->addItems({"TXT+HEX", "TXT", "CSV"});
+    logLayout->addRow("Format", m_logFormat);
     
-    QHBoxLayout* actionLayout = new QHBoxLayout();
-    actionLayout->addWidget(new QPushButton("Import"));
-    actionLayout->addWidget(new QPushButton("Export"));
-    logLayout->addRow("Action", actionLayout);
+    m_logStatus = new QLabel("Idle");
+    m_logStatus->setStyleSheet("color: #abb2bf; font-weight: bold;");
+    logLayout->addRow("Status", m_logStatus);
     
-    logLayout->addRow("Status", new QLabel("Idle"));
     logWidget->setLayout(logLayout);
     logDock->setWidget(logWidget);
     addDockWidget(Qt::LeftDockWidgetArea, logDock);
@@ -393,6 +396,13 @@ void MainWindow::appendToTerminal(const QString& prefix, const QByteArray& data,
                        .arg(timestampStr, bgColor, finalColor, prefix, finalDataStr.toHtmlEscaped());
 
     m_terminalOutput->append(htmlLine);
+    
+    // Save to log if active
+    if (m_logStream && m_logFile && m_logFile->isOpen()) {
+        QString rawTimestamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+        *m_logStream << "[" << rawTimestamp << "] " << prefix << " " << finalDataStr << "\n";
+        m_logStream->flush();
+    }
 }
 
 void MainWindow::onDataReceived(const QByteArray& data)
@@ -499,6 +509,42 @@ void MainWindow::onClearTerminalClicked()
 {
     if (m_terminalOutput) {
         m_terminalOutput->clear();
+    }
+}
+
+void MainWindow::onToggleLogging(bool checked)
+{
+    if (checked) {
+        QString filename = m_logFilename->text();
+        if (filename.isEmpty()) filename = "baudix_log.txt";
+        
+        m_logFile = new QFile(filename);
+        if (m_logFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+            m_logStream = new QTextStream(m_logFile);
+            m_logStatus->setText("Recording...");
+            m_logStatus->setStyleSheet("color: #e06c75; font-weight: bold;"); // Red for recording
+            m_logFilename->setEnabled(false);
+            m_logFormat->setEnabled(false);
+        } else {
+            QMessageBox::warning(this, "Log Error", "Could not open log file for writing.");
+            m_btnLog->setChecked(false);
+            delete m_logFile;
+            m_logFile = nullptr;
+        }
+    } else {
+        if (m_logStream) {
+            delete m_logStream;
+            m_logStream = nullptr;
+        }
+        if (m_logFile) {
+            m_logFile->close();
+            delete m_logFile;
+            m_logFile = nullptr;
+        }
+        m_logStatus->setText("Idle");
+        m_logStatus->setStyleSheet("color: #abb2bf; font-weight: bold;");
+        m_logFilename->setEnabled(true);
+        m_logFormat->setEnabled(true);
     }
 }
 

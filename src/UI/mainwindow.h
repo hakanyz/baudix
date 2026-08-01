@@ -13,6 +13,8 @@
 #include <QListWidget>
 #include <QTabWidget>
 #include <QTimer>
+#include <QFile>
+#include <QTextStream>
 #include "../Communication/SerialPortController.h"
 
 QT_BEGIN_NAMESPACE
@@ -41,6 +43,7 @@ private slots:
     void onMacroBootClicked();
     void onMacroVerClicked();
     void onSearchTextChanged(const QString &text);
+    void onToggleLogging(bool checked);
 
 private:
     Ui::MainWindow *ui;
@@ -59,6 +62,7 @@ private:
     // ToolBar Actions
     QAction* m_actionConnectToggle;
     QToolButton* m_btnConnect;
+    QToolButton* m_btnLog;
 
     // Connection Dock
     QComboBox* m_portCombo;
@@ -68,6 +72,13 @@ private:
     QComboBox* m_parityCombo;
     QComboBox* m_flowControlCombo;
     QCheckBox* m_autoRecCb;
+
+    // Logging Dock
+    QLineEdit* m_logFilename;
+    QComboBox* m_logFormat;
+    QLabel* m_logStatus;
+    QFile* m_logFile;
+    QTextStream* m_logStream;
 
     // Send Dock
     QLineEdit* m_inputField;
