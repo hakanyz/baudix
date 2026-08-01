@@ -166,32 +166,28 @@ void MainWindow::setupDockWidgets()
     QDockWidget *logDock = new QDockWidget("Logging", this);
     logDock->setFeatures(dockFeatures);
     QWidget *logWidget = new QWidget(logDock);
-    logWidget->setObjectName("dockContent");
     QFormLayout *logLayout = new QFormLayout(logWidget);
     
-    // -- Live Record Section --
-    QLabel* liveTitle = new QLabel("Live Record");
-    liveTitle->setStyleSheet("color: #abb2bf; font-weight: bold; padding-top: 5px;");
-    logLayout->addRow(liveTitle);
-
-    m_logFilename = new QLineEdit("baudix_log.txt");
-    logLayout->addRow("Save to", m_logFilename);
+    // Save to row: text field + Browse button side by side
+    QHBoxLayout* fileLayout = new QHBoxLayout();
+    fileLayout->setSpacing(4);
+    fileLayout->setContentsMargins(0,0,0,0);
+    
+    m_logFilename = new QLineEdit("baudix_log");
+    fileLayout->addWidget(m_logFilename);
 
     QPushButton* browseBtn = new QPushButton("Browse...");
     browseBtn->setToolTip("Choose save location");
     connect(browseBtn, &QPushButton::clicked, this, [this](){
-        QString filename = QFileDialog::getSaveFileName(
-            this, "Save Log File", m_logFilename->text(),
-            "Text Files (*.txt);;CSV Files (*.csv);;All Files (*)"
-        );
+        QString filename = QFileDialog::getSaveFileName(this, "Save Log File", m_logFilename->text(), "Text Files (*.txt)");
         if (!filename.isEmpty()) m_logFilename->setText(filename);
     });
-    logLayout->addRow("", browseBtn);
-
-    m_logFormat = new QComboBox();
-    m_logFormat->addItems({"TXT+HEX", "TXT", "CSV"});
-    logLayout->addRow("Format", m_logFormat);
+    fileLayout->addWidget(browseBtn);
     
+    logLayout->addRow("Save to", fileLayout);
+    
+    logLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
+
     QHBoxLayout* liveActionLayout = new QHBoxLayout();
     m_btnLog = new QPushButton("⏺ Record");
     m_btnLog->setObjectName("connectBtn");
@@ -208,20 +204,14 @@ void MainWindow::setupDockWidgets()
 
     logLayout->addRow(liveActionLayout);
 
-    // -- Snapshot Section --
-    QLabel* exportTitle = new QLabel("Snapshot (Display)");
-    exportTitle->setStyleSheet("color: #abb2bf; font-weight: bold; padding-top: 15px;");
-    logLayout->addRow(exportTitle);
+    logLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
 
-    QHBoxLayout* exportActionLayout = new QHBoxLayout();
-    QPushButton* btnExportTxt = new QPushButton("📥 TXT");
-    QPushButton* btnExportHtml = new QPushButton("📥 HTML");
-    btnExportTxt->setMinimumHeight(26);
-    btnExportHtml->setMinimumHeight(26);
-    
+    QPushButton* btnExportTxt = new QPushButton("📥 Save All (TXT)");
+    btnExportTxt->setMinimumHeight(28);
     connect(btnExportTxt, &QPushButton::clicked, [this](){
-        QString filename = QFileDialog::getSaveFileName(this, "Export Display as TXT", "terminal_export.txt", "Text Files (*.txt)");
+        QString filename = QFileDialog::getSaveFileName(this, "Save Terminal Buffer", "terminal_export.txt", "Text Files (*.txt)");
         if (!filename.isEmpty()) {
+            if (!filename.endsWith(".txt", Qt::CaseInsensitive)) filename += ".txt";
             QFile file(filename);
             if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
                 QTextStream out(&file);
@@ -230,21 +220,7 @@ void MainWindow::setupDockWidgets()
             }
         }
     });
-    connect(btnExportHtml, &QPushButton::clicked, [this](){
-        QString filename = QFileDialog::getSaveFileName(this, "Export Display as HTML", "terminal_export.html", "HTML Files (*.html)");
-        if (!filename.isEmpty()) {
-            QFile file(filename);
-            if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                QTextStream out(&file);
-                out << m_terminalOutput->toHtml();
-                file.close();
-            }
-        }
-    });
-    
-    exportActionLayout->addWidget(btnExportTxt);
-    exportActionLayout->addWidget(btnExportHtml);
-    logLayout->addRow(exportActionLayout);
+    logLayout->addRow(btnExportTxt);
 
     logWidget->setLayout(logLayout);
     logDock->setWidget(logWidget);
@@ -656,7 +632,8 @@ void MainWindow::onToggleLogging(bool checked)
 {
     if (checked) {
         QString filename = m_logFilename->text();
-        if (filename.isEmpty()) filename = "baudix_log.txt";
+        if (filename.isEmpty()) filename = "baudix_log";
+        if (!filename.endsWith(".txt", Qt::CaseInsensitive)) filename += ".txt";
         
         m_logFile = new QFile(filename);
         if (m_logFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
@@ -670,7 +647,6 @@ void MainWindow::onToggleLogging(bool checked)
             
             m_btnPauseLog->setEnabled(true);
             m_logFilename->setEnabled(false);
-            m_logFormat->setEnabled(false);
         } else {
             QMessageBox::warning(this, "Log Error", "Could not open log file for writing.");
             m_btnLog->setChecked(false);
@@ -698,7 +674,6 @@ void MainWindow::onToggleLogging(bool checked)
         m_btnPauseLog->setEnabled(false);
         
         m_logFilename->setEnabled(true);
-        m_logFormat->setEnabled(true);
     }
 }
 
