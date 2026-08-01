@@ -182,12 +182,11 @@ void MainWindow::setupDockWidgets()
     logWidget->setObjectName("dockContent");
     QFormLayout *logLayout = new QFormLayout(logWidget);
     
-    // Filename + browse button
-    QHBoxLayout* fileRowLayout = new QHBoxLayout();
+    // Filename row: text field + Browse button
     m_logFilename = new QLineEdit("baudix_log.txt");
-    fileRowLayout->addWidget(m_logFilename, 1);
-    QPushButton* browseBtn = new QPushButton("...");
-    browseBtn->setFixedWidth(28);
+    logLayout->addRow("Save to", m_logFilename);
+
+    QPushButton* browseBtn = new QPushButton("Browse...");
     browseBtn->setToolTip("Choose save location");
     connect(browseBtn, &QPushButton::clicked, this, [this](){
         QString filename = QFileDialog::getSaveFileName(
@@ -196,9 +195,8 @@ void MainWindow::setupDockWidgets()
         );
         if (!filename.isEmpty()) m_logFilename->setText(filename);
     });
-    fileRowLayout->addWidget(browseBtn);
-    logLayout->addRow("Save to", fileRowLayout);
-    
+    logLayout->addRow("", browseBtn);
+
     m_logFormat = new QComboBox();
     m_logFormat->addItems({"TXT+HEX", "TXT", "CSV"});
     logLayout->addRow("Format", m_logFormat);
@@ -310,26 +308,19 @@ void MainWindow::setupDockWidgets()
     toolsLayout->addWidget(macroTitle);
 
     m_macrosList = new QListWidget();
-    m_macrosList->setToolTip("Double-click to send. Right-click to add/edit/remove.");
+    m_macrosList->setToolTip("Select a macro then click Send, or double-click to send immediately");
     m_macrosList->setContextMenuPolicy(Qt::CustomContextMenu);
-    // Start empty - user fills their own commands
-    auto addMacro = [this](const QString& text){
-        QListWidgetItem* item = new QListWidgetItem(text);
-        item->setFlags(item->flags() | Qt::ItemIsEditable);
-        m_macrosList->addItem(item);
-    };
-    addMacro("");
-    addMacro("");
+    m_macrosList->setWordWrap(true);
+    m_macrosList->setMaximumHeight(150);
+    // Don't pre-fill with edit-mode items — start clean
 
-    m_macrosList->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    m_macrosList->setWordWrap(true); // Wrap long text
+    // Double-click = SEND
     connect(m_macrosList, &QListWidget::itemDoubleClicked, [this](QListWidgetItem* item){
-        QString cmd = item->text();
-        if (!cmd.isEmpty()) performSend(cmd);
+        if (!item->text().isEmpty()) performSend(item->text());
     });
 
     // Right-click context menu: Add / Edit / Remove
-    connect(m_macrosList, &QListWidget::customContextMenuRequested, [this, addMacro](const QPoint& pos){
+    connect(m_macrosList, &QListWidget::customContextMenuRequested, [this](const QPoint& pos){
         QListWidgetItem* sel = m_macrosList->currentItem();
         QMenu menu(this);
         QAction* actAdd    = menu.addAction("Add Macro");
@@ -348,15 +339,13 @@ void MainWindow::setupDockWidgets()
             delete sel;
         }
     });
-    toolsLayout->addWidget(m_macrosList, 1);
+    toolsLayout->addWidget(m_macrosList);
 
-    // Send button for selected macro
-    QPushButton* macroSendBtn = new QPushButton("Send Selected Macro");
+    // Send button always visible below list
+    QPushButton* macroSendBtn = new QPushButton("Send Selected");
     connect(macroSendBtn, &QPushButton::clicked, [this](){
         QListWidgetItem* sel = m_macrosList->currentItem();
-        if (sel && !sel->text().isEmpty()) {
-            performSend(sel->text());
-        }
+        if (sel && !sel->text().isEmpty()) performSend(sel->text());
     });
     toolsLayout->addWidget(macroSendBtn);
 
