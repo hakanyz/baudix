@@ -191,6 +191,7 @@ void MainWindow::setupDockWidgets()
     logLayout->addItem(new QSpacerItem(0, 10, QSizePolicy::Minimum, QSizePolicy::Fixed));
 
     m_btnLog = new QPushButton("Start Logging");
+    m_btnLog->setObjectName("connectBtn");
     m_btnLog->setCheckable(true);
     m_btnLog->setMinimumHeight(30);
     // Will style based on check state
@@ -610,8 +611,13 @@ void MainWindow::onToggleLogging(bool checked)
         m_logFile = new QFile(filename);
         if (m_logFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
             m_logStream = new QTextStream(m_logFile);
-            // Show recording state via Log button color
-            m_btnLog->setStyleSheet("color: #e06c75; font-weight: bold;");
+            
+            // Touch up: Change text and switch to "Stop/Destructive" red outline style
+            m_btnLog->setText("Stop Logging");
+            m_btnLog->setObjectName("disconnectBtn");
+            m_btnLog->style()->unpolish(m_btnLog);
+            m_btnLog->style()->polish(m_btnLog);
+            
             m_logFilename->setEnabled(false);
             m_logFormat->setEnabled(false);
         } else {
@@ -630,7 +636,13 @@ void MainWindow::onToggleLogging(bool checked)
             delete m_logFile;
             m_logFile = nullptr;
         }
-        m_btnLog->setStyleSheet(""); // Reset to default style
+        
+        // Touch up: Revert to "Start/Primary" blue style
+        m_btnLog->setText("Start Logging");
+        m_btnLog->setObjectName("connectBtn");
+        m_btnLog->style()->unpolish(m_btnLog);
+        m_btnLog->style()->polish(m_btnLog);
+        
         m_logFilename->setEnabled(true);
         m_logFormat->setEnabled(true);
     }
