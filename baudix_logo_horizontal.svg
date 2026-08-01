@@ -1,0 +1,16 @@
+<svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="640" height="200" rx="20" fill="#14181d"/>
+
+  <!-- Signature: literal UART frame (start bit + 8 data bits + stop bit)
+       Data bits spell ASCII 'b' (0x62), transmitted LSB-first, as it
+       would really appear on a logic analyzer / oscilloscope. -->
+  <path d="M40,76 H56 V124 H88 V76 H104 V124 H152 V76 H184 V124 H200 V76 H232"
+        fill="none" stroke="#FFB300" stroke-width="10"
+        stroke-linecap="square" stroke-linejoin="miter"/>
+
+  <!-- faint scope baseline for context, kept quiet -->
+  <line x1="40" y1="150" x2="232" y2="150" stroke="#3a4048" stroke-width="1.5" stroke-dasharray="4 5"/>
+
+  <text x="272" y="126" font-family="'JetBrains Mono','Fira Code',Consolas,monospace"
+        font-size="64" font-weight="700" letter-spacing="2" fill="#EDEAE3">baudix</text>
+</svg>
