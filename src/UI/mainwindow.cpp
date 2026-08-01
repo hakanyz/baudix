@@ -283,47 +283,37 @@ void MainWindow::setupDockWidgets()
     toolsLayout->setSpacing(8);
     toolsLayout->setContentsMargins(8, 8, 8, 8);
 
-    // --- Highlight Rules ---
-    QLabel* hlTitle = new QLabel("Highlight Rules");
-    hlTitle->setStyleSheet("color: #61afef; font-weight: bold; font-size: 12px;");
-    toolsLayout->addWidget(hlTitle);
-
-    QFormLayout* highlightLayout = new QFormLayout();
-    highlightLayout->setSpacing(4);
+    // --- Highlight Rules (QGroupBox) ---
+    QGroupBox* hlGroup = new QGroupBox("Highlight Rules");
+    QFormLayout* hlLayout = new QFormLayout(hlGroup);
+    hlLayout->setContentsMargins(6, 6, 6, 6);
+    hlLayout->setSpacing(4);
     m_hlHeader = new QLineEdit("0xAA");
     m_hlHeader->setToolTip("Lines starting with this byte will be highlighted");
-    m_hlHeader->setMaximumHeight(26);
-    highlightLayout->addRow("Header", m_hlHeader);
+    hlLayout->addRow("Header", m_hlHeader);
     m_hlPayload = new QLineEdit("0xCC");
     m_hlPayload->setToolTip("Secondary marker byte");
-    m_hlPayload->setMaximumHeight(26);
-    highlightLayout->addRow("Payload", m_hlPayload);
-    toolsLayout->addLayout(highlightLayout);
+    hlLayout->addRow("Payload", m_hlPayload);
+    toolsLayout->addWidget(hlGroup);
 
-    toolsLayout->addSpacing(8);
-
-    // --- Macros ---
-    QLabel* macroTitle = new QLabel("Macros");
-    macroTitle->setStyleSheet("color: #61afef; font-weight: bold; font-size: 12px;");
-    toolsLayout->addWidget(macroTitle);
+    // --- Macros (QGroupBox) ---
+    QGroupBox* macroGroup = new QGroupBox("Macros");
+    QVBoxLayout* macroLayout = new QVBoxLayout(macroGroup);
+    macroLayout->setContentsMargins(6, 6, 6, 6);
+    macroLayout->setSpacing(4);
 
     m_macrosList = new QListWidget();
-    m_macrosList->setToolTip("Select a macro then click Send, or double-click to send immediately");
+    m_macrosList->setToolTip("Select then click Send, or double-click to send");
     m_macrosList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_macrosList->setWordWrap(true);
-    m_macrosList->setMaximumHeight(150);
-    // Don't pre-fill with edit-mode items — start clean
 
-    // Double-click = SEND
     connect(m_macrosList, &QListWidget::itemDoubleClicked, [this](QListWidgetItem* item){
         if (!item->text().isEmpty()) performSend(item->text());
     });
-
-    // Right-click context menu: Add / Edit / Remove
     connect(m_macrosList, &QListWidget::customContextMenuRequested, [this](const QPoint& pos){
         QListWidgetItem* sel = m_macrosList->currentItem();
         QMenu menu(this);
-        QAction* actAdd    = menu.addAction("Add Macro");
+        QAction* actAdd    = menu.addAction("Add");
         QAction* actEdit   = sel ? menu.addAction("Edit")   : nullptr;
         QAction* actRemove = sel ? menu.addAction("Remove") : nullptr;
         QAction* chosen = menu.exec(m_macrosList->mapToGlobal(pos));
@@ -331,7 +321,6 @@ void MainWindow::setupDockWidgets()
             QListWidgetItem* newItem = new QListWidgetItem("");
             newItem->setFlags(newItem->flags() | Qt::ItemIsEditable);
             m_macrosList->addItem(newItem);
-            m_macrosList->scrollToItem(newItem);
             m_macrosList->editItem(newItem);
         } else if (actEdit && chosen == actEdit) {
             m_macrosList->editItem(sel);
@@ -339,28 +328,25 @@ void MainWindow::setupDockWidgets()
             delete sel;
         }
     });
-    toolsLayout->addWidget(m_macrosList);
+    macroLayout->addWidget(m_macrosList);
 
-    // Send button always visible below list
     QPushButton* macroSendBtn = new QPushButton("Send Selected");
     connect(macroSendBtn, &QPushButton::clicked, [this](){
         QListWidgetItem* sel = m_macrosList->currentItem();
         if (sel && !sel->text().isEmpty()) performSend(sel->text());
     });
-    toolsLayout->addWidget(macroSendBtn);
+    macroLayout->addWidget(macroSendBtn);
+    toolsLayout->addWidget(macroGroup, 1); // stretch = 1 so it grows
 
-    toolsLayout->addSpacing(8);
-
-    // --- Search ---
-    QLabel* searchTitle = new QLabel("Search Terminal");
-    searchTitle->setStyleSheet("color: #61afef; font-weight: bold; font-size: 12px;");
-    toolsLayout->addWidget(searchTitle);
-
+    // --- Search (QGroupBox) ---
+    QGroupBox* searchGroup = new QGroupBox("Search Terminal");
+    QVBoxLayout* searchLayout = new QVBoxLayout(searchGroup);
+    searchLayout->setContentsMargins(6, 6, 6, 6);
     m_searchBox = new QLineEdit();
     m_searchBox->setPlaceholderText("Find text or HEX...");
-    m_searchBox->setMaximumHeight(26);
     connect(m_searchBox, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
-    toolsLayout->addWidget(m_searchBox);
+    searchLayout->addWidget(m_searchBox);
+    toolsLayout->addWidget(searchGroup);
 
     toolsWidget->setLayout(toolsLayout);
     toolsDock->setWidget(toolsWidget);

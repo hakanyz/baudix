@@ -6,6 +6,23 @@ QWidget {
     font-size: 13px;
 }
 
+/* Group Boxes for Tools panel sections */
+QGroupBox {
+    border: 1px solid #3e4452;
+    border-radius: 4px;
+    margin-top: 10px;
+    padding-top: 6px;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    top: -1px;
+    padding: 0 4px;
+    color: #61afef;
+    font-weight: bold;
+}
+
 /* Main Window and Docks */
 QMainWindow::separator {
     background: #181a1f;
