@@ -81,6 +81,25 @@ QPushButton:checked {
     color: #ffffff;
 }
 
+/* Toggle style buttons (Auto Reconnect, Timestamp) */
+QPushButton#toggleBtn {
+    background-color: #3a3f4b;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 10px;
+    color: #abb2bf;
+}
+
+QPushButton#toggleBtn:checked {
+    background-color: #2d5a27;
+    border: 1px solid #98c379;
+    color: #98c379;
+}
+
+QPushButton#toggleBtn:hover {
+    background-color: #4b5363;
+}
+
 /* Special styling for the Send button */
 QPushButton#sendButton {
     background-color: #61afef;

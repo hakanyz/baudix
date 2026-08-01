@@ -72,12 +72,11 @@ private:
     QComboBox* m_stopBitsCombo;
     QComboBox* m_parityCombo;
     QComboBox* m_flowControlCombo;
-    QCheckBox* m_autoRecCb;
+    QPushButton* m_autoRecCb; // checkable toggle button
 
     // Logging Dock
     QLineEdit* m_logFilename;
     QComboBox* m_logFormat;
-    QLabel* m_logStatus;
     QFile* m_logFile;
     QTextStream* m_logStream;
 
@@ -92,7 +91,7 @@ private:
 
     // Terminal (Central)
     QTextEdit* m_terminalOutput;
-    QCheckBox* m_timestampCb;
+    QPushButton* m_timestampCb; // checkable toggle button
     QPushButton* m_btnAscii;
     QPushButton* m_btnHex;
     QPushButton* m_btnBoth;

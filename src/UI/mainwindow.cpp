@@ -85,8 +85,10 @@ void MainWindow::setupCentralWidget()
     topBar->addWidget(new QLabel("Terminal Output (COMx - 115200, 8N1)"));
     topBar->addStretch();
     
-    m_timestampCb = new QCheckBox("Timestamp");
+    m_timestampCb = new QPushButton("Timestamp");
+    m_timestampCb->setCheckable(true);
     m_timestampCb->setChecked(true);
+    m_timestampCb->setObjectName("toggleBtn");
     topBar->addWidget(m_timestampCb);
     
     m_btnAscii = new QPushButton("ASCII");
@@ -161,8 +163,10 @@ void MainWindow::setupDockWidgets()
     m_flowControlCombo->addItems({"None", "Hardware", "Software"});
     connLayout->addRow("Flow Control", m_flowControlCombo);
     
-    m_autoRecCb = new QCheckBox("Auto Reconnect");
+    m_autoRecCb = new QPushButton("Auto Reconnect");
+    m_autoRecCb->setCheckable(true);
     m_autoRecCb->setChecked(true);
+    m_autoRecCb->setObjectName("toggleBtn");
     connLayout->addRow(m_autoRecCb);
     
     connWidget->setLayout(connLayout);
@@ -182,10 +186,7 @@ void MainWindow::setupDockWidgets()
     m_logFormat = new QComboBox();
     m_logFormat->addItems({"TXT+HEX", "TXT", "CSV"});
     logLayout->addRow("Format", m_logFormat);
-    
-    m_logStatus = new QLabel("Idle");
-    m_logStatus->setStyleSheet("color: #abb2bf; font-weight: bold;");
-    logLayout->addRow("Status", m_logStatus);
+    // Status is shown via Log button color in toolbar
     
     logWidget->setLayout(logLayout);
     logDock->setWidget(logWidget);
@@ -555,8 +556,8 @@ void MainWindow::onToggleLogging(bool checked)
         m_logFile = new QFile(filename);
         if (m_logFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
             m_logStream = new QTextStream(m_logFile);
-            m_logStatus->setText("Recording...");
-            m_logStatus->setStyleSheet("color: #e06c75; font-weight: bold;"); // Red for recording
+            // Show recording state via Log button color
+            m_btnLog->setStyleSheet("color: #e06c75; font-weight: bold;");
             m_logFilename->setEnabled(false);
             m_logFormat->setEnabled(false);
         } else {
@@ -575,8 +576,7 @@ void MainWindow::onToggleLogging(bool checked)
             delete m_logFile;
             m_logFile = nullptr;
         }
-        m_logStatus->setText("Idle");
-        m_logStatus->setStyleSheet("color: #abb2bf; font-weight: bold;");
+        m_btnLog->setStyleSheet(""); // Reset to default style
         m_logFilename->setEnabled(true);
         m_logFormat->setEnabled(true);
     }
