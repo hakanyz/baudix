@@ -141,22 +141,30 @@ QPushButton#iconBtn {
 
 /* Connect / Disconnect Buttons in Connection Dock */
 QPushButton#connectBtn {
-    background-color: #98c379;
-    color: #282c34;
+    background-color: #2c4a6e;
+    border: 1px solid #61afef;
+    color: #61afef;
     font-weight: bold;
     border-radius: 4px;
     padding: 6px 10px;
 }
-QPushButton#connectBtn:hover { background-color: #b5e890; }
+QPushButton#connectBtn:hover {
+    background-color: #3a5f8a;
+    color: #ffffff;
+}
 
 QPushButton#disconnectBtn {
-    background-color: #e06c75;
-    color: #282c34;
+    background-color: transparent;
+    border: 1px solid #e06c75;
+    color: #e06c75;
     font-weight: bold;
     border-radius: 4px;
     padding: 6px 10px;
 }
-QPushButton#disconnectBtn:hover { background-color: #fcaeb5; }
+QPushButton#disconnectBtn:hover {
+    background-color: #e06c75;
+    color: #282c34;
+}
 
 /* iOS Style Toggle Checkbox */
 QCheckBox::indicator {
