@@ -169,7 +169,11 @@ void MainWindow::setupDockWidgets()
     logWidget->setObjectName("dockContent");
     QFormLayout *logLayout = new QFormLayout(logWidget);
     
-    // Filename row: text field + Browse button
+    // -- Live Record Section --
+    QLabel* liveTitle = new QLabel("Live Record");
+    liveTitle->setStyleSheet("color: #abb2bf; font-weight: bold; padding-top: 5px;");
+    logLayout->addRow(liveTitle);
+
     m_logFilename = new QLineEdit("baudix_log.txt");
     logLayout->addRow("Save to", m_logFilename);
 
@@ -188,15 +192,59 @@ void MainWindow::setupDockWidgets()
     m_logFormat->addItems({"TXT+HEX", "TXT", "CSV"});
     logLayout->addRow("Format", m_logFormat);
     
-    logLayout->addItem(new QSpacerItem(0, 10, QSizePolicy::Minimum, QSizePolicy::Fixed));
-
-    m_btnLog = new QPushButton("Start Logging");
+    QHBoxLayout* liveActionLayout = new QHBoxLayout();
+    m_btnLog = new QPushButton("⏺ Record");
     m_btnLog->setObjectName("connectBtn");
     m_btnLog->setCheckable(true);
     m_btnLog->setMinimumHeight(30);
-    // Will style based on check state
     connect(m_btnLog, &QPushButton::toggled, this, &MainWindow::onToggleLogging);
-    logLayout->addRow(m_btnLog);
+    liveActionLayout->addWidget(m_btnLog);
+
+    m_btnPauseLog = new QPushButton("⏸ Pause");
+    m_btnPauseLog->setCheckable(true);
+    m_btnPauseLog->setMinimumHeight(30);
+    m_btnPauseLog->setEnabled(false); // Only enable when recording
+    liveActionLayout->addWidget(m_btnPauseLog);
+
+    logLayout->addRow(liveActionLayout);
+
+    // -- Snapshot Section --
+    QLabel* exportTitle = new QLabel("Snapshot (Display)");
+    exportTitle->setStyleSheet("color: #abb2bf; font-weight: bold; padding-top: 15px;");
+    logLayout->addRow(exportTitle);
+
+    QHBoxLayout* exportActionLayout = new QHBoxLayout();
+    QPushButton* btnExportTxt = new QPushButton("📥 TXT");
+    QPushButton* btnExportHtml = new QPushButton("📥 HTML");
+    btnExportTxt->setMinimumHeight(26);
+    btnExportHtml->setMinimumHeight(26);
+    
+    connect(btnExportTxt, &QPushButton::clicked, [this](){
+        QString filename = QFileDialog::getSaveFileName(this, "Export Display as TXT", "terminal_export.txt", "Text Files (*.txt)");
+        if (!filename.isEmpty()) {
+            QFile file(filename);
+            if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                QTextStream out(&file);
+                out << m_terminalOutput->toPlainText();
+                file.close();
+            }
+        }
+    });
+    connect(btnExportHtml, &QPushButton::clicked, [this](){
+        QString filename = QFileDialog::getSaveFileName(this, "Export Display as HTML", "terminal_export.html", "HTML Files (*.html)");
+        if (!filename.isEmpty()) {
+            QFile file(filename);
+            if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                QTextStream out(&file);
+                out << m_terminalOutput->toHtml();
+                file.close();
+            }
+        }
+    });
+    
+    exportActionLayout->addWidget(btnExportTxt);
+    exportActionLayout->addWidget(btnExportHtml);
+    logLayout->addRow(exportActionLayout);
 
     logWidget->setLayout(logLayout);
     logDock->setWidget(logWidget);
@@ -489,11 +537,13 @@ void MainWindow::appendToTerminal(const QString& prefix, const QByteArray& data,
 
     m_terminalOutput->append(htmlLine);
     
-    // Save to log if active
+    // Save to log if active and NOT paused
     if (m_logStream && m_logFile && m_logFile->isOpen()) {
-        QString rawTimestamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
-        *m_logStream << "[" << rawTimestamp << "] " << prefix << " " << finalDataStr << "\n";
-        m_logStream->flush();
+        if (!m_btnPauseLog->isChecked()) {
+            QString rawTimestamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+            *m_logStream << "[" << rawTimestamp << "] " << prefix << " " << finalDataStr << "\n";
+            m_logStream->flush();
+        }
     }
 }
 
@@ -613,11 +663,12 @@ void MainWindow::onToggleLogging(bool checked)
             m_logStream = new QTextStream(m_logFile);
             
             // Touch up: Change text and switch to "Stop/Destructive" red outline style
-            m_btnLog->setText("Stop Logging");
+            m_btnLog->setText("⏹ Stop");
             m_btnLog->setObjectName("disconnectBtn");
             m_btnLog->style()->unpolish(m_btnLog);
             m_btnLog->style()->polish(m_btnLog);
             
+            m_btnPauseLog->setEnabled(true);
             m_logFilename->setEnabled(false);
             m_logFormat->setEnabled(false);
         } else {
@@ -638,10 +689,13 @@ void MainWindow::onToggleLogging(bool checked)
         }
         
         // Touch up: Revert to "Start/Primary" blue style
-        m_btnLog->setText("Start Logging");
+        m_btnLog->setText("⏺ Record");
         m_btnLog->setObjectName("connectBtn");
         m_btnLog->style()->unpolish(m_btnLog);
         m_btnLog->style()->polish(m_btnLog);
+        
+        m_btnPauseLog->setChecked(false);
+        m_btnPauseLog->setEnabled(false);
         
         m_logFilename->setEnabled(true);
         m_logFormat->setEnabled(true);

@@ -62,6 +62,7 @@ private:
     // --- UI Elements ---
     QPushButton* m_btnConnect;
     QPushButton* m_btnLog;
+    QPushButton* m_btnPauseLog;
 
     // Connection Dock
     QComboBox* m_portCombo;
