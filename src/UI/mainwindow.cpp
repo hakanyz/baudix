@@ -331,8 +331,32 @@ void MainWindow::setupDockWidgets()
     });
     toolsLayout->addWidget(m_macrosList, 1); // stretch = 1 so it grows
     
+    // Macro Action Buttons
+    QHBoxLayout* macroOps = new QHBoxLayout();
+    macroOps->setSpacing(4);
+    
+    QPushButton* btnAddMacro = new QPushButton("+ Add");
+    connect(btnAddMacro, &QPushButton::clicked, [this](){
+        QListWidgetItem* newItem = new QListWidgetItem("");
+        newItem->setFlags(newItem->flags() | Qt::ItemIsEditable);
+        m_macrosList->addItem(newItem);
+        m_macrosList->scrollToItem(newItem);
+        m_macrosList->editItem(newItem);
+    });
+    macroOps->addWidget(btnAddMacro);
+    
+    QPushButton* btnRemoveMacro = new QPushButton("- Remove");
+    connect(btnRemoveMacro, &QPushButton::clicked, [this](){
+        QListWidgetItem* sel = m_macrosList->currentItem();
+        if (sel) delete sel;
+    });
+    macroOps->addWidget(btnRemoveMacro);
+    
+    toolsLayout->addLayout(macroOps);
+
     // Send Selected button
     QPushButton* macroSendBtn = new QPushButton("Send Selected");
+    macroSendBtn->setObjectName("sendButton"); // Style like the main send button
     connect(macroSendBtn, &QPushButton::clicked, [this](){
         QListWidgetItem* sel = m_macrosList->currentItem();
         if (sel && !sel->text().isEmpty()) performSend(sel->text());
