@@ -98,6 +98,16 @@ void MainWindow::setupCentralWidget()
     tabLayout->addWidget(m_terminalOutput);
     
     tabWidget->addTab(terminalTab, "Terminal");
+    
+    // Modbus Tab (Placeholder)
+    QWidget* modbusTab = new QWidget();
+    QVBoxLayout* modbusLayout = new QVBoxLayout(modbusTab);
+    QLabel* modbusLabel = new QLabel("Modbus UI (Coming Soon...)");
+    modbusLabel->setAlignment(Qt::AlignCenter);
+    modbusLabel->setStyleSheet("color: #61afef; font-size: 16px;");
+    modbusLayout->addWidget(modbusLabel);
+    tabWidget->addTab(modbusTab, "Modbus");
+    
     setCentralWidget(tabWidget);
 }
 
@@ -253,7 +263,7 @@ void MainWindow::setupDockWidgets()
     
     sendLayout->addLayout(inputLayout);
     
-    // Middle Row: History
+    // Middle Row: History + History Controls
     QHBoxLayout *historyLayout = new QHBoxLayout();
     historyLayout->addWidget(new QLabel("History"));
     m_historyCombo = new QComboBox();
@@ -262,6 +272,19 @@ void MainWindow::setupDockWidgets()
         if (idx > 0) m_inputField->setText(m_historyCombo->itemText(idx));
     });
     historyLayout->addWidget(m_historyCombo, 1);
+    
+    QCheckBox* cbHistoryOn = new QCheckBox("ON");
+    cbHistoryOn->setChecked(true);
+    historyLayout->addWidget(cbHistoryOn);
+    
+    QPushButton* btnClearHistory = new QPushButton("Clear");
+    btnClearHistory->setObjectName("iconBtn"); // keep it small
+    connect(btnClearHistory, &QPushButton::clicked, [this](){
+        m_historyCombo->clear();
+        m_historyCombo->addItem("-- Previous commands --");
+    });
+    historyLayout->addWidget(btnClearHistory);
+    
     sendLayout->addLayout(historyLayout);
     
     // Bottom Row: Periodic Send
