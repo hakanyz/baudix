@@ -133,6 +133,12 @@ QPushButton#clearTerminalBtn:hover {
     color: #282c34;
 }
 
+/* Small icon buttons (e.g. Search Next/Prev) */
+QPushButton#iconBtn {
+    padding: 2px 0px;
+    font-size: 14px;
+}
+
 /* Connect / Disconnect Buttons in Connection Dock */
 QPushButton#connectBtn {
     background-color: #3a3f4b;
