@@ -19,5 +19,6 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    void setupDockWidgets();
 };
 #endif // MAINWINDOW_H
