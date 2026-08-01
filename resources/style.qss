@@ -228,6 +228,15 @@ QListWidget {
 QListWidget::item {
     padding: 4px 6px;
     border-radius: 3px;
+    min-height: 22px;
+}
+
+QListWidget QLineEdit {
+    background-color: #1e2227;
+    color: #abb2bf;
+    border: 1px solid #61afef;
+    padding: 2px;
+    min-height: 20px;
 }
 
 QListWidget::item:hover {
