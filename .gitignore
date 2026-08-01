@@ -1,0 +1,23 @@
+# C++ / CMake
+build/
+build-*/
+*.user
+*.user.*
+.qtc_clangd/
+.qtcreator/
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+*.exe
+*.dll
+*.so
+*.dylib
+
+# OS
+.DS_Store
+Thumbs.db

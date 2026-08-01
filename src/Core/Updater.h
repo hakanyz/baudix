@@ -6,7 +6,7 @@
 
 class Updater : public QObject
 {
-    QObject
+    Q_OBJECT
 public:
     explicit Updater(QObject *parent = nullptr);
     void checkForUpdates();
