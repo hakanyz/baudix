@@ -70,7 +70,7 @@ private:
     QComboBox* m_stopBitsCombo;
     QComboBox* m_parityCombo;
     QComboBox* m_flowControlCombo;
-    QPushButton* m_autoRecCb; // checkable toggle button
+    QCheckBox* m_autoRecCb;
 
     // Logging Dock
     QLineEdit* m_logFilename;

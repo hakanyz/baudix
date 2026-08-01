@@ -34,6 +34,9 @@ MainWindow::MainWindow(QWidget *parent)
     setupCentralWidget();
     setupDockWidgets();
 
+    menuBar()->hide(); // Remove the top View menu bar
+    statusBar()->addPermanentWidget(new QLabel("v1.0.1 ")); // Add version to bottom right
+
     // Connect controller signals
     connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
     connect(m_serialController, &SerialPortController::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
@@ -136,19 +139,24 @@ void MainWindow::setupDockWidgets()
     m_flowControlCombo->addItems({"None", "Hardware", "Software"});
     connLayout->addRow("Flow Control", m_flowControlCombo);
     
-    m_autoRecCb = new QPushButton("Auto Reconnect");
-    m_autoRecCb->setCheckable(true);
-    m_autoRecCb->setChecked(true);
-    // No objectName - uses same blue :checked style as other buttons
-    connLayout->addRow(m_autoRecCb);
-    
-    connLayout->addItem(new QSpacerItem(0, 10, QSizePolicy::Minimum, QSizePolicy::Fixed));
+    connLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
 
+    // Put Auto Reconnect and Connect buttons in a single row
+    QHBoxLayout* actionLayout = new QHBoxLayout();
+    
+    m_autoRecCb = new QCheckBox("Auto Reconnect");
+    m_autoRecCb->setChecked(true);
+    // Uses iOS Style Checkbox from QSS
+    actionLayout->addWidget(m_autoRecCb);
+    
     m_btnConnect = new QPushButton("Connect");
     m_btnConnect->setObjectName("connectBtn");
     m_btnConnect->setMinimumHeight(30);
+    m_btnConnect->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     connect(m_btnConnect, &QPushButton::clicked, this, &MainWindow::onToggleConnectClicked);
-    connLayout->addRow(m_btnConnect);
+    actionLayout->addWidget(m_btnConnect);
+
+    connLayout->addRow(actionLayout);
 
     connWidget->setLayout(connLayout);
     connDock->setWidget(connWidget);
