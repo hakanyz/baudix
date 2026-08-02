@@ -255,15 +255,6 @@ void MainWindow::setupCentralWidget()
     
     tabWidget->addTab(terminalTab, "Terminal");
     
-    // Modbus Tab (Placeholder)
-    QWidget* modbusTab = new QWidget();
-    QVBoxLayout* modbusLayout = new QVBoxLayout(modbusTab);
-    QLabel* modbusLabel = new QLabel("Modbus UI (Coming Soon...)");
-    modbusLabel->setAlignment(Qt::AlignCenter);
-    modbusLabel->setStyleSheet("color: #61afef; font-size: 16px;");
-    modbusLayout->addWidget(modbusLabel);
-    tabWidget->addTab(modbusTab, "Modbus");
-    
     setCentralWidget(tabWidget);
 }
 
