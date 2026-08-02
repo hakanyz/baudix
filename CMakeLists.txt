@@ -24,6 +24,10 @@ set(PROJECT_SOURCES
         resources/resources.qrc
 )
 
+if(WIN32)
+    list(APPEND PROJECT_SOURCES resources/app.rc)
+endif()
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(baudix
         MANUAL_FINALIZATION

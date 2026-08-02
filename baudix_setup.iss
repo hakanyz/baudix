@@ -7,6 +7,7 @@ AppPublisherURL=https://github.com/hakanyz/baudix
 DefaultDirName={autopf}\Baudix
 DisableProgramGroupPage=yes
 OutputBaseFilename=Baudix_Setup_v1.0.1
+SetupIconFile=resources\baudix_icon.ico
 UninstallDisplayIcon={app}\baudix.exe
 Compression=lzma
 SolidCompression=yes
