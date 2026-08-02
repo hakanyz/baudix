@@ -21,3 +21,7 @@ compile_commands.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Workspace Specific
+hatalar.txt
+resim.png

@@ -74,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupCentralWidget();
     setupDockWidgets();
 
-    statusBar()->addPermanentWidget(new QLabel("v1.0.0 ")); // Add version to bottom right
+    statusBar()->addPermanentWidget(new QLabel("v1.0.1 ")); // Add version to bottom right
 
     // Connect controller signals
     connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
