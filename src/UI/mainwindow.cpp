@@ -74,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupCentralWidget();
     setupDockWidgets();
 
-    statusBar()->addPermanentWidget(new QLabel("v1.0.1 ")); // Add version to bottom right
+    statusBar()->addPermanentWidget(new QLabel("v1.0.2 ")); // Add version to bottom right
 
     // Connect controller signals
     connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
@@ -567,7 +567,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.0.1<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.0.2<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 

@@ -25,7 +25,7 @@ private:
     QNetworkAccessManager *networkManager;
     const QString repoOwner = "hakanyz";
     const QString repoName = "baudix";
-    const QString currentVersion = "v1.0.1";
+    const QString currentVersion = "v1.0.2";
     bool m_isSilent = false;
 };
 
