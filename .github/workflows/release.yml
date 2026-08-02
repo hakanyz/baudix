@@ -67,7 +67,27 @@ jobs:
           cpack -G DEB
           cp *.deb ../${{ matrix.artifact }}
 
-      - name: Upload Release Asset
+      - name: Upload Artifacts for Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.os }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+      
+      - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ matrix.artifact }}
+          files: release-assets/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
