@@ -25,3 +25,6 @@ Thumbs.db
 # Workspace Specific
 hatalar.txt
 resim.png
+
+# Inno Setup Output
+Output/
