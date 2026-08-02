@@ -609,17 +609,14 @@ void MainWindow::setupDockWidgets()
     connect(exportAct, &QAction::triggered, this, &MainWindow::onExportTerminal);
     QMenu* prefMenu = fileMenu->addMenu("Preferences");
     
-    QWidgetAction* trayAction = new QWidgetAction(this);
-    QCheckBox* trayCb = new QCheckBox("Minimize to Tray on Close", prefMenu);
-    trayCb->setStyleSheet("margin-left: 5px; margin-right: 5px;");
+    QAction* trayAct = prefMenu->addAction("Minimize to Tray on Close");
+    trayAct->setCheckable(true);
     QSettings settings("hakanyz", "Baudix");
-    trayCb->setChecked(settings.value("System/CloseBehavior", "").toString() == "Tray");
-    connect(trayCb, &QCheckBox::toggled, this, [](bool checked){
+    trayAct->setChecked(settings.value("System/CloseBehavior", "").toString() == "Tray");
+    connect(trayAct, &QAction::toggled, this, [](bool checked){
         QSettings s("hakanyz", "Baudix");
         s.setValue("System/CloseBehavior", checked ? "Tray" : "Exit");
     });
-    trayAction->setDefaultWidget(trayCb);
-    prefMenu->addAction(trayAction);
     
     fileMenu->addSeparator();
     
@@ -658,7 +655,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.2<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.3<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
