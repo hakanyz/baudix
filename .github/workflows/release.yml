@@ -17,9 +17,9 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            artifact: Baudix_Setup_v1.2.4.exe
+            artifact: Baudix_Setup_v1.2.5.exe
           - os: ubuntu-latest
-            artifact: baudix-linux.zip
+            artifact: baudix_1.2.5_amd64.deb
 
     steps:
       - name: Checkout Code
@@ -48,13 +48,13 @@ jobs:
           if [ -f "build/Release/baudix.exe" ]; then
             windeployqt --release build/Release/baudix.exe
             "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" baudix_setup.iss
-            cp Output/Baudix_Setup_v1.2.4.exe ${{ matrix.artifact }}
+            cp Output/Baudix_Setup_v1.2.5.exe ${{ matrix.artifact }}
           elif [ -f "build/baudix.exe" ]; then
             windeployqt --release build/baudix.exe
             # Adjust installer.iss on the fly if path is different
             sed -i 's|build\\Release|build|g' baudix_setup.iss
             "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" baudix_setup.iss
-            cp Output/Baudix_Setup_v1.2.4.exe ${{ matrix.artifact }}
+            cp Output/Baudix_Setup_v1.2.5.exe ${{ matrix.artifact }}
           else
             echo "Executable not found!"
             exit 1
@@ -63,7 +63,9 @@ jobs:
       - name: Package Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-          zip -j ${{ matrix.artifact }} build/baudix
+          cd build
+          cpack -G DEB
+          cp *.deb ../${{ matrix.artifact }}
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(baudix VERSION 1.2.4 LANGUAGES CXX)
+project(baudix VERSION 1.2.5 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -76,4 +76,16 @@ install(TARGETS baudix
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(baudix)
+endif()
+
+# --- CPack Configuration for Linux (.deb) ---
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_PACKAGE_NAME "baudix")
+    set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+    set(CPACK_PACKAGE_CONTACT "hakanyz")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Professional Serial Terminal for Embedded Systems")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "hakanyz")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6core6, libqt6gui6, libqt6widgets6, libqt6serialport6, libqt6network6")
+    include(CPack)
 endif()
