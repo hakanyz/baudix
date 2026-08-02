@@ -19,40 +19,20 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.5.3'
-          host: 'windows'
-          target: 'desktop'
-          arch: 'win64_mingw'
-          modules: 'qtserialport qtwebsockets'
-        if: matrix.os == 'windows-latest'
+          version: '6.6.3'
+          modules: 'qtserialport'
 
-      - name: Install Qt (Ubuntu)
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.5.3'
-          host: 'linux'
-          target: 'desktop'
-          modules: 'qtserialport qtwebsockets'
+      - name: Install Linux Dependencies
         if: matrix.os == 'ubuntu-latest'
-
-      - name: Install Dependencies (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake libgl1-mesa-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0-dev libxcb-xinerama0 libxcb-shm0 libxcb-xkb1 libxcb-render0-dev libxcb1-dev libx11-xcb-dev
+        run: sudo apt-get update && sudo apt-get install -y build-essential libgl1-mesa-dev
 
       - name: Configure CMake
-        run: |
-          mkdir build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build
-        run: |
-          cd build
-          cmake --build . --config Release
+      - name: Build Project
+        run: cmake --build build --config Release
