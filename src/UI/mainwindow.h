@@ -74,6 +74,7 @@ private:
     QPushButton* m_btnConnect;
     QPushButton* m_btnLog;
     QPushButton* m_btnPauseLog;
+    QTextEdit* m_terminalOutput;
 
     // Connection Dock
     QComboBox* m_portCombo;
@@ -84,31 +85,26 @@ private:
     QComboBox* m_flowControlCombo;
     QCheckBox* m_autoRecCb;
 
-    // Logging Dock
-    QLineEdit* m_logFilename;
-    QComboBox* m_logFormat;
-    QFile* m_logFile;
-    QTextStream* m_logStream;
+    // Terminal View Settings
+    QPushButton* m_timestampCb;
+    QComboBox* m_viewModeCombo;
+    QLineEdit* m_searchBox;
 
     // Send Dock
     QComboBox* m_inputCombo;
     QCheckBox* m_cbHistoryOn;
     QPushButton* m_sendButton;
     QComboBox* m_sendAsCombo;
-    QPushButton* m_btnNone;
-    QPushButton* m_btnCR;
-    QPushButton* m_btnLF;
-    QPushButton* m_btnCRLF;
+    QComboBox* m_appendCombo;
     QCheckBox* m_periodicSendCb;
     QSpinBox* m_periodicMsBox;
     QSpinBox* m_burstBox;
 
-    // Terminal (Central)
-    QTextEdit* m_terminalOutput;
-    QPushButton* m_timestampCb; // checkable toggle button
-    QPushButton* m_btnAscii;
-    QPushButton* m_btnHex;
-    QPushButton* m_btnBoth;
+    // Logging Dock
+    QLineEdit* m_logFilename;
+    QComboBox* m_logFormat;
+    QFile* m_logFile;
+    QTextStream* m_logStream;
 
     // Tools Dock
     QLineEdit* m_hlHeader;

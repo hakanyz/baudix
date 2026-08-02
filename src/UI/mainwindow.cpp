@@ -200,26 +200,38 @@ void MainWindow::setupCentralWidget()
     m_timestampCb->setObjectName("smallBtn");
     topBar->addWidget(m_timestampCb);
     
-    m_btnAscii = new QPushButton("ASCII");
-    m_btnAscii->setCheckable(true);
-    m_btnAscii->setChecked(true); // Default
-    m_btnAscii->setObjectName("smallBtn");
-    
-    m_btnHex = new QPushButton("HEX");
-    m_btnHex->setCheckable(true);
-    m_btnHex->setObjectName("smallBtn");
-    
-    m_btnBoth = new QPushButton("Both");
-    m_btnBoth->setCheckable(true);
-    m_btnBoth->setObjectName("smallBtn");
-    
-    connect(m_btnAscii, &QPushButton::clicked, [this](){ m_btnHex->setChecked(false); m_btnBoth->setChecked(false); });
-    connect(m_btnHex, &QPushButton::clicked, [this](){ m_btnAscii->setChecked(false); m_btnBoth->setChecked(false); });
-    connect(m_btnBoth, &QPushButton::clicked, [this](){ m_btnAscii->setChecked(false); m_btnHex->setChecked(false); });
-    
-    topBar->addWidget(m_btnAscii);
-    topBar->addWidget(m_btnHex);
-    topBar->addWidget(m_btnBoth);
+    m_viewModeCombo = new QComboBox();
+    m_viewModeCombo->addItems({"ASCII", "HEX", "Both"});
+    m_viewModeCombo->setCurrentText("ASCII");
+    topBar->addWidget(m_viewModeCombo);
+
+    topBar->addSpacing(10);
+
+    // Search bar integrated into Top Bar
+    m_searchBox = new QLineEdit();
+    m_searchBox->setPlaceholderText("Search terminal...");
+    m_searchBox->setMaximumWidth(200);
+    connect(m_searchBox, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
+    connect(m_searchBox, &QLineEdit::returnPressed, [this](){
+        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text());
+    });
+    topBar->addWidget(m_searchBox);
+
+    QPushButton* btnFindPrev = new QPushButton("▲");
+    btnFindPrev->setObjectName("iconBtn");
+    btnFindPrev->setFixedWidth(28);
+    connect(btnFindPrev, &QPushButton::clicked, [this](){
+        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text(), QTextDocument::FindBackward);
+    });
+    topBar->addWidget(btnFindPrev);
+
+    QPushButton* btnFindNext = new QPushButton("▼");
+    btnFindNext->setObjectName("iconBtn");
+    btnFindNext->setFixedWidth(28);
+    connect(btnFindNext, &QPushButton::clicked, [this](){
+        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text());
+    });
+    topBar->addWidget(btnFindNext);
     
     QPushButton* clearBtn = new QPushButton("Clear");
     clearBtn->setObjectName("clearTerminalBtn");
@@ -371,6 +383,12 @@ void MainWindow::setupDockWidgets()
     // --- Send Dock ---
     QDockWidget *sendDock = new QDockWidget("Send", this);
     sendDock->setFeatures(dockFeatures);
+    
+    // UI/UX Improvement: Remove Title Bar from Send dock to save vertical space
+    QWidget* emptyTitle = new QWidget();
+    emptyTitle->setFixedHeight(0);
+    sendDock->setTitleBarWidget(emptyTitle);
+
     QWidget *sendWidget = new QWidget(sendDock);
     sendWidget->setObjectName("dockContent");
     QVBoxLayout *sendLayout = new QVBoxLayout(sendWidget);
@@ -417,34 +435,10 @@ void MainWindow::setupDockWidgets()
     QHBoxLayout *bottomLayout = new QHBoxLayout();
     
     bottomLayout->addWidget(new QLabel("Append:"));
-    m_btnNone = new QPushButton("None");
-    m_btnNone->setCheckable(true);
-    m_btnNone->setObjectName("smallBtn");
     
-    m_btnCR = new QPushButton("CR");
-    m_btnCR->setCheckable(true);
-    m_btnCR->setObjectName("smallBtn");
-    
-    m_btnLF = new QPushButton("LF");
-    m_btnLF->setCheckable(true);
-    m_btnLF->setObjectName("smallBtn");
-    
-    m_btnCRLF = new QPushButton("CRLF");
-    m_btnCRLF->setCheckable(true);
-    m_btnCRLF->setObjectName("smallBtn");
-    
-    m_btnNone->setChecked(true); // Default
-
-    // Exclusivity logic
-    connect(m_btnNone, &QPushButton::clicked, [this](){ m_btnCR->setChecked(false); m_btnLF->setChecked(false); m_btnCRLF->setChecked(false); m_btnNone->setChecked(true); });
-    connect(m_btnCR, &QPushButton::clicked, [this](){ m_btnNone->setChecked(false); m_btnLF->setChecked(false); m_btnCRLF->setChecked(false); m_btnCR->setChecked(true); });
-    connect(m_btnLF, &QPushButton::clicked, [this](){ m_btnNone->setChecked(false); m_btnCR->setChecked(false); m_btnCRLF->setChecked(false); m_btnLF->setChecked(true); });
-    connect(m_btnCRLF, &QPushButton::clicked, [this](){ m_btnNone->setChecked(false); m_btnCR->setChecked(false); m_btnLF->setChecked(false); m_btnCRLF->setChecked(true); });
-
-    bottomLayout->addWidget(m_btnNone);
-    bottomLayout->addWidget(m_btnCR);
-    bottomLayout->addWidget(m_btnLF);
-    bottomLayout->addWidget(m_btnCRLF);
+    m_appendCombo = new QComboBox();
+    m_appendCombo->addItems({"None", "CR", "LF", "CRLF"});
+    bottomLayout->addWidget(m_appendCombo);
     
     bottomLayout->addSpacing(15);
     
@@ -469,6 +463,14 @@ void MainWindow::setupDockWidgets()
     bottomLayout->addWidget(m_burstBox);
     
     bottomLayout->addStretch();
+    
+    // Add Send Button to the far right of the bottom row to save space
+    m_sendButton = new QPushButton("Send");
+    m_sendButton->setObjectName("sendButton");
+    m_sendButton->setMinimumWidth(120);
+    connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendClicked);
+    bottomLayout->addWidget(m_sendButton);
+    
     sendLayout->addLayout(bottomLayout);
     
     sendWidget->setLayout(sendLayout);
@@ -566,43 +568,7 @@ void MainWindow::setupDockWidgets()
     toolsLayout->addWidget(macroSendBtn);
 
     toolsLayout->addSpacing(8);
-
-    // --- Search ---
-    QLabel* searchTitle = new QLabel("Search");
-    searchTitle->setStyleSheet("color: #abb2bf; font-size: 13px;");
-    toolsLayout->addWidget(searchTitle);
-
-    m_searchBox = new QLineEdit();
-    m_searchBox->setPlaceholderText("Find text/HEX");
-    connect(m_searchBox, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
-    connect(m_searchBox, &QLineEdit::returnPressed, [this](){
-        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text());
-    });
-
-    QHBoxLayout* searchLayout = new QHBoxLayout();
-    searchLayout->setSpacing(4);
-    searchLayout->addWidget(m_searchBox);
-
-    QPushButton* btnFindPrev = new QPushButton("▲");
-    btnFindPrev->setObjectName("iconBtn");
-    btnFindPrev->setFixedWidth(28);
-    btnFindPrev->setToolTip("Find Previous");
-    connect(btnFindPrev, &QPushButton::clicked, [this](){
-        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text(), QTextDocument::FindBackward);
-    });
-    searchLayout->addWidget(btnFindPrev);
-
-    QPushButton* btnFindNext = new QPushButton("▼");
-    btnFindNext->setObjectName("iconBtn");
-    btnFindNext->setFixedWidth(28);
-    btnFindNext->setToolTip("Find Next");
-    connect(btnFindNext, &QPushButton::clicked, [this](){
-        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text());
-    });
-    searchLayout->addWidget(btnFindNext);
-
-    toolsLayout->addLayout(searchLayout);
-
+    toolsLayout->addStretch();
     toolsWidget->setLayout(toolsLayout);
     toolsDock->setWidget(toolsWidget);
     addDockWidget(Qt::RightDockWidgetArea, toolsDock);
@@ -688,7 +654,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.8<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.2.0<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
@@ -764,9 +730,10 @@ void MainWindow::appendToTerminal(const QString& prefix, const QByteArray& data,
     }
 
     QString finalDataStr = "";
-    if (m_btnBoth->isChecked()) {
+    QString viewMode = m_viewModeCombo->currentText();
+    if (viewMode == "Both") {
         finalDataStr = hexStr + " [" + asciiStr + "]";
-    } else if (m_btnHex->isChecked()) {
+    } else if (viewMode == "HEX") {
         finalDataStr = hexStr;
     } else {
         finalDataStr = asciiStr;
@@ -818,10 +785,10 @@ void MainWindow::performSend(const QString& text)
         // ASCII mode: send as plain UTF-8
         data = text.toUtf8();
     }
-    
-    if (m_btnCR->isChecked()) data.append('\r');
-    else if (m_btnLF->isChecked()) data.append('\n');
-    else if (m_btnCRLF->isChecked()) { data.append('\r'); data.append('\n'); }
+    QString appendMode = m_appendCombo->currentText();
+    if (appendMode == "CR") data.append('\r');
+    else if (appendMode == "LF") data.append('\n');
+    else if (appendMode == "CRLF") { data.append('\r'); data.append('\n'); }
 
     if (data.isEmpty()) return;
 
