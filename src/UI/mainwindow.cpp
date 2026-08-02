@@ -403,16 +403,16 @@ void MainWindow::setupDockWidgets()
     sendLayout->addLayout(inputLayout);
     
     // Middle Row: Action Tools
-    QHBoxLayout *actionLayout = new QHBoxLayout();
+    QHBoxLayout *sendActionLayout = new QHBoxLayout();
     
     QPushButton* btnSendFile = new QPushButton("📁 Send File");
     btnSendFile->setObjectName("smallBtn");
     connect(btnSendFile, &QPushButton::clicked, this, &MainWindow::onSendFileClicked);
-    actionLayout->addWidget(btnSendFile);
+    sendActionLayout->addWidget(btnSendFile);
     
     m_cbHistoryOn = new QCheckBox("Save History");
     m_cbHistoryOn->setChecked(true);
-    actionLayout->addWidget(m_cbHistoryOn);
+    sendActionLayout->addWidget(m_cbHistoryOn);
     
     QPushButton* btnClearHistory = new QPushButton("Clear History");
     btnClearHistory->setObjectName("smallBtn");
@@ -420,27 +420,27 @@ void MainWindow::setupDockWidgets()
         m_inputCombo->clear();
         m_inputCombo->addItem("");
     });
-    actionLayout->addWidget(btnClearHistory);
+    sendActionLayout->addWidget(btnClearHistory);
     
-    actionLayout->addWidget(new QLabel("Append:"));
+    sendActionLayout->addWidget(new QLabel("Append:"));
     m_appendCombo = new QComboBox();
     m_appendCombo->addItems({"None", "CR", "LF", "CRLF"});
-    actionLayout->addWidget(m_appendCombo);
+    sendActionLayout->addWidget(m_appendCombo);
     
-    actionLayout->addWidget(new QLabel("Format:"));
+    sendActionLayout->addWidget(new QLabel("Format:"));
     m_sendAsCombo = new QComboBox();
     m_sendAsCombo->addItems({"ASCII", "HEX"});
     m_sendAsCombo->setToolTip("ASCII: send as plain text\nHEX: parse as hex bytes");
-    actionLayout->addWidget(m_sendAsCombo);
+    sendActionLayout->addWidget(m_sendAsCombo);
     
-    actionLayout->addStretch();
+    sendActionLayout->addStretch();
     
     m_sendButton = new QPushButton("Send");
     m_sendButton->setObjectName("sendButton");
     connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendClicked);
-    actionLayout->addWidget(m_sendButton);
+    sendActionLayout->addWidget(m_sendButton);
     
-    sendLayout->addLayout(actionLayout);
+    sendLayout->addLayout(sendActionLayout);
     
     // Bottom Row: Periodic Send
     QHBoxLayout *bottomLayout = new QHBoxLayout();
@@ -1002,5 +1002,4 @@ void MainWindow::onSendFileClicked()
         QMessageBox::critical(this, "Error", "Failed to send file data.");
     }
 }
-
-} // end of file
+}
