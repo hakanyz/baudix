@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(baudix VERSION 1.1.6 LANGUAGES CXX)
+project(baudix VERSION 1.1.7 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)

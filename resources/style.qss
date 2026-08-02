@@ -6,6 +6,10 @@ QWidget {
     font-size: 13px;
 }
 
+QLabel, QCheckBox, QRadioButton {
+    background-color: transparent;
+}
+
 /* Group Boxes for Tools panel sections */
 QGroupBox {
     border: 1px solid #3e4452;
