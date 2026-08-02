@@ -1,12 +1,12 @@
 [Setup]
 AppId={{8B2F3D9A-B7F1-4F9E-9D12-BaudixApp123}
 AppName=Baudix
-AppVersion=1.0.2
+AppVersion=1.1.0
 AppPublisher=hakanyz
 AppPublisherURL=https://github.com/hakanyz/baudix
 DefaultDirName={autopf}\Baudix
 DisableProgramGroupPage=yes
-OutputBaseFilename=Baudix_Setup_v1.0.2
+OutputBaseFilename=Baudix_Setup_v1.1.0
 SetupIconFile=resources\baudix_icon.ico
 UninstallDisplayIcon={app}\baudix.exe
 Compression=lzma

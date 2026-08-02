@@ -4,6 +4,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QStandardPaths>
 #include <QDebug>
 
 Updater::Updater(QObject *parent) : QObject(parent)
@@ -42,7 +43,18 @@ void Updater::onReplyFinished(QNetworkReply *reply)
     if (!jsonDoc.isNull() && jsonDoc.isObject()) {
         QJsonObject jsonObj = jsonDoc.object();
         QString latestVersion = jsonObj["tag_name"].toString();
-        QString htmlUrl = jsonObj["html_url"].toString();
+        
+        // Find the Windows installer asset
+        QString downloadUrl = jsonObj["html_url"].toString(); // fallback
+        QJsonArray assets = jsonObj["assets"].toArray();
+        for (const QJsonValue& val : assets) {
+            QJsonObject asset = val.toObject();
+            QString name = asset["name"].toString();
+            if (name.endsWith(".exe", Qt::CaseInsensitive)) {
+                downloadUrl = asset["browser_download_url"].toString();
+                break;
+            }
+        }
         
         // Semantic version comparison (handles cases like v1.0.2 vs v1.0.10)
         auto isNewer = [](const QString& latest, const QString& current) {
@@ -60,7 +72,7 @@ void Updater::onReplyFinished(QNetworkReply *reply)
         };
 
         if (isNewer(latestVersion, currentVersion)) {
-            emit updateAvailable(latestVersion, htmlUrl, m_isSilent);
+            emit updateAvailable(latestVersion, downloadUrl, m_isSilent);
         } else {
             if (!m_isSilent) {
                 emit noUpdateAvailable();
@@ -73,4 +85,65 @@ void Updater::onReplyFinished(QNetworkReply *reply)
     }
     
     reply->deleteLater();
+}
+
+void Updater::downloadUpdate(const QString& downloadUrl)
+{
+    if (m_downloadReply) {
+        m_downloadReply->abort();
+        m_downloadReply->deleteLater();
+    }
+    
+    if (m_downloadFile) {
+        m_downloadFile->close();
+        delete m_downloadFile;
+    }
+
+    m_downloadFilePath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/Baudix_Update.exe";
+    m_downloadFile = new QFile(m_downloadFilePath);
+    if (!m_downloadFile->open(QIODevice::WriteOnly)) {
+        emit errorOccurred("Could not open temp file for writing.");
+        return;
+    }
+
+    QUrl url(downloadUrl);
+    QNetworkRequest request(url);
+    request.setRawHeader("User-Agent", "Baudix-Updater");
+    
+    // Follow redirects is important for GitHub asset downloads
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+
+    m_downloadReply = networkManager->get(request);
+    
+    connect(m_downloadReply, &QNetworkReply::readyRead, this, [this](){
+        if (m_downloadFile && m_downloadFile->isOpen()) {
+            m_downloadFile->write(m_downloadReply->readAll());
+        }
+    });
+    
+    connect(m_downloadReply, &QNetworkReply::downloadProgress, this, &Updater::onDownloadProgress);
+    connect(m_downloadReply, &QNetworkReply::finished, this, &Updater::onDownloadFinished);
+}
+
+void Updater::onDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
+{
+    emit downloadProgress(bytesReceived, bytesTotal);
+}
+
+void Updater::onDownloadFinished()
+{
+    if (m_downloadFile) {
+        m_downloadFile->close();
+        delete m_downloadFile;
+        m_downloadFile = nullptr;
+    }
+
+    if (m_downloadReply->error() == QNetworkReply::NoError) {
+        emit downloadFinished(m_downloadFilePath);
+    } else {
+        emit errorOccurred("Failed to download update: " + m_downloadReply->errorString());
+    }
+
+    m_downloadReply->deleteLater();
+    m_downloadReply = nullptr;
 }

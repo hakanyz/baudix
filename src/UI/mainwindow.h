@@ -12,6 +12,10 @@
 #include <QCheckBox>
 #include <QListWidget>
 #include <QTabWidget>
+#include <QSystemTrayIcon>
+#include <QMenu>
+#include <QCloseEvent>
+#include <QProgressDialog>
 #include <QTimer>
 #include <QLabel>
 #include <QFile>
@@ -30,6 +34,9 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void onToggleConnectClicked();
@@ -107,5 +114,10 @@ private:
     QLineEdit* m_hlPayload;
     QListWidget* m_macrosList;
     QLineEdit* m_searchBox;
+
+    // Tray and Updater UI
+    QSystemTrayIcon* m_trayIcon;
+    QMenu* m_trayMenu;
+    QProgressDialog* m_downloadProgressDialog;
 };
 #endif // MAINWINDOW_H

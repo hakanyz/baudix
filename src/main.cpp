@@ -7,6 +7,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    a.setWindowIcon(QIcon(":/baudix_icon.svg"));
 
     // Load QSS
     QFile styleFile(":/style.qss");

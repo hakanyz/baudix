@@ -23,6 +23,7 @@
 #include <QSettings>
 #include <QTimer>
 #include <QDesktopServices>
+#include <QProcess>
 #include <QUrl>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -58,7 +59,26 @@ MainWindow::MainWindow(QWidget *parent)
         msgBox.exec();
         
         if (msgBox.clickedButton() == downloadBtn) {
-            QDesktopServices::openUrl(QUrl(url));
+            m_downloadProgressDialog = new QProgressDialog("Downloading update...", "Cancel", 0, 100, this);
+            m_downloadProgressDialog->setWindowTitle("Baudix Updater");
+            m_downloadProgressDialog->setWindowModality(Qt::WindowModal);
+            m_downloadProgressDialog->show();
+
+            connect(m_updater, &Updater::downloadProgress, this, [this](qint64 bytesReceived, qint64 bytesTotal){
+                if (bytesTotal > 0) {
+                    m_downloadProgressDialog->setMaximum(bytesTotal);
+                    m_downloadProgressDialog->setValue(bytesReceived);
+                }
+            });
+
+            connect(m_updater, &Updater::downloadFinished, this, [this](const QString& filePath){
+                m_downloadProgressDialog->close();
+                m_downloadProgressDialog->deleteLater();
+                QProcess::startDetached(filePath, {"/VERYSILENT", "/RESTART"});
+                qApp->quit();
+            });
+
+            m_updater->downloadUpdate(url);
         } else if (msgBox.clickedButton() == skipBtn) {
             settings.setValue("Updates/SkippedVersion", version);
         }
@@ -74,7 +94,29 @@ MainWindow::MainWindow(QWidget *parent)
     setupCentralWidget();
     setupDockWidgets();
 
-    statusBar()->addPermanentWidget(new QLabel("v1.0.2 ")); // Add version to bottom right
+    // Initialize System Tray
+    m_trayIcon = new QSystemTrayIcon(QIcon(":/baudix_icon.svg"), this);
+    m_trayMenu = new QMenu(this);
+    
+    QAction* restoreAct = m_trayMenu->addAction("Show/Restore");
+    connect(restoreAct, &QAction::triggered, this, &MainWindow::showNormal);
+    
+    m_trayMenu->addSeparator();
+    
+    QAction* quitAct = m_trayMenu->addAction("Quit Baudix");
+    connect(quitAct, &QAction::triggered, qApp, &QCoreApplication::quit);
+    
+    m_trayIcon->setContextMenu(m_trayMenu);
+    m_trayIcon->show();
+
+    connect(m_trayIcon, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason){
+        if (reason == QSystemTrayIcon::DoubleClick) {
+            this->showNormal();
+            this->activateWindow();
+        }
+    });
+
+    statusBar()->addPermanentWidget(new QLabel("v1.1.0 ")); // Add version to bottom right
 
     // Connect controller signals
     connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
@@ -85,6 +127,44 @@ MainWindow::MainWindow(QWidget *parent)
         m_updater->checkForUpdates(true); // true = silent
     });
     connect(m_serialController, &SerialPortController::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    QSettings settings("hakanyz", "Baudix");
+    QString behavior = settings.value("System/CloseBehavior", "").toString();
+
+    if (behavior == "Tray") {
+        hide();
+        event->ignore();
+    } else if (behavior == "Exit") {
+        event->accept();
+    } else {
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle("Exit Baudix");
+        msgBox.setText("What do you want to do when closing the window?");
+        
+        QPushButton* trayBtn = msgBox.addButton("Minimize to Tray", QMessageBox::ActionRole);
+        QPushButton* exitBtn = msgBox.addButton("Exit Application", QMessageBox::DestructiveRole);
+        msgBox.addButton(QMessageBox::Cancel);
+
+        QCheckBox* rememberCb = new QCheckBox("Remember my choice (can be changed in Settings)", &msgBox);
+        msgBox.setCheckBox(rememberCb);
+
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == trayBtn) {
+            if (rememberCb->isChecked()) settings.setValue("System/CloseBehavior", "Tray");
+            hide();
+            event->ignore();
+            m_trayIcon->showMessage("Baudix", "Application is still running in the background.", QSystemTrayIcon::Information, 2000);
+        } else if (msgBox.clickedButton() == exitBtn) {
+            if (rememberCb->isChecked()) settings.setValue("System/CloseBehavior", "Exit");
+            event->accept();
+        } else {
+            event->ignore();
+        }
+    }
 }
 
 MainWindow::~MainWindow()
@@ -243,7 +323,7 @@ void MainWindow::setupDockWidgets()
     QPushButton* browseBtn = new QPushButton("Browse...");
     browseBtn->setObjectName("smallBtn");
     browseBtn->setToolTip("Choose save location");
-    connect(browseBtn, &QPushButton::clicked, this, [this](){
+    connect(browseBtn, &QPushButton::clicked, [this](){
         QString filename = QFileDialog::getSaveFileName(this, "Save Log File", m_logFilename->text(), "Text Files (*.txt)");
         if (!filename.isEmpty()) m_logFilename->setText(filename);
     });
@@ -567,7 +647,15 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.0.2<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.0<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+    });
+
+    QMenu *settingsMenu = menuBar()->addMenu("Settings");
+    QAction* closeBehaviorAct = settingsMenu->addAction("Reset Close Behavior...");
+    connect(closeBehaviorAct, &QAction::triggered, this, [this](){
+        QSettings settings("hakanyz", "Baudix");
+        settings.remove("System/CloseBehavior");
+        QMessageBox::information(this, "Settings Reset", "Your close behavior preference has been reset.\nYou will be prompted again next time you close the application.");
     });
 }
 
