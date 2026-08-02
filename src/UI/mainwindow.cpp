@@ -673,7 +673,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.2.5<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.2.6<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
