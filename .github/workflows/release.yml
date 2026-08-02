@@ -47,13 +47,13 @@ jobs:
         run: |
           if [ -f "build/Release/baudix.exe" ]; then
             windeployqt --release build/Release/baudix.exe
-            "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" installer.iss
+            "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" baudix_setup.iss
             cp Output/Baudix_Setup_v1.0.1.exe ${{ matrix.artifact }}
           elif [ -f "build/baudix.exe" ]; then
             windeployqt --release build/baudix.exe
             # Adjust installer.iss on the fly if path is different
-            sed -i 's|build\\Release|build|g' installer.iss
-            "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" installer.iss
+            sed -i 's|build\\Release|build|g' baudix_setup.iss
+            "C:/Program Files (x86)/Inno Setup 6/ISCC.exe" baudix_setup.iss
             cp Output/Baudix_Setup_v1.0.1.exe ${{ matrix.artifact }}
           else
             echo "Executable not found!"
