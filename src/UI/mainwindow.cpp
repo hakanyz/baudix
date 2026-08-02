@@ -52,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
         msgBox.setWindowTitle("Update Available");
         msgBox.setText(QString("A new version of Baudix (%1) is available!\n\nWould you like to download it now?").arg(version));
         
-        QPushButton *downloadBtn = msgBox.addButton("Download & Install", QMessageBox::AcceptRole);
+        QPushButton *downloadBtn = msgBox.addButton("Download && Install", QMessageBox::AcceptRole);
         QPushButton *remindBtn = msgBox.addButton("Remind Me Later", QMessageBox::RejectRole);
         QPushButton *skipBtn = msgBox.addButton("Skip This Version", QMessageBox::DestructiveRole);
         
@@ -115,6 +115,8 @@ MainWindow::MainWindow(QWidget *parent)
             this->activateWindow();
         }
     });
+
+    statusBar()->hide(); // Hide empty status bar space
 
     // Connect controller signals
     connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
@@ -607,9 +609,7 @@ void MainWindow::setupDockWidgets()
     QAction* exportAct = fileMenu->addAction("Export Terminal");
     exportAct->setShortcut(QKeySequence("Ctrl+S"));
     connect(exportAct, &QAction::triggered, this, &MainWindow::onExportTerminal);
-    QMenu* prefMenu = fileMenu->addMenu("Preferences");
-    
-    QAction* trayAct = prefMenu->addAction("Minimize to Tray on Close");
+    QAction* trayAct = fileMenu->addAction("Preferences: Minimize to Tray on Close");
     trayAct->setCheckable(true);
     QSettings settings("hakanyz", "Baudix");
     trayAct->setChecked(settings.value("System/CloseBehavior", "").toString() == "Tray");
@@ -655,7 +655,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.3<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.4<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
