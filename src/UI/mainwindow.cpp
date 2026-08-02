@@ -23,6 +23,7 @@
 #include <QSettings>
 #include <QTimer>
 #include <QDesktopServices>
+#include <QDialogButtonBox>
 #include <QProcess>
 #include <QUrl>
 
@@ -609,13 +610,38 @@ void MainWindow::setupDockWidgets()
     QAction* exportAct = fileMenu->addAction("Export Terminal");
     exportAct->setShortcut(QKeySequence("Ctrl+S"));
     connect(exportAct, &QAction::triggered, this, &MainWindow::onExportTerminal);
-    QAction* trayAct = fileMenu->addAction("Preferences: Minimize to Tray on Close");
-    trayAct->setCheckable(true);
-    QSettings settings("hakanyz", "Baudix");
-    trayAct->setChecked(settings.value("System/CloseBehavior", "").toString() == "Tray");
-    connect(trayAct, &QAction::toggled, this, [](bool checked){
-        QSettings s("hakanyz", "Baudix");
-        s.setValue("System/CloseBehavior", checked ? "Tray" : "Exit");
+    QAction* settingsAct = fileMenu->addAction("Settings...");
+    connect(settingsAct, &QAction::triggered, this, [this](){
+        QDialog dialog(this);
+        dialog.setWindowTitle("Application Settings");
+        dialog.setMinimumWidth(350);
+        
+        QVBoxLayout* layout = new QVBoxLayout(&dialog);
+        
+        QFormLayout* form = new QFormLayout();
+        QComboBox* behaviorCombo = new QComboBox(&dialog);
+        behaviorCombo->addItem("Ask me every time", "");
+        behaviorCombo->addItem("Minimize to Tray", "Tray");
+        behaviorCombo->addItem("Exit Application", "Exit");
+        
+        QSettings settings("hakanyz", "Baudix");
+        QString currentBehavior = settings.value("System/CloseBehavior", "").toString();
+        int idx = behaviorCombo->findData(currentBehavior);
+        if (idx >= 0) behaviorCombo->setCurrentIndex(idx);
+        
+        form->addRow("Close Behavior:", behaviorCombo);
+        layout->addLayout(form);
+        
+        layout->addSpacing(20);
+        
+        QDialogButtonBox* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Close, Qt::Horizontal, &dialog);
+        connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+        connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+        layout->addWidget(buttons);
+        
+        if (dialog.exec() == QDialog::Accepted) {
+            settings.setValue("System/CloseBehavior", behaviorCombo->currentData().toString());
+        }
     });
     
     fileMenu->addSeparator();
@@ -655,7 +681,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.4<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.5<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
