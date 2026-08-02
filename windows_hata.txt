@@ -1,5 +1,5 @@
 Run cmake --build build --config Release
-MSBuild version 18.8.2+ce25c0108 for .NET Framework
+MSBuild version 18.7.8+1ac568fee for .NET Framework
 
   1>Checking Build System
   Building Custom Rule D:/a/baudix/baudix/CMakeLists.txt
@@ -8,13 +8,7 @@ MSBuild version 18.8.2+ce25c0108 for .NET Framework
   1>Automatic RCC for resources/resources.qrc
   Building Custom Rule D:/a/baudix/baudix/CMakeLists.txt
   main.cpp
-D:\a\baudix\baudix\src\UI\mainwindow.h(113,16): error C2086: 'QLineEdit *MainWindow::m_searchBox': redefinition [D:\a\baudix\baudix\build\baudix.vcxproj]
-  (compiling source file '../src/main.cpp')
-  
   mainwindow.cpp
-D:\a\baudix\baudix\src\UI\mainwindow.h(113,16): error C2086: 'QLineEdit *MainWindow::m_searchBox': redefinition [D:\a\baudix\baudix\build\baudix.vcxproj]
-  (compiling source file '../src/UI/mainwindow.cpp')
-  
 D:\a\baudix\baudix\src\UI\mainwindow.cpp(641,50): error C2065: 'm_btnAscii': undeclared identifier [D:\a\baudix\baudix\build\baudix.vcxproj]
 D:\a\baudix\baudix\src\UI\mainwindow.cpp(644,48): error C2065: 'm_btnHex': undeclared identifier [D:\a\baudix\baudix\build\baudix.vcxproj]
 D:\a\baudix\baudix\src\UI\mainwindow.cpp(647,49): error C2065: 'm_btnBoth': undeclared identifier [D:\a\baudix\baudix\build\baudix.vcxproj]
@@ -22,8 +16,5 @@ D:\a\baudix\baudix\src\UI\mainwindow.cpp(647,49): error C2065: 'm_btnBoth': unde
   SerialPortController.cpp
   qrc_resources.cpp
   mocs_compilation_Release.cpp
-D:\a\baudix\baudix\src\UI\mainwindow.h(113,16): error C2086: 'QLineEdit *MainWindow::m_searchBox': redefinition [D:\a\baudix\baudix\build\baudix.vcxproj]
-  (compiling source file 'baudix_autogen/mocs_compilation_Release.cpp')
-  
   Generating Code...
 Error: Process completed with exit code 1.

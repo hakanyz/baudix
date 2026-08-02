@@ -638,13 +638,13 @@ void MainWindow::setupDockWidgets()
     
     QMenu *formatMenu = termMenu->addMenu("Format");
     QAction* formatAsciiAct = formatMenu->addAction("ASCII");
-    connect(formatAsciiAct, &QAction::triggered, m_btnAscii, &QPushButton::click);
+    connect(formatAsciiAct, &QAction::triggered, [this](){ m_viewModeCombo->setCurrentText("ASCII"); });
     
     QAction* formatHexAct = formatMenu->addAction("HEX");
-    connect(formatHexAct, &QAction::triggered, m_btnHex, &QPushButton::click);
+    connect(formatHexAct, &QAction::triggered, [this](){ m_viewModeCombo->setCurrentText("HEX"); });
     
     QAction* formatBothAct = formatMenu->addAction("Both");
-    connect(formatBothAct, &QAction::triggered, m_btnBoth, &QPushButton::click);
+    connect(formatBothAct, &QAction::triggered, [this](){ m_viewModeCombo->setCurrentText("Both"); });
 
     // --- Help Menu ---
     QMenu *helpMenu = menuBar()->addMenu("Help");
@@ -654,7 +654,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.2.1<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.2.2<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
