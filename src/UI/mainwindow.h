@@ -84,6 +84,10 @@ private:
     QCheckBox* m_cbHistoryOn;
     QPushButton* m_sendButton;
     QComboBox* m_sendAsCombo;
+    QPushButton* m_btnNone;
+    QPushButton* m_btnCR;
+    QPushButton* m_btnLF;
+    QPushButton* m_btnCRLF;
     QCheckBox* m_periodicSendCb;
     QSpinBox* m_periodicMsBox;
     QSpinBox* m_burstBox;

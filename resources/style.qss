@@ -139,6 +139,12 @@ QPushButton#iconBtn {
     font-size: 14px;
 }
 
+/* Small cute buttons (e.g. Line Endings) */
+QPushButton#smallBtn {
+    padding: 3px 8px;
+    font-size: 11px;
+}
+
 /* Connect / Disconnect Buttons in Connection Dock */
 QPushButton#connectBtn {
     background-color: #2c4a6e;

@@ -1,0 +1,31 @@
+C:\Users\hakan\OneDrive\Desktop\hakan_workspace\hakan\baudix\src\UI\mainwindow.cpp:287: error: 'QGroupBox' was not declared in this scope
+C:/Users/hakan/OneDrive/Desktop/hakan_workspace/hakan/baudix/src/UI/mainwindow.cpp: In member function 'void MainWindow::setupDockWidgets()':
+C:/Users/hakan/OneDrive/Desktop/hakan_workspace/hakan/baudix/src/UI/mainwindow.cpp:287:5: error: 'QGroupBox' was not declared in this scope
+  287 |     QGroupBox* hlGroup = new QGroupBox("Highlight Rules");
+      |     ^~~~~~~~~
+C:\Users\hakan\OneDrive\Desktop\hakan_workspace\hakan\baudix\src\UI\mainwindow.cpp:287: error: 'hlGroup' was not declared in this scope
+C:/Users/hakan/OneDrive/Desktop/hakan_workspace/hakan/baudix/src/UI/mainwindow.cpp:287:16: error: 'hlGroup' was not declared in this scope
+  287 |     QGroupBox* hlGroup = new QGroupBox("Highlight Rules");
+      |                ^~~~~~~
+C:\Users\hakan\OneDrive\Desktop\hakan_workspace\hakan\baudix\src\UI\mainwindow.cpp:287: error: expected type-specifier before 'QGroupBox'
+C:/Users/hakan/OneDrive/Desktop/hakan_workspace/hakan/baudix/src/UI/mainwindow.cpp:287:30: error: expected type-specifier before 'QGroupBox'
+  287 |     QGroupBox* hlGroup = new QGroupBox("Highlight Rules");
+      |                              ^~~~~~~~~
+C:\Users\hakan\OneDrive\Desktop\hakan_workspace\hakan\baudix\src\UI\mainwindow.cpp:300: error: 'macroGroup' was not declared in this scope; did you mean 'QActionGroup'?
+C:/Users/hakan/OneDrive/Desktop/hakan_workspace/hakan/baudix/src/UI/mainwindow.cpp:300:16: error: 'macroGroup' was not declared in this scope; did you mean 'QActionGroup'?
+  300 |     QGroupBox* macroGroup = new QGroupBox("Macros");
+      |                ^~~~~~~~~~
+      |                QActionGroup
+C:\Users\hakan\OneDrive\Desktop\hakan_workspace\hakan\baudix\src\UI\mainwindow.cpp:300: error: expected type-specifier before 'QGroupBox'
+C:/Users/hakan/OneDrive/Desktop/hakan_workspace/hakan/baudix/src/UI/mainwindow.cpp:300:33: error: expected type-specifier before 'QGroupBox'
+  300 |     QGroupBox* macroGroup = new QGroupBox("Macros");
+      |                                 ^~~~~~~~~
+C:\Users\hakan\OneDrive\Desktop\hakan_workspace\hakan\baudix\src\UI\mainwindow.cpp:342: error: 'searchGroup' was not declared in this scope
+C:/Users/hakan/OneDrive/Desktop/hakan_workspace/hakan/baudix/src/UI/mainwindow.cpp:342:16: error: 'searchGroup' was not declared in this scope
+  342 |     QGroupBox* searchGroup = new QGroupBox("Search Terminal");
+      |                ^~~~~~~~~~~
+C:\Users\hakan\OneDrive\Desktop\hakan_workspace\hakan\baudix\src\UI\mainwindow.cpp:342: error: expected type-specifier before 'QGroupBox'
+C:/Users/hakan/OneDrive/Desktop/hakan_workspace/hakan/baudix/src/UI/mainwindow.cpp:342:34: error: expected type-specifier before 'QGroupBox'
+  342 |     QGroupBox* searchGroup = new QGroupBox("Search Terminal");
+      |                                  ^~~~~~~~~
+:-1: error: ninja: build stopped: subcommand failed.

@@ -4,6 +4,7 @@
 #include <QVBoxLayout>
 #include <QFormLayout>
 #include <QComboBox>
+#include <QRadioButton>
 #include <QPushButton>
 #include <QLineEdit>
 #include <QCheckBox>
@@ -119,7 +120,7 @@ void MainWindow::setupDockWidgets()
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
 
     // Common features for all docks: No Close Button
-    QDockWidget::DockWidgetFeatures dockFeatures = QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable;
+    QDockWidget::DockWidgetFeatures dockFeatures = QDockWidget::DockWidgetMovable;
 
     // --- Connection Dock ---
     QDockWidget *connDock = new QDockWidget("Connection", this);
@@ -288,6 +289,38 @@ void MainWindow::setupDockWidgets()
     
     // Bottom Row: Periodic Send
     QHBoxLayout *bottomLayout = new QHBoxLayout();
+    
+    bottomLayout->addWidget(new QLabel("Append:"));
+    m_btnNone = new QPushButton("None");
+    m_btnNone->setCheckable(true);
+    m_btnNone->setObjectName("smallBtn");
+    
+    m_btnCR = new QPushButton("CR");
+    m_btnCR->setCheckable(true);
+    m_btnCR->setObjectName("smallBtn");
+    
+    m_btnLF = new QPushButton("LF");
+    m_btnLF->setCheckable(true);
+    m_btnLF->setObjectName("smallBtn");
+    
+    m_btnCRLF = new QPushButton("CRLF");
+    m_btnCRLF->setCheckable(true);
+    m_btnCRLF->setObjectName("smallBtn");
+    
+    m_btnNone->setChecked(true); // Default
+
+    // Exclusivity logic
+    connect(m_btnNone, &QPushButton::clicked, [this](){ m_btnCR->setChecked(false); m_btnLF->setChecked(false); m_btnCRLF->setChecked(false); m_btnNone->setChecked(true); });
+    connect(m_btnCR, &QPushButton::clicked, [this](){ m_btnNone->setChecked(false); m_btnLF->setChecked(false); m_btnCRLF->setChecked(false); m_btnCR->setChecked(true); });
+    connect(m_btnLF, &QPushButton::clicked, [this](){ m_btnNone->setChecked(false); m_btnCR->setChecked(false); m_btnCRLF->setChecked(false); m_btnLF->setChecked(true); });
+    connect(m_btnCRLF, &QPushButton::clicked, [this](){ m_btnNone->setChecked(false); m_btnCR->setChecked(false); m_btnLF->setChecked(false); m_btnCRLF->setChecked(true); });
+
+    bottomLayout->addWidget(m_btnNone);
+    bottomLayout->addWidget(m_btnCR);
+    bottomLayout->addWidget(m_btnLF);
+    bottomLayout->addWidget(m_btnCRLF);
+    
+    bottomLayout->addSpacing(15);
     
     m_periodicSendCb = new QCheckBox("Periodic Send");
     m_periodicSendCb->setToolTip("Automatically send the input at a fixed interval");
@@ -574,6 +607,10 @@ void MainWindow::performSend(const QString& text)
         // ASCII mode: send as plain UTF-8
         data = text.toUtf8();
     }
+    
+    if (m_btnCR->isChecked()) data.append('\r');
+    else if (m_btnLF->isChecked()) data.append('\n');
+    else if (m_btnCRLF->isChecked()) { data.append('\r'); data.append('\n'); }
 
     if (data.isEmpty()) return;
 
