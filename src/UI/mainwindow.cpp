@@ -147,7 +147,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
         
         QPushButton* trayBtn = msgBox.addButton("Minimize to Tray", QMessageBox::ActionRole);
         QPushButton* exitBtn = msgBox.addButton("Exit Application", QMessageBox::DestructiveRole);
-        msgBox.addButton(QMessageBox::Cancel);
+        QPushButton* cancelBtn = msgBox.addButton(QMessageBox::Cancel);
+        cancelBtn->hide();
 
         QCheckBox* rememberCb = new QCheckBox("Remember my choice (can be changed in Settings)", &msgBox);
         msgBox.setCheckBox(rememberCb);
@@ -681,7 +682,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.5<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.6<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
