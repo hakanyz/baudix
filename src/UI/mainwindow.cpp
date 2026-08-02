@@ -244,6 +244,13 @@ void MainWindow::setupCentralWidget()
     m_terminalOutput = new QTextEdit();
     m_terminalOutput->setObjectName("terminalOutput");
     m_terminalOutput->setReadOnly(true);
+    
+    QSettings settings("hakanyz", "Baudix");
+    int bufferLimit = settings.value("System/BufferLimit", 5000).toInt();
+    if (bufferLimit > 0) {
+        m_terminalOutput->document()->setMaximumBlockCount(bufferLimit);
+    }
+    
     tabLayout->addWidget(m_terminalOutput);
     
     tabWidget->addTab(terminalTab, "Terminal");
@@ -592,6 +599,7 @@ void MainWindow::setupDockWidgets()
         QVBoxLayout* layout = new QVBoxLayout(&dialog);
         
         QFormLayout* form = new QFormLayout();
+        
         QComboBox* behaviorCombo = new QComboBox(&dialog);
         behaviorCombo->addItem("Ask me every time", "");
         behaviorCombo->addItem("Minimize to Tray", "Tray");
@@ -601,8 +609,19 @@ void MainWindow::setupDockWidgets()
         QString currentBehavior = settings.value("System/CloseBehavior", "").toString();
         int idx = behaviorCombo->findData(currentBehavior);
         if (idx >= 0) behaviorCombo->setCurrentIndex(idx);
-        
         form->addRow("Close Behavior:", behaviorCombo);
+        
+        QComboBox* bufferCombo = new QComboBox(&dialog);
+        bufferCombo->addItem("5,000 Lines", 5000);
+        bufferCombo->addItem("10,000 Lines", 10000);
+        bufferCombo->addItem("50,000 Lines", 50000);
+        bufferCombo->addItem("Unlimited", 0);
+        
+        int currentLimit = settings.value("System/BufferLimit", 5000).toInt();
+        int bufIdx = bufferCombo->findData(currentLimit);
+        if (bufIdx >= 0) bufferCombo->setCurrentIndex(bufIdx);
+        form->addRow("Terminal Buffer Limit:", bufferCombo);
+        
         layout->addLayout(form);
         
         layout->addSpacing(20);
@@ -614,6 +633,15 @@ void MainWindow::setupDockWidgets()
         
         if (dialog.exec() == QDialog::Accepted) {
             settings.setValue("System/CloseBehavior", behaviorCombo->currentData().toString());
+            int newLimit = bufferCombo->currentData().toInt();
+            settings.setValue("System/BufferLimit", newLimit);
+            
+            // Apply immediately to the live terminal
+            if (newLimit > 0) {
+                m_terminalOutput->document()->setMaximumBlockCount(newLimit);
+            } else {
+                m_terminalOutput->document()->setMaximumBlockCount(0); // unlimited
+            }
         }
     });
     
@@ -654,7 +682,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.2.2<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.2.3<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
@@ -709,14 +737,16 @@ void MainWindow::appendToTerminal(const QString& prefix, const QByteArray& data,
         }
     }
 
-    // Prepare HEX
+    // Prepare HEX (Optimization: Preallocate memory to save CPU cycles)
     QString hexStr;
+    hexStr.reserve(data.size() * 5);
     for (char c : data) {
         hexStr += QString("0x%1 ").arg((quint8)c, 2, 16, QChar('0')).toUpper();
     }
     
     // Prepare ASCII (filter non-printables)
     QString asciiStr;
+    asciiStr.reserve(data.size() * 4); // <CR> and <LF> take up to 4 chars
     for (char c : data) {
         if (c >= 32 && c <= 126) {
             asciiStr += c;

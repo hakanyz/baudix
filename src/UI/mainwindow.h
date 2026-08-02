@@ -11,9 +11,13 @@
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QListWidget>
-#include <QTabWidget>
+#include <QIcon>
 #include <QSystemTrayIcon>
 #include <QMenu>
+#include <QApplication>
+#include <QSettings>
+#include <QInputDialog>
+#include <QTabWidget>
 #include <QCloseEvent>
 #include <QProgressDialog>
 #include <QTimer>
