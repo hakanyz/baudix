@@ -58,6 +58,7 @@ private slots:
     void onMacroVerClicked();
     void onSearchTextChanged(const QString &text);
     void onToggleLogging(bool checked);
+    void onSendFileClicked();
 
 private:
     Ui::MainWindow *ui;
@@ -84,9 +85,9 @@ private:
     QComboBox* m_portCombo;
     QComboBox* m_baudCombo;
     QComboBox* m_dataBitsCombo;
-    QComboBox* m_stopBitsCombo;
-    QComboBox* m_parityCombo;
-    QComboBox* m_flowControlCombo;
+    QComboBox *m_stopBitsCombo;
+    QComboBox *m_parityCombo;
+    QComboBox *m_flowControlCombo;
     QCheckBox* m_autoRecCb;
 
     // Terminal View Settings

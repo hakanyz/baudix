@@ -391,49 +391,59 @@ void MainWindow::setupDockWidgets()
     sendWidget->setObjectName("dockContent");
     QVBoxLayout *sendLayout = new QVBoxLayout(sendWidget);
     
-    // Top Row: Input (History Combo) + History Controls + Format + Send
+    // Top Row: Input only
     QHBoxLayout *inputLayout = new QHBoxLayout();
-    inputLayout->addWidget(new QLabel("Input"));
-    
     m_inputCombo = new QComboBox();
     m_inputCombo->setEditable(true);
+    m_inputCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes (e.g. AA BB CC)");
     m_inputCombo->addItem(""); // Default empty
-    // Enter sends the command
     connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &MainWindow::onSendClicked);
     inputLayout->addWidget(m_inputCombo, 1);
+    sendLayout->addLayout(inputLayout);
     
-    // History Clear Button
+    // Middle Row: Action Tools
+    QHBoxLayout *actionLayout = new QHBoxLayout();
+    
+    QPushButton* btnSendFile = new QPushButton("📁 Send File");
+    btnSendFile->setObjectName("smallBtn");
+    connect(btnSendFile, &QPushButton::clicked, this, &MainWindow::onSendFileClicked);
+    actionLayout->addWidget(btnSendFile);
+    
+    m_cbHistoryOn = new QCheckBox("Save History");
+    m_cbHistoryOn->setChecked(true);
+    actionLayout->addWidget(m_cbHistoryOn);
+    
     QPushButton* btnClearHistory = new QPushButton("Clear History");
     btnClearHistory->setObjectName("smallBtn");
     connect(btnClearHistory, &QPushButton::clicked, [this](){
         m_inputCombo->clear();
         m_inputCombo->addItem("");
     });
-    inputLayout->addWidget(btnClearHistory);
+    actionLayout->addWidget(btnClearHistory);
     
-    inputLayout->addWidget(new QLabel("Append:"));
+    actionLayout->addWidget(new QLabel("Append:"));
     m_appendCombo = new QComboBox();
     m_appendCombo->addItems({"None", "CR", "LF", "CRLF"});
-    inputLayout->addWidget(m_appendCombo);
+    actionLayout->addWidget(m_appendCombo);
     
-    // Single format selector
+    actionLayout->addWidget(new QLabel("Format:"));
     m_sendAsCombo = new QComboBox();
     m_sendAsCombo->addItems({"ASCII", "HEX"});
     m_sendAsCombo->setToolTip("ASCII: send as plain text\nHEX: parse as hex bytes");
-    inputLayout->addWidget(m_sendAsCombo);
+    actionLayout->addWidget(m_sendAsCombo);
+    
+    actionLayout->addStretch();
     
     m_sendButton = new QPushButton("Send");
     m_sendButton->setObjectName("sendButton");
     connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendClicked);
-    inputLayout->addWidget(m_sendButton);
+    actionLayout->addWidget(m_sendButton);
     
-    sendLayout->addLayout(inputLayout);
+    sendLayout->addLayout(actionLayout);
     
     // Bottom Row: Periodic Send
     QHBoxLayout *bottomLayout = new QHBoxLayout();
-    
-    // We moved Append up, so bottom layout is just for Periodic Send now.
     
     m_periodicSendCb = new QCheckBox("Periodic Send");
     m_periodicSendCb->setToolTip("Automatically send the input at a fixed interval");
@@ -442,21 +452,22 @@ void MainWindow::setupDockWidgets()
     bottomLayout->addWidget(m_periodicSendCb);
     
     m_periodicMsBox = new QSpinBox();
-    m_periodicMsBox->setRange(1, 10000);
+    m_periodicMsBox->setRange(1, 100000);
     m_periodicMsBox->setValue(100);
     m_periodicMsBox->setSuffix(" ms");
+    m_periodicMsBox->setFixedWidth(80);
     m_periodicMsBox->setToolTip("Interval between sends");
     bottomLayout->addWidget(m_periodicMsBox);
     
     bottomLayout->addWidget(new QLabel("Burst:"));
     m_burstBox = new QSpinBox();
-    m_burstBox->setRange(1, 100);
+    m_burstBox->setRange(1, 1000);
     m_burstBox->setValue(1);
+    m_burstBox->setFixedWidth(60);
     m_burstBox->setToolTip("How many times to send per interval");
     bottomLayout->addWidget(m_burstBox);
     
     bottomLayout->addStretch();
-    
     sendLayout->addLayout(bottomLayout);
     
     sendWidget->setLayout(sendLayout);
@@ -815,8 +826,10 @@ void MainWindow::onSendClicked()
     
     m_inputCombo->lineEdit()->selectAll();
     
-    if (m_inputCombo->findText(text) == -1) {
-        m_inputCombo->insertItem(1, text);
+    if (m_cbHistoryOn->isChecked()) {
+        if (m_inputCombo->findText(text) == -1) {
+            m_inputCombo->insertItem(1, text);
+        }
     }
 }
 
@@ -963,3 +976,31 @@ void MainWindow::onConnectionStateChanged(bool isOpen, const QString& errorMsg)
         }
     }
 }
+
+void MainWindow::onSendFileClicked()
+{
+    if (!m_serialController->isOpen()) {
+        QMessageBox::warning(this, "Not Connected", "Please connect to a serial port first.");
+        return;
+    }
+
+    QString filename = QFileDialog::getOpenFileName(this, "Select File to Send", "", "All Files (*.*)");
+    if (filename.isEmpty()) return;
+
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, "Error", "Could not open the selected file.");
+        return;
+    }
+
+    QByteArray fileData = file.readAll();
+    file.close();
+
+    if (m_serialController->writeData(fileData)) {
+        appendToTerminal(QString("> TX FILE: %1 (%2 bytes)").arg(QFileInfo(filename).fileName()).arg(fileData.size()), "", "#61afef");
+    } else {
+        QMessageBox::critical(this, "Error", "Failed to send file data.");
+    }
+}
+
+} // end of file
