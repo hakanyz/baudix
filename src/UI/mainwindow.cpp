@@ -1002,4 +1002,3 @@ void MainWindow::onSendFileClicked()
         QMessageBox::critical(this, "Error", "Failed to send file data.");
     }
 }
-}
