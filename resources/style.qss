@@ -3,7 +3,7 @@ QWidget {
     background-color: #282c34;
     color: #abb2bf;
     font-family: "Segoe UI", "Helvetica Neue", sans-serif;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 QLabel, QCheckBox, QRadioButton {
