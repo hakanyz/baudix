@@ -12,6 +12,7 @@
 #include <QCheckBox>
 #include <QListWidget>
 #include <QTabWidget>
+#include <QWidgetAction>
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QCloseEvent>

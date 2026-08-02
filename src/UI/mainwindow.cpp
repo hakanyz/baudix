@@ -52,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
         msgBox.setWindowTitle("Update Available");
         msgBox.setText(QString("A new version of Baudix (%1) is available!\n\nWould you like to download it now?").arg(version));
         
-        QPushButton *downloadBtn = msgBox.addButton("Download", QMessageBox::AcceptRole);
+        QPushButton *downloadBtn = msgBox.addButton("Download & Install", QMessageBox::AcceptRole);
         QPushButton *remindBtn = msgBox.addButton("Remind Me Later", QMessageBox::RejectRole);
         QPushButton *skipBtn = msgBox.addButton("Skip This Version", QMessageBox::DestructiveRole);
         
@@ -74,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
             connect(m_updater, &Updater::downloadFinished, this, [this](const QString& filePath){
                 m_downloadProgressDialog->close();
                 m_downloadProgressDialog->deleteLater();
-                QProcess::startDetached(filePath, {"/VERYSILENT", "/RESTART"});
+                QProcess::startDetached(filePath, {"/SILENT", "/RESTART"});
                 qApp->quit();
             });
 
@@ -608,14 +608,18 @@ void MainWindow::setupDockWidgets()
     exportAct->setShortcut(QKeySequence("Ctrl+S"));
     connect(exportAct, &QAction::triggered, this, &MainWindow::onExportTerminal);
     QMenu* prefMenu = fileMenu->addMenu("Preferences");
-    QAction* trayAct = prefMenu->addAction("Minimize to Tray on Close");
-    trayAct->setCheckable(true);
+    
+    QWidgetAction* trayAction = new QWidgetAction(this);
+    QCheckBox* trayCb = new QCheckBox("Minimize to Tray on Close", prefMenu);
+    trayCb->setStyleSheet("margin-left: 5px; margin-right: 5px;");
     QSettings settings("hakanyz", "Baudix");
-    trayAct->setChecked(settings.value("System/CloseBehavior", "").toString() == "Tray");
-    connect(trayAct, &QAction::toggled, this, [](bool checked){
+    trayCb->setChecked(settings.value("System/CloseBehavior", "").toString() == "Tray");
+    connect(trayCb, &QCheckBox::toggled, this, [](bool checked){
         QSettings s("hakanyz", "Baudix");
         s.setValue("System/CloseBehavior", checked ? "Tray" : "Exit");
     });
+    trayAction->setDefaultWidget(trayCb);
+    prefMenu->addAction(trayAction);
     
     fileMenu->addSeparator();
     
@@ -654,7 +658,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.1<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.2<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
