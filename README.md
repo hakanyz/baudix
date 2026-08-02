@@ -6,7 +6,7 @@
   [![Build Status](https://img.shields.io/github/actions/workflow/status/hakanyz/baudix/build.yml?branch=master)](https://github.com/hakanyz/baudix/actions)
   [![C++ Standard](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
   [![Framework](https://img.shields.io/badge/Qt-6.5+-41CD52.svg)](https://www.qt.io/)
-  [![License](https://img.shields.io/badge/License-GPL%203.0-green.svg)](LICENSE)
+  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 </div>
 
 <br>
@@ -69,4 +69,4 @@ Contributions are welcome. Please ensure that UI modifications adhere to the est
 
 ## License
 
-This project is licensed under the GPL-3.0 License - Copyright (c) 2026 Hakan (hakanyz). See the LICENSE file for details.
+This project is licensed under the MIT License - Copyright (c) 2026 Hakan (hakanyz). See the LICENSE file for details.
