@@ -20,6 +20,10 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QGroupBox>
+#include <QSettings>
+#include <QTimer>
+#include <QDesktopServices>
+#include <QUrl>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -34,8 +38,31 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Setup Updater first so it can be connected in menus
     m_updater = new Updater(this);
-    connect(m_updater, &Updater::updateAvailable, this, [this](const QString& version, const QString& url){
-        QMessageBox::information(this, "Update Available", QString("Baudix %1 is available!\n\nDownload at:\n%2").arg(version, url));
+    connect(m_updater, &Updater::updateAvailable, this, [this](const QString& version, const QString& url, bool isSilent){
+        QSettings settings("hakanyz", "Baudix");
+        QString skippedVersion = settings.value("Updates/SkippedVersion", "").toString();
+        
+        // If this is a silent check on startup and the user previously skipped this exact version, ignore it.
+        if (isSilent && version == skippedVersion) {
+            return;
+        }
+
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle("Update Available");
+        msgBox.setText(QString("A new version of Baudix (%1) is available!\n\nWould you like to download it now?").arg(version));
+        
+        QPushButton *downloadBtn = msgBox.addButton("Download", QMessageBox::AcceptRole);
+        QPushButton *remindBtn = msgBox.addButton("Remind Me Later", QMessageBox::RejectRole);
+        QPushButton *skipBtn = msgBox.addButton("Skip This Version", QMessageBox::DestructiveRole);
+        
+        msgBox.exec();
+        
+        if (msgBox.clickedButton() == downloadBtn) {
+            QDesktopServices::openUrl(QUrl(url));
+        } else if (msgBox.clickedButton() == skipBtn) {
+            settings.setValue("Updates/SkippedVersion", version);
+        }
+        // "Remind Me Later" does nothing, it will just ask again next time.
     });
     connect(m_updater, &Updater::noUpdateAvailable, this, [this](){
         QMessageBox::information(this, "Up to Date", "You are using the latest version of Baudix.");
@@ -51,6 +78,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Connect controller signals
     connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
+    connect(m_serialController, &SerialPortController::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
+    
+    // Automatically check for updates silently 2 seconds after startup
+    QTimer::singleShot(2000, this, [this](){
+        m_updater->checkForUpdates(true); // true = silent
+    });
     connect(m_serialController, &SerialPortController::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
 }
 

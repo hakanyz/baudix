@@ -12,10 +12,12 @@ Updater::Updater(QObject *parent) : QObject(parent)
     connect(networkManager, &QNetworkAccessManager::finished, this, &Updater::onReplyFinished);
 }
 
-void Updater::checkForUpdates()
+void Updater::checkForUpdates(bool silent)
 {
+    m_isSilent = silent;
     QString apiUrl = QString("https://api.github.com/repos/%1/%2/releases/latest").arg(repoOwner, repoName);
-    QNetworkRequest request((QUrl(apiUrl)));
+    QUrl url(apiUrl);
+    QNetworkRequest request(url);
     
     // GitHub API requires a User-Agent header
     request.setRawHeader("User-Agent", "Baudix-Updater");
@@ -27,7 +29,9 @@ void Updater::checkForUpdates()
 void Updater::onReplyFinished(QNetworkReply *reply)
 {
     if (reply->error() != QNetworkReply::NoError) {
-        emit errorOccurred(reply->errorString());
+        if (!m_isSilent) {
+            emit errorOccurred(reply->errorString());
+        }
         reply->deleteLater();
         return;
     }
@@ -56,12 +60,16 @@ void Updater::onReplyFinished(QNetworkReply *reply)
         };
 
         if (isNewer(latestVersion, currentVersion)) {
-            emit updateAvailable(latestVersion, htmlUrl);
+            emit updateAvailable(latestVersion, htmlUrl, m_isSilent);
         } else {
-            emit noUpdateAvailable();
+            if (!m_isSilent) {
+                emit noUpdateAvailable();
+            }
         }
     } else {
-        emit errorOccurred("Invalid JSON response from GitHub API.");
+        if (!m_isSilent) {
+            emit errorOccurred("Invalid JSON response from GitHub API.");
+        }
     }
     
     reply->deleteLater();
