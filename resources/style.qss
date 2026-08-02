@@ -77,7 +77,7 @@ QComboBox QAbstractItemView {
 QPushButton {
     background-color: #3e4451;
     border: 1px solid #282c34;
-    border-radius: 5px;
+    border-radius: 12px;
     padding: 6px 14px;
     color: #abb2bf;
     font-weight: normal;
@@ -110,6 +110,7 @@ QPushButton#sendButton {
     border: 1px solid #61afef;
     color: #61afef;
     font-weight: bold;
+    border-radius: 12px;
 }
 
 QPushButton#sendButton:hover {
@@ -124,25 +125,34 @@ QPushButton#sendButton:pressed {
 
 /* Clear Terminal Button */
 QPushButton#clearTerminalBtn {
-    background-color: transparent;
-    border: 1px solid #e06c75;
+    background-color: #3e4451;
+    border: 1px solid #282c34;
     color: #e06c75;
+    padding: 3px 10px;
+    font-size: 11px;
+    border-radius: 10px;
 }
 QPushButton#clearTerminalBtn:hover {
     background-color: #e06c75;
-    color: #282c34;
+    border: 1px solid #c85a63;
+    color: #ffffff;
+}
+QPushButton#clearTerminalBtn:pressed {
+    background-color: #be5058;
 }
 
 /* Small icon buttons (e.g. Search Next/Prev) */
 QPushButton#iconBtn {
-    padding: 2px 0px;
+    padding: 2px 6px;
     font-size: 14px;
+    border-radius: 6px;
 }
 
 /* Small cute buttons (e.g. Line Endings) */
 QPushButton#smallBtn {
-    padding: 3px 8px;
+    padding: 3px 10px;
     font-size: 11px;
+    border-radius: 10px;
 }
 
 /* Connect / Disconnect Buttons in Connection Dock */
@@ -151,7 +161,7 @@ QPushButton#connectBtn {
     border: 1px solid #61afef;
     color: #61afef;
     font-weight: bold;
-    border-radius: 4px;
+    border-radius: 12px;
     padding: 6px 10px;
 }
 QPushButton#connectBtn:hover {
@@ -164,7 +174,7 @@ QPushButton#disconnectBtn {
     border: 1px solid #e06c75;
     color: #e06c75;
     font-weight: bold;
-    border-radius: 4px;
+    border-radius: 12px;
     padding: 6px 10px;
 }
 QPushButton#disconnectBtn:hover {

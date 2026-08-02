@@ -65,16 +65,21 @@ void MainWindow::setupCentralWidget()
     m_timestampCb = new QPushButton("Timestamp");
     m_timestampCb->setCheckable(true);
     m_timestampCb->setChecked(true);
-    // No objectName - uses same blue :checked style as ASCII/HEX/Both buttons
+    m_timestampCb->setObjectName("smallBtn");
     topBar->addWidget(m_timestampCb);
     
     m_btnAscii = new QPushButton("ASCII");
     m_btnAscii->setCheckable(true);
     m_btnAscii->setChecked(true); // Default
+    m_btnAscii->setObjectName("smallBtn");
+    
     m_btnHex = new QPushButton("HEX");
     m_btnHex->setCheckable(true);
+    m_btnHex->setObjectName("smallBtn");
+    
     m_btnBoth = new QPushButton("Both");
     m_btnBoth->setCheckable(true);
+    m_btnBoth->setObjectName("smallBtn");
     
     connect(m_btnAscii, &QPushButton::clicked, [this](){ m_btnHex->setChecked(false); m_btnBoth->setChecked(false); });
     connect(m_btnHex, &QPushButton::clicked, [this](){ m_btnAscii->setChecked(false); m_btnBoth->setChecked(false); });
@@ -84,7 +89,6 @@ void MainWindow::setupCentralWidget()
     topBar->addWidget(m_btnHex);
     topBar->addWidget(m_btnBoth);
     
-    topBar->addSpacing(15);
     QPushButton* clearBtn = new QPushButton("Clear");
     clearBtn->setObjectName("clearTerminalBtn");
     connect(clearBtn, &QPushButton::clicked, this, &MainWindow::onClearTerminalClicked);
@@ -193,6 +197,7 @@ void MainWindow::setupDockWidgets()
     fileLayout->addWidget(m_logFilename);
 
     QPushButton* browseBtn = new QPushButton("Browse...");
+    browseBtn->setObjectName("smallBtn");
     browseBtn->setToolTip("Choose save location");
     connect(browseBtn, &QPushButton::clicked, this, [this](){
         QString filename = QFileDialog::getSaveFileName(this, "Save Log File", m_logFilename->text(), "Text Files (*.txt)");
@@ -267,7 +272,7 @@ void MainWindow::setupDockWidgets()
     inputLayout->addWidget(m_cbHistoryOn);
     
     QPushButton* btnClearHistory = new QPushButton("Clear");
-    btnClearHistory->setObjectName("iconBtn"); // keep it small
+    btnClearHistory->setObjectName("smallBtn");
     connect(btnClearHistory, &QPushButton::clicked, [this](){
         m_inputCombo->clear();
         m_inputCombo->addItem("");
@@ -410,6 +415,7 @@ void MainWindow::setupDockWidgets()
     macroOps->setSpacing(4);
     
     QPushButton* btnAddMacro = new QPushButton("+ Add");
+    btnAddMacro->setObjectName("smallBtn");
     connect(btnAddMacro, &QPushButton::clicked, [this](){
         QListWidgetItem* newItem = new QListWidgetItem("");
         newItem->setFlags(newItem->flags() | Qt::ItemIsEditable);
@@ -420,6 +426,7 @@ void MainWindow::setupDockWidgets()
     macroOps->addWidget(btnAddMacro);
     
     QPushButton* btnRemoveMacro = new QPushButton("- Remove");
+    btnRemoveMacro->setObjectName("smallBtn");
     connect(btnRemoveMacro, &QPushButton::clicked, [this](){
         QListWidgetItem* sel = m_macrosList->currentItem();
         if (sel) delete sel;
@@ -548,8 +555,15 @@ void MainWindow::appendToTerminal(const QString& prefix, const QByteArray& data,
     // Prepare ASCII (filter non-printables)
     QString asciiStr;
     for (char c : data) {
-        if (c >= 32 && c <= 126) asciiStr += c;
-        else asciiStr += ".";
+        if (c >= 32 && c <= 126) {
+            asciiStr += c;
+        } else if (c == '\r') {
+            asciiStr += "<CR>";
+        } else if (c == '\n') {
+            asciiStr += "<LF>";
+        } else {
+            asciiStr += ".";
+        }
     }
 
     QString finalDataStr = "";
