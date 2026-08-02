@@ -43,9 +43,19 @@ jobs:
 
       - name: Package Windows
         if: matrix.os == 'windows-latest'
+        shell: bash
         run: |
-          windeployqt --release build\Release\baudix.exe
-          Compress-Archive -Path build\Release\* -DestinationPath ${{ matrix.artifact }}
+          if [ -f "build/Release/baudix.exe" ]; then
+            windeployqt --release build/Release/baudix.exe
+            7z a ${{ matrix.artifact }} ./build/Release/*
+          elif [ -f "build/baudix.exe" ]; then
+            windeployqt --release build/baudix.exe
+            7z a ${{ matrix.artifact }} ./build/*
+          else
+            echo "Executable not found!"
+            find build -name "baudix.exe"
+            exit 1
+          fi
 
       - name: Package Linux
         if: matrix.os == 'ubuntu-latest'
