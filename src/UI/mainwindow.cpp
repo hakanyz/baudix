@@ -116,8 +116,6 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
-    statusBar()->addPermanentWidget(new QLabel("v1.1.0 ")); // Add version to bottom right
-
     // Connect controller signals
     connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
     connect(m_serialController, &SerialPortController::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
@@ -609,6 +607,15 @@ void MainWindow::setupDockWidgets()
     QAction* exportAct = fileMenu->addAction("Export Terminal");
     exportAct->setShortcut(QKeySequence("Ctrl+S"));
     connect(exportAct, &QAction::triggered, this, &MainWindow::onExportTerminal);
+    QMenu* prefMenu = fileMenu->addMenu("Preferences");
+    QAction* trayAct = prefMenu->addAction("Minimize to Tray on Close");
+    trayAct->setCheckable(true);
+    QSettings settings("hakanyz", "Baudix");
+    trayAct->setChecked(settings.value("System/CloseBehavior", "").toString() == "Tray");
+    connect(trayAct, &QAction::toggled, this, [](bool checked){
+        QSettings s("hakanyz", "Baudix");
+        s.setValue("System/CloseBehavior", checked ? "Tray" : "Exit");
+    });
     
     fileMenu->addSeparator();
     
@@ -647,15 +654,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.0<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
-    });
-
-    QMenu *settingsMenu = menuBar()->addMenu("Settings");
-    QAction* closeBehaviorAct = settingsMenu->addAction("Reset Close Behavior...");
-    connect(closeBehaviorAct, &QAction::triggered, this, [this](){
-        QSettings settings("hakanyz", "Baudix");
-        settings.remove("System/CloseBehavior");
-        QMessageBox::information(this, "Settings Reset", "Your close behavior preference has been reset.\nYou will be prompted again next time you close the application.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.1<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
