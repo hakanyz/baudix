@@ -17,6 +17,7 @@
 #include <QFile>
 #include <QTextStream>
 #include "../Communication/SerialPortController.h"
+#include "../Core/Updater.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -36,6 +37,7 @@ private slots:
     void onConnectionStateChanged(bool isOpen, const QString& errorMsg);
     void onSendClicked();
     void onClearTerminalClicked();
+    void onExportTerminal();
     
     // Core Feature Slots
     void onPeriodicSendToggled(bool checked);
@@ -57,6 +59,7 @@ private:
 
     // Core Controller
     SerialPortController* m_serialController;
+    Updater* m_updater;
     QTimer* m_periodicTimer;
 
     // --- UI Elements ---

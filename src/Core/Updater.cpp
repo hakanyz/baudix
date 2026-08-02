@@ -40,7 +40,22 @@ void Updater::onReplyFinished(QNetworkReply *reply)
         QString latestVersion = jsonObj["tag_name"].toString();
         QString htmlUrl = jsonObj["html_url"].toString();
         
-        if (latestVersion > currentVersion) {
+        // Semantic version comparison (handles cases like v1.0.2 vs v1.0.10)
+        auto isNewer = [](const QString& latest, const QString& current) {
+            QString l = latest; l.remove('v');
+            QString c = current; c.remove('v');
+            QStringList lParts = l.split('.');
+            QStringList cParts = c.split('.');
+            for (int i = 0; i < std::max(lParts.size(), cParts.size()); ++i) {
+                int lPart = i < lParts.size() ? lParts[i].toInt() : 0;
+                int cPart = i < cParts.size() ? cParts[i].toInt() : 0;
+                if (lPart > cPart) return true;
+                if (lPart < cPart) return false;
+            }
+            return false;
+        };
+
+        if (isNewer(latestVersion, currentVersion)) {
             emit updateAvailable(latestVersion, htmlUrl);
         } else {
             emit noUpdateAvailable();

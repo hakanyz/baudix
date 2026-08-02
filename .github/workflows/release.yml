@@ -1,0 +1,56 @@
+name: Release Baudix
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: baudix-windows.zip
+          - os: ubuntu-latest
+            artifact: baudix-linux.zip
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.5.3'
+
+      - name: Install Linux Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y build-essential libgl1-mesa-dev
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Project
+        run: cmake --build build --config Release
+
+      - name: Package Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          windeployqt --release build\Release\baudix.exe
+          Compress-Archive -Path build\Release\* -DestinationPath ${{ matrix.artifact }}
+
+      - name: Package Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          zip -j ${{ matrix.artifact }} build/baudix
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ matrix.artifact }}

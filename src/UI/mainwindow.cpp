@@ -32,11 +32,22 @@ MainWindow::MainWindow(QWidget *parent)
     m_logFile = nullptr;
     m_logStream = nullptr;
 
+    // Setup Updater first so it can be connected in menus
+    m_updater = new Updater(this);
+    connect(m_updater, &Updater::updateAvailable, this, [this](const QString& version, const QString& url){
+        QMessageBox::information(this, "Update Available", QString("Baudix %1 is available!\n\nDownload at:\n%2").arg(version, url));
+    });
+    connect(m_updater, &Updater::noUpdateAvailable, this, [this](){
+        QMessageBox::information(this, "Up to Date", "You are using the latest version of Baudix.");
+    });
+    connect(m_updater, &Updater::errorOccurred, this, [this](const QString& errorMsg){
+        QMessageBox::warning(this, "Update Error", "Failed to check for updates:\n" + errorMsg);
+    });
+
     setupCentralWidget();
     setupDockWidgets();
 
-    menuBar()->hide(); // Remove the top View menu bar
-    statusBar()->addPermanentWidget(new QLabel("v1.0.1 ")); // Add version to bottom right
+    statusBar()->addPermanentWidget(new QLabel("v1.0.0 ")); // Add version to bottom right
 
     // Connect controller signals
     connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
@@ -229,18 +240,7 @@ void MainWindow::setupDockWidgets()
 
     QPushButton* btnExportTxt = new QPushButton("📥 Save All");
     btnExportTxt->setMinimumHeight(28);
-    connect(btnExportTxt, &QPushButton::clicked, [this](){
-        QString filename = QFileDialog::getSaveFileName(this, "Save Terminal Buffer", "terminal_export.txt", "Text Files (*.txt)");
-        if (!filename.isEmpty()) {
-            if (!filename.endsWith(".txt", Qt::CaseInsensitive)) filename += ".txt";
-            QFile file(filename);
-            if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                QTextStream out(&file);
-                out << m_terminalOutput->toPlainText();
-                file.close();
-            }
-        }
-    });
+    connect(btnExportTxt, &QPushButton::clicked, this, &MainWindow::onExportTerminal);
     logLayout->addRow(btnExportTxt);
 
     logWidget->setLayout(logLayout);
@@ -486,13 +486,56 @@ void MainWindow::setupDockWidgets()
     toolsDock->setWidget(toolsWidget);
     addDockWidget(Qt::RightDockWidgetArea, toolsDock);
 
-    // --- View Menu for Docks ---
-    QMenu *viewMenu = menuBar()->addMenu("View");
-    viewMenu->addAction(connDock->toggleViewAction());
-    viewMenu->addAction(logDock->toggleViewAction());
-    viewMenu->addAction(sendDock->toggleViewAction());
-    viewMenu->addAction(toolsDock->toggleViewAction());
+    // --- File Menu ---
+    QMenu *fileMenu = menuBar()->addMenu("File");
+    
+    QAction* toggleLogAct = fileMenu->addAction("Start/Stop Logging");
+    toggleLogAct->setShortcut(QKeySequence("Ctrl+R"));
+    connect(toggleLogAct, &QAction::triggered, m_btnLog, &QPushButton::click);
+    
+    QAction* exportAct = fileMenu->addAction("Export Terminal");
+    exportAct->setShortcut(QKeySequence("Ctrl+S"));
+    connect(exportAct, &QAction::triggered, this, &MainWindow::onExportTerminal);
+    
+    fileMenu->addSeparator();
+    
+    QAction* exitAct = fileMenu->addAction("Exit");
+    exitAct->setShortcut(QKeySequence("Ctrl+Q"));
+    connect(exitAct, &QAction::triggered, this, &QWidget::close);
 
+    // --- Terminal Menu ---
+    QMenu *termMenu = menuBar()->addMenu("Terminal");
+    
+    QAction* clearAct = termMenu->addAction("Clear Screen");
+    clearAct->setShortcut(QKeySequence("Ctrl+L"));
+    connect(clearAct, &QAction::triggered, this, &MainWindow::onClearTerminalClicked);
+    
+    termMenu->addSeparator();
+    
+    QAction* toggleTimeAct = termMenu->addAction("Toggle Timestamps");
+    toggleTimeAct->setShortcut(QKeySequence("Ctrl+T"));
+    connect(toggleTimeAct, &QAction::triggered, m_timestampCb, &QPushButton::click);
+    
+    QMenu *formatMenu = termMenu->addMenu("Format");
+    QAction* formatAsciiAct = formatMenu->addAction("ASCII");
+    connect(formatAsciiAct, &QAction::triggered, m_btnAscii, &QPushButton::click);
+    
+    QAction* formatHexAct = formatMenu->addAction("HEX");
+    connect(formatHexAct, &QAction::triggered, m_btnHex, &QPushButton::click);
+    
+    QAction* formatBothAct = formatMenu->addAction("Both");
+    connect(formatBothAct, &QAction::triggered, m_btnBoth, &QPushButton::click);
+
+    // --- Help Menu ---
+    QMenu *helpMenu = menuBar()->addMenu("Help");
+    
+    QAction* checkUpdateAct = helpMenu->addAction("Check for Updates");
+    connect(checkUpdateAct, &QAction::triggered, m_updater, &Updater::checkForUpdates);
+    
+    QAction* aboutAct = helpMenu->addAction("About Baudix");
+    connect(aboutAct, &QAction::triggered, [this](){
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.0.0<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+    });
 }
 
 void MainWindow::refreshPorts()
@@ -699,6 +742,20 @@ void MainWindow::onClearTerminalClicked()
 {
     if (m_terminalOutput) {
         m_terminalOutput->clear();
+    }
+}
+
+void MainWindow::onExportTerminal()
+{
+    QString filename = QFileDialog::getSaveFileName(this, "Save Terminal Buffer", "terminal_export.txt", "Text Files (*.txt)");
+    if (!filename.isEmpty()) {
+        if (!filename.endsWith(".txt", Qt::CaseInsensitive)) filename += ".txt";
+        QFile file(filename);
+        if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QTextStream out(&file);
+            out << m_terminalOutput->toPlainText();
+            file.close();
+        }
     }
 }
 
