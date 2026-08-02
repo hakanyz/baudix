@@ -75,6 +75,7 @@ MainWindow::MainWindow(QWidget *parent)
             connect(m_updater, &Updater::downloadFinished, this, [this](const QString& filePath){
                 m_downloadProgressDialog->close();
                 m_downloadProgressDialog->deleteLater();
+                m_isUpdating = true; // Bypass exit dialog
                 QProcess::startDetached(filePath, {"/SILENT", "/RESTART"});
                 qApp->quit();
             });
@@ -132,6 +133,11 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    if (m_isUpdating) {
+        event->accept();
+        return;
+    }
+
     QSettings settings("hakanyz", "Baudix");
     QString behavior = settings.value("System/CloseBehavior", "").toString();
 
@@ -682,7 +688,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.7<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.1.8<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 

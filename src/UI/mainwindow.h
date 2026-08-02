@@ -68,6 +68,7 @@ private:
     SerialPortController* m_serialController;
     Updater* m_updater;
     QTimer* m_periodicTimer;
+    bool m_isUpdating = false;
 
     // --- UI Elements ---
     QPushButton* m_btnConnect;
