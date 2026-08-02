@@ -403,18 +403,19 @@ void MainWindow::setupDockWidgets()
     connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &MainWindow::onSendClicked);
     inputLayout->addWidget(m_inputCombo, 1);
     
-    m_cbHistoryOn = new QCheckBox("ON");
-    m_cbHistoryOn->setChecked(true);
-    m_cbHistoryOn->setToolTip("Save sent commands to history");
-    inputLayout->addWidget(m_cbHistoryOn);
-    
-    QPushButton* btnClearHistory = new QPushButton("Clear");
+    // History Clear Button
+    QPushButton* btnClearHistory = new QPushButton("Clear History");
     btnClearHistory->setObjectName("smallBtn");
     connect(btnClearHistory, &QPushButton::clicked, [this](){
         m_inputCombo->clear();
         m_inputCombo->addItem("");
     });
     inputLayout->addWidget(btnClearHistory);
+    
+    inputLayout->addWidget(new QLabel("Append:"));
+    m_appendCombo = new QComboBox();
+    m_appendCombo->addItems({"None", "CR", "LF", "CRLF"});
+    inputLayout->addWidget(m_appendCombo);
     
     // Single format selector
     m_sendAsCombo = new QComboBox();
@@ -432,13 +433,7 @@ void MainWindow::setupDockWidgets()
     // Bottom Row: Periodic Send
     QHBoxLayout *bottomLayout = new QHBoxLayout();
     
-    bottomLayout->addWidget(new QLabel("Append:"));
-    
-    m_appendCombo = new QComboBox();
-    m_appendCombo->addItems({"None", "CR", "LF", "CRLF"});
-    bottomLayout->addWidget(m_appendCombo);
-    
-    bottomLayout->addSpacing(15);
+    // We moved Append up, so bottom layout is just for Periodic Send now.
     
     m_periodicSendCb = new QCheckBox("Periodic Send");
     m_periodicSendCb->setToolTip("Automatically send the input at a fixed interval");
@@ -461,13 +456,6 @@ void MainWindow::setupDockWidgets()
     bottomLayout->addWidget(m_burstBox);
     
     bottomLayout->addStretch();
-    
-    // Add Send Button to the far right of the bottom row to save space
-    m_sendButton = new QPushButton("Send");
-    m_sendButton->setObjectName("sendButton");
-    m_sendButton->setMinimumWidth(120);
-    connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendClicked);
-    bottomLayout->addWidget(m_sendButton);
     
     sendLayout->addLayout(bottomLayout);
     
@@ -673,7 +661,7 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.2.6<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.2.7<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
     });
 }
 
@@ -827,10 +815,8 @@ void MainWindow::onSendClicked()
     
     m_inputCombo->lineEdit()->selectAll();
     
-    if (m_cbHistoryOn->isChecked()) {
-        if (m_inputCombo->findText(text) == -1) {
-            m_inputCombo->insertItem(1, text);
-        }
+    if (m_inputCombo->findText(text) == -1) {
+        m_inputCombo->insertItem(1, text);
     }
 }
 

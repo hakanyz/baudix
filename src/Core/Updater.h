@@ -31,7 +31,7 @@ private:
     QNetworkAccessManager *networkManager;
     const QString repoOwner = "hakanyz";
     const QString repoName = "baudix";
-    const QString currentVersion = "v1.2.6";
+    const QString currentVersion = "v1.2.7";
     bool m_isSilent = false;
     QNetworkReply* m_downloadReply = nullptr;
     QFile* m_downloadFile = nullptr;
