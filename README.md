@@ -1,7 +1,7 @@
 <div align="center">
   <img src="resources/baudix_icon.svg" width="120" height="120" alt="Baudix Logo">
   <h1>Baudix</h1>
-  <p><b>Serial Terminal & Modbus Utility for Embedded Systems</b></p>
+  <p><b>Professional Serial Terminal for Embedded Systems</b></p>
   
   [![Build Status](https://img.shields.io/github/actions/workflow/status/hakanyz/baudix/build.yml?branch=master)](https://github.com/hakanyz/baudix/actions)
   [![C++ Standard](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
