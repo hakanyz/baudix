@@ -110,7 +110,6 @@ private:
     QLineEdit* m_hlHeader;
     QLineEdit* m_hlPayload;
     QListWidget* m_macrosList;
-    QLineEdit* m_searchBox;
 
     // Tray and Updater UI
     QSystemTrayIcon* m_trayIcon;

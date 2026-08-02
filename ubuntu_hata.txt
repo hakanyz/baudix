@@ -1,0 +1,18 @@
+Run cmake --build build --config Release
+[  0%] Built target baudix_autogen_timestamp_deps
+[ 10%] Automatic MOC and UIC for target baudix
+[ 10%] Built target baudix_autogen
+[ 20%] Automatic RCC for resources/resources.qrc
+[ 30%] Building CXX object CMakeFiles/baudix.dir/baudix_autogen/mocs_compilation.cpp.o
+In file included from /home/runner/work/baudix/baudix/build/baudix_autogen/WAYUIA5GRM/moc_mainwindow.cpp:9,
+                 from /home/runner/work/baudix/baudix/build/baudix_autogen/mocs_compilation.cpp:4:
+/home/runner/work/baudix/baudix/build/baudix_autogen/WAYUIA5GRM/../../../src/UI/mainwindow.h:113:16: error: redeclaration of ‘QLineEdit* MainWindow::m_searchBox’
+  113 |     QLineEdit* m_searchBox;
+      |                ^~~~~~~~~~~
+/home/runner/work/baudix/baudix/build/baudix_autogen/WAYUIA5GRM/../../../src/UI/mainwindow.h:91:16: note: previous declaration ‘QLineEdit* MainWindow::m_searchBox’
+   91 |     QLineEdit* m_searchBox;
+      |                ^~~~~~~~~~~
+gmake[2]: *** [CMakeFiles/baudix.dir/build.make:96: CMakeFiles/baudix.dir/baudix_autogen/mocs_compilation.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/baudix.dir/all] Error 2
+gmake: *** [Makefile:136: all] Error 2
+Error: Process completed with exit code 2.
