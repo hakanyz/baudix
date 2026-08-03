@@ -165,8 +165,9 @@ QPushButton#connectBtn {
     border: 1px solid #61afef;
     color: #61afef;
     font-weight: bold;
+    font-size: 11px;
     border-radius: 12px;
-    padding: 6px 10px;
+    padding: 4px 10px;
 }
 QPushButton#connectBtn:hover {
     background-color: #3a5f8a;
@@ -178,12 +179,13 @@ QPushButton#disconnectBtn {
     border: 1px solid #e06c75;
     color: #e06c75;
     font-weight: bold;
+    font-size: 11px;
     border-radius: 12px;
-    padding: 6px 10px;
+    padding: 4px 10px;
 }
 QPushButton#disconnectBtn:hover {
     background-color: #e06c75;
-    color: #282c34;
+    color: #ffffff;
 }
 
 /* Standard Checkbox */

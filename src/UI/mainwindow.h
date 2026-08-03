@@ -89,7 +89,6 @@ private:
     QComboBox *m_stopBitsCombo;
     QComboBox *m_parityCombo;
     QComboBox *m_flowControlCombo;
-    QCheckBox* m_autoRecCb;
 
     // Terminal View Settings
     QPushButton* m_timestampCb;

@@ -257,7 +257,7 @@ void MainWindow::setupCentralWidget()
     
     topBar->addSpacing(20); // Separate from search controls
     
-    QPushButton* clearBtn = new QPushButton("🗑 Clear Screen");
+    QPushButton* clearBtn = new QPushButton("Clear Screen");
     clearBtn->setObjectName("clearTerminalBtn");
     connect(clearBtn, &QPushButton::clicked, this, &MainWindow::onClearTerminalClicked);
     topBar->addWidget(clearBtn);
@@ -274,6 +274,12 @@ void MainWindow::setupCentralWidget()
     if (bufferLimit > 0) {
         m_terminalOutput->document()->setMaximumBlockCount(bufferLimit);
     }
+    
+    // Apply saved terminal font size
+    int termFontSize = settings.value("UI/TerminalFontSize", 11).toInt();
+    QFont termFont = m_terminalOutput->font();
+    termFont.setPointSize(termFontSize);
+    m_terminalOutput->setFont(termFont);
     
     tabLayout->addWidget(m_terminalOutput);
     
@@ -442,21 +448,13 @@ void MainWindow::setupDockWidgets()
     
     connLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
 
-    // Put Auto Reconnect and Connect buttons in a single row
-    QHBoxLayout* actionLayout = new QHBoxLayout();
-    
-    m_autoRecCb = new QCheckBox("Auto Reconnect");
-    m_autoRecCb->setChecked(true);
-    // Uses iOS Style Checkbox from QSS
-    actionLayout->addWidget(m_autoRecCb);
-    
+    // Full-width Connect / Disconnect Action Button
     m_btnConnect = new QPushButton("Connect");
     m_btnConnect->setObjectName("connectBtn");
     m_btnConnect->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_btnConnect->setFixedHeight(26);
     connect(m_btnConnect, &QPushButton::clicked, this, &MainWindow::onToggleConnectClicked);
-    actionLayout->addWidget(m_btnConnect);
-
-    connLayout->addRow(actionLayout);
+    connLayout->addRow(m_btnConnect);
 
     connWidget->setLayout(connLayout);
     connDock->setWidget(connWidget);
@@ -649,6 +647,21 @@ void MainWindow::setupDockWidgets()
         if (bufIdx >= 0) bufferCombo->setCurrentIndex(bufIdx);
         form->addRow("Terminal Buffer Limit:", bufferCombo);
         
+        QComboBox* fontSizeCombo = new QComboBox(&dialog);
+        fontSizeCombo->addItem("8 pt", 8);
+        fontSizeCombo->addItem("9 pt", 9);
+        fontSizeCombo->addItem("10 pt", 10);
+        fontSizeCombo->addItem("11 pt (Default)", 11);
+        fontSizeCombo->addItem("12 pt", 12);
+        fontSizeCombo->addItem("13 pt", 13);
+        fontSizeCombo->addItem("14 pt", 14);
+        fontSizeCombo->addItem("16 pt", 16);
+        
+        int currentFontSize = settings.value("UI/TerminalFontSize", 11).toInt();
+        int fontIdx = fontSizeCombo->findData(currentFontSize);
+        if (fontIdx >= 0) fontSizeCombo->setCurrentIndex(fontIdx);
+        form->addRow("Terminal Font Size:", fontSizeCombo);
+        
         layout->addLayout(form);
         
         layout->addSpacing(20);
@@ -663,12 +676,19 @@ void MainWindow::setupDockWidgets()
             int newLimit = bufferCombo->currentData().toInt();
             settings.setValue("System/BufferLimit", newLimit);
             
-            // Apply immediately to the live terminal
+            // Apply buffer limit immediately to the live terminal
             if (newLimit > 0) {
                 m_terminalOutput->document()->setMaximumBlockCount(newLimit);
             } else {
                 m_terminalOutput->document()->setMaximumBlockCount(0); // unlimited
             }
+            
+            // Apply terminal font size immediately (only to terminal output)
+            int newFontSize = fontSizeCombo->currentData().toInt();
+            settings.setValue("UI/TerminalFontSize", newFontSize);
+            QFont termFont = m_terminalOutput->font();
+            termFont.setPointSize(newFontSize);
+            m_terminalOutput->setFont(termFont);
         }
     });
     
