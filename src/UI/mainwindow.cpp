@@ -289,6 +289,7 @@ void MainWindow::setupCentralWidget()
     QHBoxLayout *inputLayout = new QHBoxLayout();
     m_inputCombo = new QComboBox();
     m_inputCombo->setEditable(true);
+    m_inputCombo->setInsertPolicy(QComboBox::NoInsert);
     m_inputCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes (e.g. AA BB CC)");
     m_inputCombo->addItem(""); // Default empty
