@@ -31,7 +31,12 @@ private:
     QNetworkAccessManager *networkManager;
     const QString repoOwner = "hakanyz";
     const QString repoName = "baudix";
-    const QString currentVersion = "v1.2.10";
+
+#ifndef BAUDIX_VERSION_STR
+#define BAUDIX_VERSION_STR "1.2.12"
+#endif
+
+    const QString currentVersion = "v" BAUDIX_VERSION_STR;
     bool m_isSilent = false;
     QNetworkReply* m_downloadReply = nullptr;
     QFile* m_downloadFile = nullptr;

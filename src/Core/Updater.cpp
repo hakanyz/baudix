@@ -44,16 +44,23 @@ void Updater::onReplyFinished(QNetworkReply *reply)
         QJsonObject jsonObj = jsonDoc.object();
         QString latestVersion = jsonObj["tag_name"].toString();
         
-        // Find the Windows installer asset
+        // Find the installer asset for current platform
         QString downloadUrl = jsonObj["html_url"].toString(); // fallback
         QJsonArray assets = jsonObj["assets"].toArray();
         for (const QJsonValue& val : assets) {
             QJsonObject asset = val.toObject();
             QString name = asset["name"].toString();
+#ifdef Q_OS_WIN
             if (name.endsWith(".exe", Qt::CaseInsensitive)) {
                 downloadUrl = asset["browser_download_url"].toString();
                 break;
             }
+#else
+            if (name.endsWith(".deb", Qt::CaseInsensitive)) {
+                downloadUrl = asset["browser_download_url"].toString();
+                break;
+            }
+#endif
         }
         
         // Semantic version comparison (handles cases like v1.0.2 vs v1.0.10)
@@ -99,7 +106,11 @@ void Updater::downloadUpdate(const QString& downloadUrl)
         delete m_downloadFile;
     }
 
+#ifdef Q_OS_WIN
     m_downloadFilePath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/Baudix_Update.exe";
+#else
+    m_downloadFilePath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/Baudix_Update.deb";
+#endif
     m_downloadFile = new QFile(m_downloadFilePath);
     if (!m_downloadFile->open(QIODevice::WriteOnly)) {
         emit errorOccurred("Could not open temp file for writing.");

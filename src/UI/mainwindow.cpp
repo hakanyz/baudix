@@ -18,6 +18,8 @@
 #include <QMenuBar>
 #include <QMenu>
 #include <QFileDialog>
+#include <QDesktopServices>
+#include <QUrl>
 #include <QInputDialog>
 #include <QGroupBox>
 #include <QSettings>
@@ -76,7 +78,11 @@ MainWindow::MainWindow(QWidget *parent)
                 m_downloadProgressDialog->close();
                 m_downloadProgressDialog->deleteLater();
                 m_isUpdating = true; // Bypass exit dialog
+#ifdef Q_OS_WIN
                 QProcess::startDetached(filePath, {"/SILENT", "/RESTART"});
+#else
+                QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
+#endif
                 qApp->quit();
             });
 
