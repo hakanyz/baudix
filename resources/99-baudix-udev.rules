@@ -1,0 +1,3 @@
+# Baudix Serial Terminal - Grant non-root access to USB-to-Serial devices (FTDI, CH340, CP210x, CDC-ACM)
+SUBSYSTEM=="tty", KERNEL=="ttyUSB[0-9]*", MODE="0666"
+SUBSYSTEM=="tty", KERNEL=="ttyACM[0-9]*", MODE="0666"

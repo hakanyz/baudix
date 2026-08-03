@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(baudix VERSION 1.2.7 LANGUAGES CXX)
+project(baudix VERSION 1.2.11 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -85,6 +85,9 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     install(FILES resources/baudix_icon.svg
         DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps
         RENAME baudix.svg
+    )
+    install(FILES resources/99-baudix-udev.rules
+        DESTINATION /lib/udev/rules.d
     )
 endif()
 
