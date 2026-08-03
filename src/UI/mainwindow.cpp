@@ -315,6 +315,8 @@ void MainWindow::setupCentralWidget()
     connect(m_cbHistoryOn, &QCheckBox::toggled, this, [this](bool checked) {
         if (!checked) {
             m_inputCombo->setStyleSheet("QComboBox::drop-down { border: none; width: 0px; }");
+            m_inputCombo->clear();
+            m_inputCombo->addItem("");
         } else {
             m_inputCombo->setStyleSheet("");
         }
@@ -893,7 +895,7 @@ void MainWindow::onSendClicked()
 
     performSend(text);
     
-    m_inputCombo->lineEdit()->selectAll();
+    m_inputCombo->setEditText("");
     
     if (m_cbHistoryOn->isChecked()) {
         if (m_inputCombo->findText(text) == -1) {
