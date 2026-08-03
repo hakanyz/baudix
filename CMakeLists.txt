@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(baudix VERSION 1.2.12 LANGUAGES CXX)
+project(baudix VERSION 1.2.13 LANGUAGES CXX)
 
 add_compile_definitions(BAUDIX_VERSION_STR="${PROJECT_VERSION}")
 
@@ -106,5 +106,6 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Professional Serial Terminal for Embedded Systems")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "hakanyz")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6core6, libqt6gui6, libqt6widgets6, libqt6serialport6, libqt6network6")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/scripts/postinst")
     include(CPack)
 endif()
