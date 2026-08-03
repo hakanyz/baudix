@@ -134,7 +134,15 @@ MainWindow::MainWindow(QWidget *parent)
     QTimer::singleShot(2000, this, [this](){
         m_updater->checkForUpdates(true); // true = silent
     });
-    connect(m_serialController, &SerialPortController::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
+
+    // Auto-scan COM ports every 2 seconds when disconnected so USB hotplug is detected automatically
+    QTimer *portCheckTimer = new QTimer(this);
+    connect(portCheckTimer, &QTimer::timeout, this, [this](){
+        if (m_serialController && !m_serialController->isOpen()) {
+            refreshPorts();
+        }
+    });
+    portCheckTimer->start(2000);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -179,6 +187,14 @@ void MainWindow::closeEvent(QCloseEvent *event)
             event->ignore();
         }
     }
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_portCombo && (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick)) {
+        refreshPorts();
+    }
+    return QMainWindow::eventFilter(watched, event);
 }
 
 MainWindow::~MainWindow()
@@ -392,9 +408,22 @@ void MainWindow::setupDockWidgets()
     connWidget->setObjectName("dockContent");
     QFormLayout *connLayout = new QFormLayout(connWidget);
     
+    QHBoxLayout *portLayout = new QHBoxLayout();
     m_portCombo = new QComboBox();
+    m_portCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_portCombo->installEventFilter(this);
     refreshPorts();
-    connLayout->addRow("COM Port", m_portCombo);
+
+    QPushButton *btnRefreshPort = new QPushButton("🔄");
+    btnRefreshPort->setObjectName("iconBtn");
+    btnRefreshPort->setFixedWidth(28);
+    btnRefreshPort->setToolTip("Refresh COM Ports");
+    connect(btnRefreshPort, &QPushButton::clicked, this, &MainWindow::refreshPorts);
+
+    portLayout->addWidget(m_portCombo);
+    portLayout->addWidget(btnRefreshPort);
+
+    connLayout->addRow("COM Port", portLayout);
     
     m_baudCombo = new QComboBox();
     m_baudCombo->addItems({"9600", "19200", "38400", "57600", "115200", "921600"});
@@ -690,14 +719,28 @@ void MainWindow::setupDockWidgets()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", "<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: 1.2.10<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.");
+        QMessageBox::about(this, "About Baudix", QString("<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: %1<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.").arg(BAUDIX_VERSION_STR));
     });
 }
 
 void MainWindow::refreshPorts()
 {
-    m_portCombo->clear();
-    m_portCombo->addItems(m_serialController->getAvailablePorts());
+    QString current = m_portCombo->currentText();
+    QStringList newPorts = m_serialController->getAvailablePorts();
+
+    QStringList existingPorts;
+    for (int i = 0; i < m_portCombo->count(); ++i) {
+        existingPorts << m_portCombo->itemText(i);
+    }
+
+    if (existingPorts != newPorts) {
+        m_portCombo->clear();
+        m_portCombo->addItems(newPorts);
+        int idx = m_portCombo->findText(current);
+        if (idx >= 0) {
+            m_portCombo->setCurrentIndex(idx);
+        }
+    }
 }
 
 void MainWindow::onToggleConnectClicked()
