@@ -160,6 +160,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         event->ignore();
     } else if (behavior == "Exit") {
         event->accept();
+        qApp->quit();
     } else {
         QMessageBox msgBox(this);
         msgBox.setWindowTitle("Exit Baudix");
@@ -183,6 +184,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         } else if (msgBox.clickedButton() == exitBtn) {
             if (rememberCb->isChecked()) settings.setValue("System/CloseBehavior", "Exit");
             event->accept();
+            qApp->quit();
         } else {
             event->ignore();
         }
@@ -408,22 +410,10 @@ void MainWindow::setupDockWidgets()
     connWidget->setObjectName("dockContent");
     QFormLayout *connLayout = new QFormLayout(connWidget);
     
-    QHBoxLayout *portLayout = new QHBoxLayout();
     m_portCombo = new QComboBox();
-    m_portCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_portCombo->installEventFilter(this);
     refreshPorts();
-
-    QPushButton *btnRefreshPort = new QPushButton("🔄");
-    btnRefreshPort->setObjectName("iconBtn");
-    btnRefreshPort->setFixedWidth(28);
-    btnRefreshPort->setToolTip("Refresh COM Ports");
-    connect(btnRefreshPort, &QPushButton::clicked, this, &MainWindow::refreshPorts);
-
-    portLayout->addWidget(m_portCombo);
-    portLayout->addWidget(btnRefreshPort);
-
-    connLayout->addRow("COM Port", portLayout);
+    connLayout->addRow("COM Port", m_portCombo);
     
     m_baudCombo = new QComboBox();
     m_baudCombo->addItems({"9600", "19200", "38400", "57600", "115200", "921600"});
