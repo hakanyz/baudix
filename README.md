@@ -62,6 +62,22 @@ The core architecture relies on Qt's signal-slot mechanism to keep the main thre
    ```
 3. The executable will be generated in the `build/` (or `build/Release/`) directory.
 
+## Linux Installation & USB Port Permissions
+
+### 1. Installing the `.deb` package
+On Debian/Ubuntu-based distributions:
+```bash
+sudo apt install ./baudix-*.deb
+```
+This installs the binary, application launcher, and desktop icon.
+
+### 2. USB / Serial Port Permissions (`dialout` group)
+On Linux, USB serial devices (`/dev/ttyUSB*`, `/dev/ttyACM*`) require membership in the `dialout` group:
+```bash
+sudo usermod -aG dialout $USER
+```
+> **Note:** Log out and log back in (or restart) for the permission changes to take effect.
+
 ## Contributing
 
 Contributions are welcome. Please ensure that UI modifications adhere to the established Baudix Dark Theme guidelines.

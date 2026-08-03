@@ -74,6 +74,20 @@ install(TARGETS baudix
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    install(FILES resources/baudix.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+    )
+    install(FILES resources/baudix_icon.svg
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps
+        RENAME baudix.svg
+    )
+    install(FILES resources/baudix_icon.svg
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/pixmaps
+        RENAME baudix.svg
+    )
+endif()
+
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(baudix)
 endif()
