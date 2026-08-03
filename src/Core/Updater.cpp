@@ -20,8 +20,9 @@ void Updater::checkForUpdates(bool silent)
     QUrl url(apiUrl);
     QNetworkRequest request(url);
     
-    // GitHub API requires a User-Agent header
+    // GitHub API requires a User-Agent header and handles redirects
     request.setRawHeader("User-Agent", "Baudix-Updater");
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
     
     networkManager->get(request);
     qDebug() << "Checking for updates at:" << apiUrl;
