@@ -113,8 +113,7 @@ private:
     QTextStream* m_logStream;
 
     // Tools Dock
-    QLineEdit* m_hlHeader;
-    QLineEdit* m_hlPayload;
+    QLineEdit* m_hlFilter;
     QListWidget* m_macrosList;
 
     // Tray and Updater UI

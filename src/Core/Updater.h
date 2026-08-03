@@ -33,7 +33,7 @@ private:
     const QString repoName = "baudix";
 
 #ifndef BAUDIX_VERSION_STR
-#define BAUDIX_VERSION_STR "1.2.16"
+#define BAUDIX_VERSION_STR "1.2.17"
 #endif
 
     const QString currentVersion = "v" BAUDIX_VERSION_STR;

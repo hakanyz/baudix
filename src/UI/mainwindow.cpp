@@ -521,18 +521,15 @@ void MainWindow::setupDockWidgets()
     toolsLayout->setSpacing(8);
     toolsLayout->setContentsMargins(8, 8, 8, 8);
 
-    // --- Highlight Rules ---
-    QLabel* hlTitle = new QLabel("Highlight Rules");
+    // --- Highlight Filter ---
+    QLabel* hlTitle = new QLabel("Highlight Filter");
     hlTitle->setStyleSheet("color: #abb2bf; font-weight: bold;");
     toolsLayout->addWidget(hlTitle);
 
-    QFormLayout* highlightLayout = new QFormLayout();
-    highlightLayout->setSpacing(4);
-    m_hlHeader = new QLineEdit("0xAA");
-    highlightLayout->addRow("Header", m_hlHeader);
-    m_hlPayload = new QLineEdit("0xCC");
-    highlightLayout->addRow("Payload", m_hlPayload);
-    toolsLayout->addLayout(highlightLayout);
+    m_hlFilter = new QLineEdit();
+    m_hlFilter->setPlaceholderText("e.g. ERROR, OK, or 0xAA");
+    m_hlFilter->setToolTip("Highlight lines matching ASCII text or HEX bytes automatically");
+    toolsLayout->addWidget(m_hlFilter);
 
     toolsLayout->addSpacing(8);
 
@@ -762,20 +759,40 @@ void MainWindow::appendToTerminal(const QString& prefix, const QByteArray& data,
                        .arg(QDateTime::currentDateTime().toString("hh:mm:ss.zzz"));
     }
 
-    // Check Highlight Rules
-    QString headerRule = m_hlHeader->text().trimmed();
-    QString payloadRule = m_hlPayload->text().trimmed();
-    
+    // Check Highlight Filter (Supports both ASCII text & HEX bytes)
+    QString filterRule = m_hlFilter->text().trimmed();
     QString finalColor = color;
     QString bgColor = "transparent";
 
-    // Very basic highlight logic: if data starts with the header byte
-    if (!headerRule.isEmpty() && data.size() > 0) {
-        bool ok;
-        int headerByte = headerRule.toInt(&ok, 16); // e.g. "0xAA" -> 170
-        if (ok && (quint8)data.at(0) == (quint8)headerByte) {
-            bgColor = "#3e4452"; // Highlight background slightly
-            finalColor = "#e5c07b"; // Highlight text yellow
+    if (!filterRule.isEmpty()) {
+        bool isMatch = false;
+
+        // 1. ASCII Match (case-insensitive search in data)
+        if (QString::fromUtf8(data).contains(filterRule, Qt::CaseInsensitive)) {
+            isMatch = true;
+        }
+
+        // 2. HEX Match (parse filter as HEX bytes e.g. "0xAA", "AA", "AA BB")
+        if (!isMatch) {
+            QString cleanHex = filterRule;
+            cleanHex.replace("0x", "", Qt::CaseInsensitive);
+            cleanHex.remove(QRegularExpression("[^0-9a-fA-F]"));
+            if (!cleanHex.isEmpty() && cleanHex.length() % 2 == 0) {
+                QByteArray hexBytes;
+                for (int i = 0; i < cleanHex.length(); i += 2) {
+                    bool ok;
+                    uint b = cleanHex.mid(i, 2).toUInt(&ok, 16);
+                    if (ok) hexBytes.append((char)b);
+                }
+                if (!hexBytes.isEmpty() && data.contains(hexBytes)) {
+                    isMatch = true;
+                }
+            }
+        }
+
+        if (isMatch) {
+            bgColor = "#3e4452";    // Highlight background
+            finalColor = "#e5c07b";  // Highlight text yellow
         }
     }
 
