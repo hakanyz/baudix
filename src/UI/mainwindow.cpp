@@ -523,6 +523,12 @@ void MainWindow::onSendFileClicked()
     QString filename = QFileDialog::getOpenFileName(this, "Select File to Send", "", "All Files (*.*)");
     if (filename.isEmpty()) return;
 
+    QFileInfo fileInfo(filename);
+    if (fileInfo.size() == 0) {
+        QMessageBox::information(this, "Empty File", "The selected file is empty.");
+        return;
+    }
+
     if (m_serialController->sendFile(filename)) {
         if (m_terminalWidget) {
             QString filter = m_macroWidget ? m_macroWidget->highlightFilter() : "";
