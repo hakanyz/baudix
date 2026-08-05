@@ -2,8 +2,9 @@
 #define TERMINALWIDGET_H
 
 #include <QWidget>
-#include <QPlainTextEdit>
-#include <QLineEdit>
+#include <QTableView>
+#include "TerminalModel.h"
+#include "BadgeDelegate.h"
 #include <QPushButton>
 #include <QComboBox>
 
@@ -27,9 +28,13 @@ private slots:
     void onFindPrev();
     void onFindNext();
     void onClearClicked();
+    void showContextMenu(const QPoint &pos);
+    void copySelection();
 
 private:
-    QPlainTextEdit* m_terminalOutput;
+    QTableView* m_tableView;
+    TerminalModel* m_model;
+    BadgeDelegate* m_delegate;
     QPushButton* m_timestampCb;
     QComboBox* m_viewModeCombo;
     QLineEdit* m_searchBox;

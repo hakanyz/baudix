@@ -34,6 +34,11 @@ QMainWindow::separator {
     height: 2px;
 }
 
+QMenuBar {
+    background-color: #282c34;
+    border-bottom: 2px solid #181a1f;
+}
+
 QDockWidget {
     font-weight: bold;
     color: #abb2bf;
@@ -74,7 +79,17 @@ QComboBox::drop-down {
 QComboBox QAbstractItemView {
     background-color: #1e2227;
     border: 1px solid #181a1f;
-    selection-background-color: #61afef;
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item {
+    color: #abb2bf;
+    background-color: #1e2227;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: transparent;
+    color: #61afef;
 }
 
 /* Buttons */

@@ -4,6 +4,14 @@
 #include <QDateTime>
 #include <QSettings>
 #include <QRegularExpression>
+#include <QLineEdit>
+#include <QHeaderView>
+#include <QScrollBar>
+#include <QShortcut>
+#include <QApplication>
+#include <QClipboard>
+#include <QMenu>
+#include <QAction>
 
 TerminalWidget::TerminalWidget(QWidget *parent)
     : QWidget(parent)
@@ -23,11 +31,19 @@ void TerminalWidget::setupUI()
     m_timestampCb->setCheckable(true);
     m_timestampCb->setChecked(true);
     m_timestampCb->setObjectName("smallBtn");
+    connect(m_timestampCb, &QPushButton::toggled, this, [this](bool checked) {
+        if (m_tableView) {
+            m_tableView->setColumnHidden(0, !checked);
+        }
+    });
     topBar->addWidget(m_timestampCb);
     
     m_viewModeCombo = new QComboBox();
     m_viewModeCombo->addItems({"ASCII", "HEX", "Both"});
     m_viewModeCombo->setCurrentText("ASCII");
+    connect(m_viewModeCombo, &QComboBox::currentTextChanged, this, [this](const QString& text){
+        if (m_model) m_model->setViewMode(text);
+    });
     topBar->addWidget(m_viewModeCombo);
 
     topBar->addSpacing(10);
@@ -61,48 +77,99 @@ void TerminalWidget::setupUI()
     
     tabLayout->addLayout(topBar);
     
-    // Terminal Output
-    m_terminalOutput = new QPlainTextEdit();
-    m_terminalOutput->setObjectName("terminalOutput");
-    m_terminalOutput->setReadOnly(true);
+    // Terminal Output as Table
+    m_tableView = new QTableView();
+    m_tableView->setObjectName("terminalTable");
+    m_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_tableView->verticalHeader()->setVisible(false);
+    m_tableView->setShowGrid(true);
+    m_tableView->setGridStyle(Qt::SolidLine);
+    m_tableView->setAlternatingRowColors(true);
     
+    // Context Menu
+    m_tableView->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_tableView, &QTableView::customContextMenuRequested, this, &TerminalWidget::showContextMenu);
+    
+    // Add Copy Shortcut (Now opens context menu)
+    QShortcut* copyShortcut = new QShortcut(QKeySequence::Copy, m_tableView);
+    copyShortcut->setContext(Qt::WidgetWithChildrenShortcut);
+    connect(copyShortcut, &QShortcut::activated, this, &TerminalWidget::copySelection);
+    
+    // Style the table for a modern analyzer look
+    m_tableView->setStyleSheet(R"(
+        QTableView {
+            background-color: #282c34;
+            alternate-background-color: #21252b;
+            color: #abb2bf;
+            border-top: none;
+            border-right: none;
+            border-bottom: none;
+            border-left: 1px solid #181a1f;
+            gridline-color: #181a1f;
+        }
+        QTableView::item {
+            padding: 2px 8px;
+        }
+        QHeaderView::section {
+            background-color: #2c313a;
+            color: #abb2bf;
+            padding: 4px 8px;
+            border: none;
+            border-right: 1px solid #181a1f;
+            border-bottom: 1px solid #181a1f;
+            font-weight: 800; /* Extra bold */
+            font-size: 13px; /* Slightly larger */
+        }
+    )");
+
+    m_model = new TerminalModel(this);
+    m_delegate = new BadgeDelegate(this);
+    
+    m_model->setViewMode(m_viewModeCombo->currentText()); // Sync model with combobox startup state
+
+    m_tableView->setModel(m_model);
+    m_tableView->setItemDelegateForColumn(1, m_delegate); // Column 1 is Direction
+
+    // Column widths - Fixed mode for fixed columns, Stretch only for Data
+    QHeaderView* header = m_tableView->horizontalHeader();
+    header->setSectionResizeMode(0, QHeaderView::Fixed);
+    header->setSectionResizeMode(1, QHeaderView::Fixed);
+    header->setSectionResizeMode(2, QHeaderView::Fixed);
+    header->setSectionResizeMode(3, QHeaderView::Stretch);
+    header->setStretchLastSection(false); // Don't double-stretch, we set it above
+
+    m_tableView->setColumnWidth(0, 130); // Timestamp
+    m_tableView->setColumnWidth(1, 90);  // Direction
+    m_tableView->setColumnWidth(2, 80);  // Length
+
+    // Sync column visibility with button state at startup
+    m_tableView->setColumnHidden(0, !m_timestampCb->isChecked());
+
     QSettings settings("hakanyz", "Baudix");
     int bufferLimit = settings.value("System/BufferLimit", 5000).toInt();
-    if (bufferLimit > 0) {
-        m_terminalOutput->setMaximumBlockCount(bufferLimit);
-    }
+    m_model->setMaxRows(bufferLimit);
     
     // Apply saved terminal font size
-    int termFontSize = settings.value("UI/TerminalFontSize", 11).toInt();
-    QFont termFont = m_terminalOutput->font();
-    termFont.setPointSize(termFontSize);
-    m_terminalOutput->setFont(termFont);
+    int termFontSize = settings.value("UI/TerminalFontSize", 10).toInt();
+    setFontSize(termFontSize);
     
-    tabLayout->addWidget(m_terminalOutput);
+    tabLayout->addWidget(m_tableView);
 }
 
 void TerminalWidget::onSearchTextChanged(const QString &text)
 {
-    if (!m_terminalOutput) return;
-    
-    m_terminalOutput->moveCursor(QTextCursor::Start);
-    if (!text.isEmpty()) {
-        m_terminalOutput->find(text);
+    if (m_model) {
+        m_model->setFilter(text);
     }
 }
 
 void TerminalWidget::onFindPrev()
 {
-    if (!m_searchBox->text().isEmpty()) {
-        m_terminalOutput->find(m_searchBox->text(), QTextDocument::FindBackward);
-    }
 }
 
 void TerminalWidget::onFindNext()
 {
-    if (!m_searchBox->text().isEmpty()) {
-        m_terminalOutput->find(m_searchBox->text());
-    }
 }
 
 void TerminalWidget::onClearClicked()
@@ -112,143 +179,126 @@ void TerminalWidget::onClearClicked()
 
 void TerminalWidget::clearTerminal()
 {
-    if (m_terminalOutput) {
-        m_terminalOutput->clear();
+    if (m_model) {
+        m_model->clearData();
     }
+}
+
+void TerminalWidget::copySelection()
+{
+    // If user presses Ctrl+C, pop up the context menu in the center of the table
+    if (m_tableView) {
+        showContextMenu(m_tableView->viewport()->rect().center());
+    }
+}
+
+void TerminalWidget::showContextMenu(const QPoint &pos)
+{
+    if (!m_tableView || !m_model) return;
+    
+    QModelIndexList selectedRows = m_tableView->selectionModel()->selectedRows();
+    if (selectedRows.isEmpty()) return;
+    
+    std::sort(selectedRows.begin(), selectedRows.end());
+    
+    QMenu menu(this);
+    QAction* copyDataAction = menu.addAction("Copy Data Only");
+    QAction* copyFullAction = menu.addAction("Copy Timestamp + Data");
+    
+    QAction* selectedAction = menu.exec(m_tableView->viewport()->mapToGlobal(pos));
+    
+    if (!selectedAction) return;
+    
+    QString clipboardText;
+    for (const QModelIndex& index : selectedRows) {
+        int row = index.row();
+        QString data = m_model->data(m_model->index(row, 3)).toString();
+        
+        if (selectedAction == copyFullAction) {
+            QString timestamp = m_model->data(m_model->index(row, 0)).toString();
+            QString direction = m_model->data(m_model->index(row, 1)).toString();
+            clipboardText += QString("%1 %2 %3\n").arg(timestamp).arg(direction).arg(data);
+        } else {
+            clipboardText += data + "\n";
+        }
+    }
+    
+    QApplication::clipboard()->setText(clipboardText);
 }
 
 QString TerminalWidget::getTerminalText() const
 {
-    if (m_terminalOutput) {
-        return m_terminalOutput->toPlainText();
-    }
+    // We don't use this directly anymore, but for export we might need to serialize the model
     return QString();
 }
 
 void TerminalWidget::setBufferLimit(int limit)
 {
-    if (m_terminalOutput) {
-        m_terminalOutput->setMaximumBlockCount(limit > 0 ? limit : 0);
+    if (m_model) {
+        m_model->setMaxRows(limit);
     }
 }
 
 void TerminalWidget::setFontSize(int size)
 {
-    if (m_terminalOutput) {
-        QFont termFont = m_terminalOutput->font();
-        termFont.setPointSize(size);
-        m_terminalOutput->setFont(termFont);
+    // The model applies the font, but we can tell the view
+    if (m_tableView) {
+        QFont f = m_tableView->font();
+        f.setPointSize(size);
+        m_tableView->setFont(f);
+        m_tableView->verticalHeader()->setDefaultSectionSize(size + 14); // Adjust row height
     }
 }
 
 QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data, const QString& color, const QString& highlightFilter)
 {
-    if (!m_terminalOutput) return QString();
+    if (!m_model) return QString();
 
     QString timestampStr = "";
     if (m_timestampCb->isChecked()) {
-        timestampStr = QString("[%1] ")
-                       .arg(QDateTime::currentDateTime().toString("hh:mm:ss.zzz"));
+        timestampStr = QString("[%1]").arg(QDateTime::currentDateTime().toString("hh:mm:ss.zzz"));
     }
 
-    QString filterRule = highlightFilter.trimmed();
-    QString finalColor = color;
-    QString bgColor = "transparent";
-
-    if (!filterRule.isEmpty()) {
-        bool isMatch = false;
-
-        // 1. ASCII Match (case-insensitive search in data)
-        if (QString::fromUtf8(data).contains(filterRule, Qt::CaseInsensitive)) {
-            isMatch = true;
-        }
-
-        // 2. HEX Match (parse filter as HEX bytes)
-        if (!isMatch) {
-            QString cleanHex = filterRule;
-            cleanHex.replace("0x", "", Qt::CaseInsensitive);
-            cleanHex.remove(QRegularExpression("[^0-9a-fA-F]"));
-            if (!cleanHex.isEmpty() && cleanHex.length() % 2 == 0) {
-                QByteArray hexBytes;
-                for (int i = 0; i < cleanHex.length(); i += 2) {
-                    bool ok;
-                    uint b = cleanHex.mid(i, 2).toUInt(&ok, 16);
-                    if (ok) hexBytes.append((char)b);
-                }
-                if (!hexBytes.isEmpty() && data.contains(hexBytes)) {
-                    isMatch = true;
-                }
-            }
-        }
-
-        if (isMatch) {
-            bgColor = "#3e4452";    // Highlight background
-            finalColor = "#e5c07b";  // Highlight text yellow
-        }
-    }
-
-    // Prepare HEX
     QString hexStr;
-    hexStr.reserve(data.size() * 5);
-    for (char c : data) {
-        hexStr += QString("0x%1 ").arg((quint8)c, 2, 16, QChar('0')).toUpper();
-    }
-    
-    // Prepare ASCII (filter non-printables)
     QString asciiStr;
-    asciiStr.reserve(data.size() * 4);
-    for (char c : data) {
-        if (c >= 32 && c <= 126) {
-            asciiStr += c;
-        } else if (c == '\r') {
-            asciiStr += "<CR>";
-        } else if (c == '\n') {
-            asciiStr += "<LF>";
-        } else {
-            asciiStr += ".";
-        }
+
+    // Parse Hex
+    for (char b : data) {
+        hexStr.append(QString::asprintf("%02X ", (unsigned char)b));
+    }
+    hexStr = hexStr.trimmed();
+
+    // Parse ASCII
+    for (char b : data) {
+        if (b >= 32 && b <= 126) asciiStr.append(b);
+        else asciiStr.append('.');
     }
 
-    QString finalDataStr = "";
-    QString viewMode = m_viewModeCombo->currentText();
-    if (viewMode == "Both") {
-        finalDataStr = hexStr + " [" + asciiStr + "]";
-    } else if (viewMode == "HEX") {
-        finalDataStr = hexStr;
-    } else {
-        finalDataStr = asciiStr;
-    }
+    // Determine direction tag
+    QString direction = "TX";
+    if (prefix.contains("RX")) direction = "RX";
+    else if (prefix.contains("Error") || prefix.contains("E:")) direction = "E";
 
-    // Prepare QTextCursor for insertion
-    QTextCursor cursor(m_terminalOutput->document());
-    cursor.movePosition(QTextCursor::End);
-
-    // Apply Timestamp if needed
-    if (!timestampStr.isEmpty()) {
-        QTextCharFormat tsFormat;
-        tsFormat.setForeground(QColor("#5c6370"));
-        cursor.insertText(timestampStr, tsFormat);
-    }
-
-    // Apply Prefix formatting (Always keep original color for TX/RX)
-    QTextCharFormat prefixFormat;
-    prefixFormat.setForeground(QColor(color));
-    cursor.insertText(prefix + " ", prefixFormat);
-
-    // Apply Data formatting
-    QTextCharFormat dataFormat;
-    if (bgColor != "transparent") {
-        dataFormat.setBackground(QColor(bgColor));
-        dataFormat.setForeground(QColor(finalColor)); // Vurgulama rengi
-    } else {
-        dataFormat.setForeground(QColor("#abb2bf")); // Standart terminal metin rengi
-    }
-
-    // Insert data
-    cursor.insertText(finalDataStr + "\n", dataFormat);
-
-    // Ensure it scrolls down if the user was at the bottom
-    m_terminalOutput->ensureCursorVisible();
+    // Filtering logic is now handled internally by TerminalModel::addEntry
     
-    return finalDataStr;
+    LogEntry entry;
+    entry.timestamp = timestampStr;
+    entry.direction = direction;
+    entry.length = data.size();
+    entry.hexData = hexStr;
+    entry.asciiData = asciiStr;
+
+    bool wasAtBottom = false;
+    if (m_tableView->verticalScrollBar()->value() == m_tableView->verticalScrollBar()->maximum()) {
+        wasAtBottom = true;
+    }
+
+    m_model->addEntry(entry);
+
+    if (wasAtBottom) {
+        m_tableView->scrollToBottom();
+    }
+
+    // Return the legacy string format for logging
+    return QString("%1 %2").arg(prefix).arg(QString::fromUtf8(data));
 }

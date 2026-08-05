@@ -16,110 +16,96 @@ SendWidget::SendWidget(QWidget *parent)
 
 void SendWidget::setupUI()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QHBoxLayout *mainLayout = new QHBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     QFrame *sendFrame = new QFrame(this);
     sendFrame->setObjectName("dockContent");
-    sendFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum); // Hugs contents vertically
-    QVBoxLayout *sendLayout = new QVBoxLayout(sendFrame);
-    sendLayout->setContentsMargins(4, 4, 4, 4);
-    sendLayout->setSpacing(4);
+    sendFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed); 
     
-    // Top Row: Input only
-    QHBoxLayout *inputLayout = new QHBoxLayout();
+    QHBoxLayout *sendLayout = new QHBoxLayout(sendFrame);
+    sendLayout->setContentsMargins(10, 5, 10, 5);
+    sendLayout->setSpacing(15);
+    
+    auto addLabelledWidget = [sendLayout](const QString& labelText, QWidget* widget) {
+        QVBoxLayout* vLayout = new QVBoxLayout();
+        vLayout->setContentsMargins(0, 0, 0, 0);
+        vLayout->setSpacing(2);
+        if (!labelText.isEmpty()) {
+            QLabel* lbl = new QLabel(labelText);
+            lbl->setStyleSheet("color: #abb2bf; font-size: 11px;");
+            vLayout->addWidget(lbl);
+        }
+        vLayout->addWidget(widget);
+        sendLayout->addLayout(vLayout);
+    };
+
+    // Format
+    m_sendAsCombo = new QComboBox();
+    m_sendAsCombo->addItems({"ASCII", "HEX"});
+    addLabelledWidget("Format", m_sendAsCombo);
+
+    // Raw Command (Input)
     m_inputCombo = new QComboBox();
     m_inputCombo->setEditable(true);
     m_inputCombo->setInsertPolicy(QComboBox::NoInsert);
     m_inputCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes (e.g. AA BB CC)");
-    m_inputCombo->addItem(""); // Default empty
+    m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes...");
+    m_inputCombo->addItem("");
     connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &SendWidget::onSendClicked);
-    inputLayout->addWidget(m_inputCombo, 1);
-    sendLayout->addLayout(inputLayout);
+    addLabelledWidget("Raw command", m_inputCombo);
+
+    // Periodic wrapper
+    QWidget* periodicWidget = new QWidget();
+    QHBoxLayout* pLayout = new QHBoxLayout(periodicWidget);
+    pLayout->setContentsMargins(0, 0, 0, 0);
+    pLayout->setSpacing(5);
     
-    // Middle Row: Action Tools
-    QHBoxLayout *sendActionLayout = new QHBoxLayout();
-    
-    int actionHeight = 28;
-    
-    QPushButton* btnSendFile = new QPushButton("Send File");
-    btnSendFile->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
-    btnSendFile->setObjectName("smallBtn");
-    btnSendFile->setFixedHeight(actionHeight);
-    connect(btnSendFile, &QPushButton::clicked, this, &SendWidget::onSendFileClicked);
-    sendActionLayout->addWidget(btnSendFile);
-    
-    m_cbHistoryOn = new QCheckBox("Save History");
-    m_cbHistoryOn->setChecked(true);
-    m_cbHistoryOn->setFixedHeight(actionHeight);
-    connect(m_cbHistoryOn, &QCheckBox::toggled, this, &SendWidget::onHistoryToggled);
-    sendActionLayout->addWidget(m_cbHistoryOn);
-    
-    QPushButton* btnClearHistory = new QPushButton("Clear History");
-    btnClearHistory->setObjectName("smallBtn");
-    btnClearHistory->setFixedHeight(actionHeight);
-    connect(btnClearHistory, &QPushButton::clicked, this, &SendWidget::onClearHistoryClicked);
-    sendActionLayout->addWidget(btnClearHistory);
-    
-    QLabel* lblAppend = new QLabel("Append:");
-    lblAppend->setFixedHeight(actionHeight);
-    sendActionLayout->addWidget(lblAppend);
-    
-    m_appendCombo = new QComboBox();
-    m_appendCombo->addItems({"None", "CR", "LF", "CRLF"});
-    m_appendCombo->setFixedHeight(actionHeight);
-    sendActionLayout->addWidget(m_appendCombo);
-    
-    QLabel* lblFormat = new QLabel("Format:");
-    lblFormat->setFixedHeight(actionHeight);
-    sendActionLayout->addWidget(lblFormat);
-    
-    m_sendAsCombo = new QComboBox();
-    m_sendAsCombo->addItems({"ASCII", "HEX"});
-    m_sendAsCombo->setToolTip("ASCII: send as plain text\nHEX: parse as hex bytes");
-    m_sendAsCombo->setFixedHeight(actionHeight);
-    sendActionLayout->addWidget(m_sendAsCombo);
-    
-    sendActionLayout->addStretch();
-    
-    m_sendButton = new QPushButton("Send");
-    m_sendButton->setObjectName("sendButton");
-    m_sendButton->setFixedHeight(actionHeight);
-    connect(m_sendButton, &QPushButton::clicked, this, &SendWidget::onSendClicked);
-    sendActionLayout->addWidget(m_sendButton);
-    
-    sendLayout->addLayout(sendActionLayout);
-    
-    // Bottom Row: Periodic Send
-    QHBoxLayout *bottomLayout = new QHBoxLayout();
-    
-    m_periodicSendCb = new QCheckBox("Periodic Send");
-    m_periodicSendCb->setToolTip("Automatically send the input at a fixed interval");
+    m_periodicSendCb = new QCheckBox("Repeat");
     connect(m_periodicSendCb, &QCheckBox::toggled, this, &SendWidget::onPeriodicSendToggled);
     connect(m_periodicTimer, &QTimer::timeout, this, &SendWidget::onPeriodicTimerTimeout);
-    bottomLayout->addWidget(m_periodicSendCb);
     
     m_periodicMsBox = new QSpinBox();
     m_periodicMsBox->setRange(1, 100000);
     m_periodicMsBox->setValue(100);
     m_periodicMsBox->setSuffix(" ms");
     m_periodicMsBox->setFixedWidth(80);
-    m_periodicMsBox->setToolTip("Interval between sends");
-    bottomLayout->addWidget(m_periodicMsBox);
     
-    bottomLayout->addWidget(new QLabel("Burst:"));
-    m_burstBox = new QSpinBox();
+    pLayout->addWidget(m_periodicSendCb);
+    pLayout->addWidget(m_periodicMsBox);
+    addLabelledWidget("Auto-send", periodicWidget);
+    
+    m_burstBox = new QSpinBox(); // Keep this hidden or add it? Let's add it cleanly
     m_burstBox->setRange(1, 1000);
     m_burstBox->setValue(1);
     m_burstBox->setFixedWidth(60);
-    m_burstBox->setToolTip("How many times to send per interval");
-    bottomLayout->addWidget(m_burstBox);
+    addLabelledWidget("Burst", m_burstBox);
+
+    // Append
+    m_appendCombo = new QComboBox();
+    m_appendCombo->addItems({"None", "CR", "LF", "CRLF"});
+    addLabelledWidget("Line-ending", m_appendCombo);
+
+    // Send Button
+    m_sendButton = new QPushButton("Send", this);
+    m_sendButton->setObjectName("sendButton");
+    m_sendButton->setMinimumWidth(80);
+    m_sendButton->setFixedHeight(28);
+    connect(m_sendButton, &QPushButton::clicked, this, &SendWidget::onSendClicked);
     
-    bottomLayout->addStretch();
-    sendLayout->addLayout(bottomLayout);
-    
+    QVBoxLayout* btnLayout = new QVBoxLayout();
+    btnLayout->setContentsMargins(0, 0, 0, 0);
+    btnLayout->addStretch();
+    btnLayout->addWidget(m_sendButton);
+    btnLayout->addStretch();
+    sendLayout->addLayout(btnLayout);
+
     mainLayout->addWidget(sendFrame);
+    
+    // We omit history saving/clearing UI from this bar to save space. 
+    // They can be added to the macro bar or main menu later if needed.
+    m_cbHistoryOn = new QCheckBox();
+    m_cbHistoryOn->setChecked(true); // default to true, hidden
 }
 
 void SendWidget::setInputText(const QString& text)

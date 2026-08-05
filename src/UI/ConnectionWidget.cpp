@@ -2,6 +2,57 @@
 #include <QFormLayout>
 #include <QEvent>
 #include <QSpacerItem>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QStyledItemDelegate>
+#include <QStylePainter>
+
+class PortComboBoxDelegate : public QStyledItemDelegate {
+public:
+    explicit PortComboBoxDelegate(QObject* parent = nullptr) : QStyledItemDelegate(parent) {}
+    
+    // We will use an editable combo box trick instead of drawing manually,
+    // so we don't strictly need this delegate for drawing the closed state,
+    // but we can use it to draw the popup if needed. Actually, standard item delegate is fine.
+};
+
+class ShortTextComboBox : public QComboBox {
+public:
+    explicit ShortTextComboBox(QWidget* parent = nullptr) : QComboBox(parent) {}
+protected:
+    void paintEvent(QPaintEvent* event) override {
+        QStylePainter painter(this);
+        painter.setPen(palette().color(QPalette::Text));
+        QStyleOptionComboBox opt;
+        initStyleOption(&opt);
+        
+        // Override the displayed text to be just the short name
+        QString fullText = opt.currentText;
+        opt.currentText = fullText.split(" - ").first();
+        
+        painter.drawComplexControl(QStyle::CC_ComboBox, opt);
+        painter.drawControl(QStyle::CE_ComboBoxLabel, opt);
+    }
+};
+
+class PortPopupDelegate : public QStyledItemDelegate {
+public:
+    explicit PortPopupDelegate(QObject* parent = nullptr) : QStyledItemDelegate(parent) {}
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+        QStyleOptionViewItem opt = option;
+        // Force background and text colors to bypass Windows native styling
+        if (opt.state & QStyle::State_Selected) {
+            painter->fillRect(opt.rect, QColor("#282c34")); // Dark background for selection
+            opt.palette.setColor(QPalette::Text, QColor("#61afef")); // Blue text
+            opt.palette.setColor(QPalette::HighlightedText, QColor("#61afef")); // Blue text
+        } else {
+            painter->fillRect(opt.rect, QColor("#21252b")); // Normal background
+            opt.palette.setColor(QPalette::Text, QColor("#abb2bf")); // Gray text
+            opt.palette.setColor(QPalette::HighlightedText, QColor("#abb2bf")); // Gray text
+        }
+        QStyledItemDelegate::paint(painter, opt, index);
+    }
+};
 
 ConnectionWidget::ConnectionWidget(QWidget *parent)
     : QWidget(parent)
@@ -12,46 +63,75 @@ ConnectionWidget::ConnectionWidget(QWidget *parent)
 
 void ConnectionWidget::setupUI()
 {
-    QFormLayout *connLayout = new QFormLayout(this);
+    QHBoxLayout *connLayout = new QHBoxLayout(this);
+    connLayout->setContentsMargins(10, 5, 10, 5);
+    connLayout->setSpacing(15);
     
-    m_portCombo = new QComboBox(this);
+    // Helper lambda to add labelled widgets
+    auto addLabelledWidget = [connLayout](const QString& labelText, QWidget* widget) {
+        QVBoxLayout* vLayout = new QVBoxLayout();
+        vLayout->setContentsMargins(0, 0, 0, 0);
+        vLayout->setSpacing(2);
+        QLabel* lbl = new QLabel(labelText);
+        lbl->setStyleSheet("color: #abb2bf; font-size: 11px;");
+        vLayout->addWidget(lbl);
+        vLayout->addWidget(widget);
+        connLayout->addLayout(vLayout);
+    };
+
+    m_portCombo = new ShortTextComboBox(this);
     m_portCombo->installEventFilter(this);
-    connLayout->addRow("COM Port", m_portCombo);
+    m_portCombo->setMinimumWidth(100);
+    addLabelledWidget("Port", m_portCombo);
     
     m_baudCombo = new QComboBox(this);
     m_baudCombo->addItems({"9600", "19200", "38400", "57600", "115200", "921600"});
     m_baudCombo->setCurrentText("115200");
-    connLayout->addRow("Baud Rate", m_baudCombo);
+    addLabelledWidget("Baud", m_baudCombo);
     
     m_dataBitsCombo = new QComboBox(this);
     m_dataBitsCombo->addItems({"5", "6", "7", "8"});
     m_dataBitsCombo->setCurrentText("8");
-    connLayout->addRow("Data Bits", m_dataBitsCombo);
-    
-    m_stopBitsCombo = new QComboBox(this);
-    m_stopBitsCombo->addItems({"1", "1.5", "2"});
-    connLayout->addRow("Stop Bits", m_stopBitsCombo);
+    addLabelledWidget("Data bits", m_dataBitsCombo);
     
     m_parityCombo = new QComboBox(this);
     m_parityCombo->addItems({"None", "Even", "Odd", "Space", "Mark"});
-    connLayout->addRow("Parity", m_parityCombo);
+    addLabelledWidget("Parity", m_parityCombo);
+
+    m_stopBitsCombo = new QComboBox(this);
+    m_stopBitsCombo->addItems({"1", "1.5", "2"});
+    addLabelledWidget("Stop bits", m_stopBitsCombo);
     
     m_flowControlCombo = new QComboBox(this);
     m_flowControlCombo->addItems({"None", "Hardware", "Software"});
-    connLayout->addRow("Flow Control", m_flowControlCombo);
+    addLabelledWidget("Flow control", m_flowControlCombo);
     
-    connLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
+    // We will add the stretch AFTER the connect button
 
     m_btnConnect = new QPushButton("Connect", this);
     m_btnConnect->setObjectName("connectBtn");
-    m_btnConnect->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_btnConnect->setMinimumWidth(90);
     m_btnConnect->setFixedHeight(26);
+    m_btnConnect->setStyleSheet("background-color: #3b5978; color: white; font-weight: bold; border-radius: 13px;");
     connect(m_btnConnect, &QPushButton::clicked, this, &ConnectionWidget::onConnectButtonClicked);
-    connLayout->addRow(m_btnConnect);
+    
+    // Add a wrapper to perfectly align the button vertically with the combo boxes
+    QVBoxLayout* btnLayout = new QVBoxLayout();
+    btnLayout->setContentsMargins(0, 0, 0, 0);
+    btnLayout->setSpacing(2);
+    QLabel* dummyLbl = new QLabel(" ");
+    dummyLbl->setStyleSheet("font-size: 11px;");
+    btnLayout->addWidget(dummyLbl);
+    btnLayout->addWidget(m_btnConnect);
+    connLayout->addLayout(btnLayout);
+    
+    connLayout->addStretch(); // Push everything to the left
 }
 
 QString ConnectionWidget::portName() const
 {
+    // The actual port name needed to connect is the short one or maybe the controller needs it.
+    // Wait, the SerialPortController connects via name (e.g. "COM3"). The short name is sufficient.
     return m_portCombo->currentText();
 }
 
@@ -85,12 +165,16 @@ void ConnectionWidget::setAvailablePorts(const QStringList& ports)
     QString current = m_portCombo->currentText();
     QStringList existingPorts;
     for (int i = 0; i < m_portCombo->count(); ++i) {
-        existingPorts << m_portCombo->itemText(i);
+        existingPorts << m_portCombo->itemData(i, Qt::UserRole).toString();
     }
 
     if (existingPorts != ports) {
         m_portCombo->clear();
-        m_portCombo->addItems(ports);
+        for (const QString& portDesc : ports) {
+            m_portCombo->addItem(portDesc);
+        }
+        m_portCombo->setItemDelegate(new PortPopupDelegate(m_portCombo)); // Force the custom delegate
+        
         int idx = m_portCombo->findText(current);
         if (idx >= 0) {
             m_portCombo->setCurrentIndex(idx);
@@ -103,7 +187,7 @@ void ConnectionWidget::setConnectedState(bool isConnected)
     m_isConnected = isConnected;
     if (isConnected) {
         m_btnConnect->setText("Disconnect");
-        m_btnConnect->setStyleSheet("background-color: #e06c75; color: white; font-weight: bold; border-radius: 4px;");
+        m_btnConnect->setStyleSheet("background-color: #8f3b43; color: white; font-weight: bold; border-radius: 13px;");
         m_portCombo->setEnabled(false);
         m_baudCombo->setEnabled(false);
         m_dataBitsCombo->setEnabled(false);
@@ -112,7 +196,7 @@ void ConnectionWidget::setConnectedState(bool isConnected)
         m_flowControlCombo->setEnabled(false);
     } else {
         m_btnConnect->setText("Connect");
-        m_btnConnect->setStyleSheet(""); // reset to default qss
+        m_btnConnect->setStyleSheet("background-color: #3b5978; color: white; font-weight: bold; border-radius: 13px;");
         m_portCombo->setEnabled(true);
         m_baudCombo->setEnabled(true);
         m_dataBitsCombo->setEnabled(true);

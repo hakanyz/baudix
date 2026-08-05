@@ -24,6 +24,7 @@
 #include <QLabel>
 #include <QFile>
 #include <QTextStream>
+#include <QSplitter>
 #include "ConnectionWidget.h"
 #include "TerminalWidget.h"
 #include "SendWidget.h"
@@ -64,7 +65,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    void setupDockWidgets();
+    void setupMenus();
     void setupToolBar();
     void setupCentralWidget();
     void refreshPorts();

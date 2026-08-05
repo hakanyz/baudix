@@ -35,10 +35,6 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     
-    // Set a good default size so panels aren't squished
-    resize(1200, 800);
-    setMinimumSize(900, 600);
-    
     m_serialController = new SerialPortController(this);
 
     // Setup Updater first so it can be connected in menus
@@ -101,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     setupCentralWidget();
-    setupDockWidgets();
+    setupMenus();
 
     // Initialize System Tray
     m_trayIcon = new QSystemTrayIcon(QIcon(":/baudix_icon.svg"), this);
@@ -225,63 +221,74 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupCentralWidget()
 {
-    QTabWidget* tabWidget = new QTabWidget(this);
-    
-    QWidget* terminalTab = new QWidget();
-    QVBoxLayout* tabLayout = new QVBoxLayout(terminalTab);
-    tabLayout->setContentsMargins(5, 5, 5, 5);
-    
-    m_terminalWidget = new TerminalWidget();
-    tabLayout->addWidget(m_terminalWidget);
-    
-    m_sendWidget = new SendWidget();
-    connect(m_sendWidget, &SendWidget::sendDataRequested, this, &MainWindow::sendDataToController);
-    connect(m_sendWidget, &SendWidget::sendFileRequested, this, &MainWindow::onSendFileClicked);
-    tabLayout->addWidget(m_sendWidget);
-    
-    tabWidget->addTab(terminalTab, "Terminal");
-    
-    setCentralWidget(tabWidget);
-}
+    QWidget* centralWidget = new QWidget(this);
+    QVBoxLayout* mainLayout = new QVBoxLayout(centralWidget);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
 
-void MainWindow::setupDockWidgets()
-{
-    // Configure dock corners so side docks extend all the way to the bottom,
-    // squishing the bottom Send dock into the center perfectly underneath the terminal.
-    setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
-    setCorner(Qt::BottomRightCorner, Qt::BottomDockWidgetArea);
-
-    // Common features for all docks: No Close Button
-    QDockWidget::DockWidgetFeatures dockFeatures = QDockWidget::DockWidgetMovable;
-
-    // --- Connection Dock ---
-    QDockWidget *connDock = new QDockWidget("Connection", this);
-    connDock->setFeatures(dockFeatures);
-    m_connectionWidget = new ConnectionWidget(connDock);
+    // Top Bar (Connection)
+    m_connectionWidget = new ConnectionWidget();
     connect(m_connectionWidget, &ConnectionWidget::connectRequested, this, &MainWindow::onConnectRequested);
     connect(m_connectionWidget, &ConnectionWidget::disconnectRequested, this, &MainWindow::onDisconnectRequested);
     connect(m_connectionWidget, &ConnectionWidget::refreshPortsRequested, this, &MainWindow::refreshPorts);
-    connDock->setWidget(m_connectionWidget);
-    addDockWidget(Qt::LeftDockWidgetArea, connDock);
-    refreshPorts();
+    mainLayout->addWidget(m_connectionWidget);
 
-    // --- Logging Dock ---
-    QDockWidget *logDock = new QDockWidget("Logging", this);
-    logDock->setFeatures(dockFeatures);
-    m_loggingWidget = new LoggingWidget(logDock);
-    connect(m_loggingWidget, &LoggingWidget::exportTerminalRequested, this, &MainWindow::onExportTerminal);
-    logDock->setWidget(m_loggingWidget);
-    addDockWidget(Qt::LeftDockWidgetArea, logDock);
+    // Divider
+    QFrame* hLine1 = new QFrame();
+    hLine1->setFrameShape(QFrame::HLine);
+    hLine1->setFrameShadow(QFrame::Sunken);
+    hLine1->setStyleSheet("background-color: #181a1f;");
+    mainLayout->addWidget(hLine1);
 
-    // --- Tools Dock ---
-    QDockWidget *toolsDock = new QDockWidget("Tools", this);
-    toolsDock->setFeatures(dockFeatures);
-    m_macroWidget = new MacroWidget(toolsDock);
+    // Send Bar
+    m_sendWidget = new SendWidget();
+    connect(m_sendWidget, &SendWidget::sendDataRequested, this, &MainWindow::sendDataToController);
+    connect(m_sendWidget, &SendWidget::sendFileRequested, this, &MainWindow::onSendFileClicked);
+    mainLayout->addWidget(m_sendWidget);
+
+    // Divider
+    QFrame* hLine2 = new QFrame();
+    hLine2->setFrameShape(QFrame::HLine);
+    hLine2->setFrameShadow(QFrame::Sunken);
+    hLine2->setStyleSheet("background-color: #181a1f;");
+    mainLayout->addWidget(hLine2);
+
+    // Splitter for Terminal and Macros/Logging
+    QSplitter* splitter = new QSplitter(Qt::Horizontal);
+    splitter->setHandleWidth(2);
+    splitter->setStyleSheet("QSplitter::handle { background: #181a1f; }");
+    
+    m_terminalWidget = new TerminalWidget();
+    
+    // Right panel (Macros & Logging)
+    QWidget* rightPanel = new QWidget();
+    QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
+    rightLayout->setContentsMargins(5, 5, 5, 5);
+    
+    m_macroWidget = new MacroWidget();
     connect(m_macroWidget, &MacroWidget::macroSendRequested, this, &MainWindow::performSend);
-    toolsDock->setWidget(m_macroWidget);
-    addDockWidget(Qt::RightDockWidgetArea, toolsDock);
+    rightLayout->addWidget(m_macroWidget, 1);
+    
+    // Logging can go below macros
+    m_loggingWidget = new LoggingWidget();
+    connect(m_loggingWidget, &LoggingWidget::exportTerminalRequested, this, &MainWindow::onExportTerminal);
+    rightLayout->addWidget(m_loggingWidget, 0);
 
-    // --- File Menu ---
+    splitter->addWidget(m_terminalWidget);
+    splitter->addWidget(rightPanel);
+    
+    // Set stretch factors (Terminal gets more space)
+    splitter->setStretchFactor(0, 4);
+    splitter->setStretchFactor(1, 1);
+    
+    mainLayout->addWidget(splitter, 1);
+    
+    setCentralWidget(centralWidget);
+    refreshPorts();
+}
+
+void MainWindow::setupMenus()
+{
     QMenu *fileMenu = menuBar()->addMenu("File");
     
     QAction* exportAct = fileMenu->addAction("Export Terminal");
@@ -529,8 +536,8 @@ void MainWindow::onSendFileClicked()
 
     QFileInfo fileInfo(filename);
     if (fileInfo.size() == 0) {
-        QMessageBox::information(this, "Empty File", "The selected file is empty.");
-        return;
+        QMessageBox::information(this,"Empty File", "The selected file is empty.");
+        return; 
     }
 
     if (m_serialController->sendFile(filename)) {

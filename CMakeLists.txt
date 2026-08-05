@@ -23,6 +23,10 @@ set(PROJECT_SOURCES
         src/UI/ConnectionWidget.h
         src/UI/TerminalWidget.cpp
         src/UI/TerminalWidget.h
+        src/UI/TerminalModel.cpp
+        src/UI/TerminalModel.h
+        src/UI/BadgeDelegate.cpp
+        src/UI/BadgeDelegate.h
         src/UI/SendWidget.cpp
         src/UI/SendWidget.h
         src/UI/LoggingWidget.cpp
