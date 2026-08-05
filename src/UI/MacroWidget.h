@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QListWidget>
 #include <QLineEdit>
+#include <QSettings>
 
 class MacroWidget : public QWidget
 {
@@ -14,6 +15,9 @@ public:
     ~MacroWidget() = default;
 
     QString highlightFilter() const;
+
+    void loadSettings(QSettings& settings);
+    void saveSettings(QSettings& settings);
 
 signals:
     void macroSendRequested(const QString& text);

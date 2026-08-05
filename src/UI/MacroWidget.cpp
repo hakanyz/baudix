@@ -104,3 +104,36 @@ QString MacroWidget::highlightFilter() const
 {
     return m_hlFilter->text();
 }
+
+void MacroWidget::saveSettings(QSettings& settings)
+{
+    settings.beginGroup("MacroWidget");
+    
+    settings.setValue("HighlightFilter", m_hlFilter->text());
+    
+    int count = m_macrosList->count();
+    settings.setValue("MacroCount", count);
+    for (int i = 0; i < count; ++i) {
+        settings.setValue(QString("Macro_%1").arg(i), m_macrosList->item(i)->text());
+    }
+    
+    settings.endGroup();
+}
+
+void MacroWidget::loadSettings(QSettings& settings)
+{
+    settings.beginGroup("MacroWidget");
+    
+    m_hlFilter->setText(settings.value("HighlightFilter", "").toString());
+    
+    m_macrosList->clear();
+    int count = settings.value("MacroCount", 0).toInt();
+    for (int i = 0; i < count; ++i) {
+        QString text = settings.value(QString("Macro_%1").arg(i), "").toString();
+        QListWidgetItem* item = new QListWidgetItem(text);
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
+        m_macrosList->addItem(item);
+    }
+    
+    settings.endGroup();
+}

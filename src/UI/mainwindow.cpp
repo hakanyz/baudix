@@ -140,6 +140,11 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
     portCheckTimer->start(2000);
+    
+    QSettings settings("hakanyz", "Baudix");
+    if (m_macroWidget) {
+        m_macroWidget->loadSettings(settings);
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -148,8 +153,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
         event->accept();
         return;
     }
-
+    
     QSettings settings("hakanyz", "Baudix");
+    if (m_macroWidget) {
+        m_macroWidget->saveSettings(settings);
+    }
     QString behavior = settings.value("System/CloseBehavior", "").toString();
 
     if (behavior == "Tray") {
