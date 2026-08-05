@@ -24,16 +24,10 @@ public:
     bool writeData(const QByteArray& data) override;
     bool isOpen() const override;
 
-    bool sendFile(const QString& filePath);
-    void resetCounters();
-    quint64 txBytes() const { return m_txBytes; }
-    quint64 rxBytes() const { return m_rxBytes; }
-
-signals:
-    void countersUpdated(quint64 tx, quint64 rx);
-    void fileTransferProgress(qint64 bytesSent, qint64 bytesTotal);
-    void fileTransferFinished();
-    void fileTransferError(const QString& error);
+    bool sendFile(const QString& filePath) override;
+    void resetCounters() override;
+    quint64 txBytes() const override { return m_txBytes; }
+    quint64 rxBytes() const override { return m_rxBytes; }
 
 private slots:
     void handleReadyRead();

@@ -132,12 +132,12 @@ MainWindow::MainWindow(QWidget *parent)
     statusBar()->setStyleSheet("background-color: #21252b; color: #abb2bf; border-top: 1px solid #181a1f;");
 
     // Connect controller signals
-    connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
-    connect(m_serialController, &SerialPortController::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
-    connect(m_serialController, &SerialPortController::countersUpdated, this, &MainWindow::updateCounters);
-    connect(m_serialController, &SerialPortController::fileTransferProgress, this, &MainWindow::onFileTransferProgress);
-    connect(m_serialController, &SerialPortController::fileTransferFinished, this, &MainWindow::onFileTransferFinished);
-    connect(m_serialController, &SerialPortController::fileTransferError, this, &MainWindow::onFileTransferError);
+    connect(m_serialController, &ISerialTransport::dataReceived, this, &MainWindow::onDataReceived);
+    connect(m_serialController, &ISerialTransport::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
+    connect(m_serialController, &ISerialTransport::countersUpdated, this, &MainWindow::updateCounters);
+    connect(m_serialController, &ISerialTransport::fileTransferProgress, this, &MainWindow::onFileTransferProgress);
+    connect(m_serialController, &ISerialTransport::fileTransferFinished, this, &MainWindow::onFileTransferFinished);
+    connect(m_serialController, &ISerialTransport::fileTransferError, this, &MainWindow::onFileTransferError);
     
     // Automatically check for updates silently 2 seconds after startup
     QTimer::singleShot(2000, this, [this](){
