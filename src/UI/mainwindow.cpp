@@ -35,6 +35,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     
+    // Set a good default size so panels aren't squished
+    resize(1200, 800);
+    setMinimumSize(900, 600);
+    
     m_serialController = new SerialPortController(this);
 
     // Setup Updater first so it can be connected in menus
