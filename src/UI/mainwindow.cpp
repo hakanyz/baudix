@@ -121,11 +121,23 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
-    statusBar()->hide(); // Hide empty status bar space
+    // Initialize Status Bar
+    m_lblTxBytes = new QLabel("TX: 0 B", this);
+    m_lblRxBytes = new QLabel("RX: 0 B", this);
+    m_lblTxBytes->setStyleSheet("color: #61afef; padding: 0 10px; font-weight: bold;");
+    m_lblRxBytes->setStyleSheet("color: #98c379; padding: 0 10px; font-weight: bold;");
+    
+    statusBar()->addPermanentWidget(m_lblTxBytes);
+    statusBar()->addPermanentWidget(m_lblRxBytes);
+    statusBar()->setStyleSheet("background-color: #21252b; color: #abb2bf; border-top: 1px solid #181a1f;");
 
     // Connect controller signals
     connect(m_serialController, &SerialPortController::dataReceived, this, &MainWindow::onDataReceived);
     connect(m_serialController, &SerialPortController::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
+    connect(m_serialController, &SerialPortController::countersUpdated, this, &MainWindow::updateCounters);
+    connect(m_serialController, &SerialPortController::fileTransferProgress, this, &MainWindow::onFileTransferProgress);
+    connect(m_serialController, &SerialPortController::fileTransferFinished, this, &MainWindow::onFileTransferFinished);
+    connect(m_serialController, &SerialPortController::fileTransferError, this, &MainWindow::onFileTransferError);
     
     // Automatically check for updates silently 2 seconds after startup
     QTimer::singleShot(2000, this, [this](){
@@ -487,6 +499,7 @@ void MainWindow::onConnectionStateChanged(bool isOpen, const QString& errorMsg)
             m_connectionWidget->setConnectedState(true);
             setWindowTitle(QString("Baudix | %1 - %2 Connected").arg(m_connectionWidget->portName().split(" - ").first(), QString::number(m_connectionWidget->baudRate())));
         }
+        m_serialController->resetCounters();
     } else {
         if (m_connectionWidget) {
             m_connectionWidget->setConnectedState(false);
@@ -510,24 +523,67 @@ void MainWindow::onSendFileClicked()
     QString filename = QFileDialog::getOpenFileName(this, "Select File to Send", "", "All Files (*.*)");
     if (filename.isEmpty()) return;
 
-    QFile file(filename);
-    if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::critical(this, "Error", "Could not open the selected file.");
-        return;
-    }
-
-    QByteArray fileData = file.readAll();
-    file.close();
-
-    if (m_serialController->writeData(fileData)) {
+    if (m_serialController->sendFile(filename)) {
         if (m_terminalWidget) {
             QString filter = m_macroWidget ? m_macroWidget->highlightFilter() : "";
-            QString formattedStr = m_terminalWidget->appendData(QString("> TX FILE: %1 (%2 bytes)").arg(QFileInfo(filename).fileName()).arg(fileData.size()), "", "#61afef", filter);
+            QString formattedStr = m_terminalWidget->appendData(QString("> TX FILE: %1").arg(QFileInfo(filename).fileName()), "", "#61afef", filter);
             if (m_loggingWidget) {
                 m_loggingWidget->appendLog("> TX FILE:", formattedStr);
             }
         }
+        
+        m_fileProgressDialog = new QProgressDialog("Sending file...", "Cancel", 0, 100, this);
+        m_fileProgressDialog->setWindowTitle("File Transfer");
+        m_fileProgressDialog->setWindowModality(Qt::WindowModal);
+        // We cannot easily cancel the current QSerialPort write if it's already queued,
+        // but for chunks, we could add cancel logic. For now, disable cancel button.
+        m_fileProgressDialog->setCancelButton(nullptr); 
+        m_fileProgressDialog->show();
     } else {
-        QMessageBox::critical(this, "Error", "Failed to send file data.");
+        QMessageBox::critical(this, "Error", "Could not start file transfer.");
     }
 }
+
+void MainWindow::updateCounters(quint64 tx, quint64 rx)
+{
+    // Format numbers with commas (e.g., 1,024 B)
+    m_lblTxBytes->setText(QString("TX: %L1 B").arg(tx));
+    m_lblRxBytes->setText(QString("RX: %L1 B").arg(rx));
+}
+
+void MainWindow::onFileTransferProgress(qint64 bytesSent, qint64 bytesTotal)
+{
+    if (m_fileProgressDialog && bytesTotal > 0) {
+        m_fileProgressDialog->setMaximum(bytesTotal);
+        m_fileProgressDialog->setValue(bytesSent);
+    }
+}
+
+void MainWindow::onFileTransferFinished()
+{
+    if (m_fileProgressDialog) {
+        m_fileProgressDialog->close();
+        m_fileProgressDialog->deleteLater();
+        m_fileProgressDialog = nullptr;
+    }
+    
+    if (m_terminalWidget) {
+        m_terminalWidget->appendData("> TX FILE:", "Transfer Complete.", "#61afef", "");
+    }
+}
+
+void MainWindow::onFileTransferError(const QString& error)
+{
+    if (m_fileProgressDialog) {
+        m_fileProgressDialog->close();
+        m_fileProgressDialog->deleteLater();
+        m_fileProgressDialog = nullptr;
+    }
+    
+    QMessageBox::critical(this, "Transfer Error", "File transfer failed: " + error);
+    
+    if (m_terminalWidget) {
+        m_terminalWidget->appendData("> TX FILE:", "Transfer Failed.", "#e06c75", "");
+    }
+}
+
