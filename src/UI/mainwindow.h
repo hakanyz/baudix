@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include <QComboBox>
-#include <QTextEdit>
+
 #include <QToolBar>
 #include <QAction>
 #include <QPushButton>

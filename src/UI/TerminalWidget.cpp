@@ -62,14 +62,14 @@ void TerminalWidget::setupUI()
     tabLayout->addLayout(topBar);
     
     // Terminal Output
-    m_terminalOutput = new QTextEdit();
+    m_terminalOutput = new QPlainTextEdit();
     m_terminalOutput->setObjectName("terminalOutput");
     m_terminalOutput->setReadOnly(true);
     
     QSettings settings("hakanyz", "Baudix");
     int bufferLimit = settings.value("System/BufferLimit", 5000).toInt();
     if (bufferLimit > 0) {
-        m_terminalOutput->document()->setMaximumBlockCount(bufferLimit);
+        m_terminalOutput->setMaximumBlockCount(bufferLimit);
     }
     
     // Apply saved terminal font size
@@ -128,7 +128,7 @@ QString TerminalWidget::getTerminalText() const
 void TerminalWidget::setBufferLimit(int limit)
 {
     if (m_terminalOutput) {
-        m_terminalOutput->document()->setMaximumBlockCount(limit > 0 ? limit : 0);
+        m_terminalOutput->setMaximumBlockCount(limit > 0 ? limit : 0);
     }
 }
 
@@ -147,7 +147,7 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
 
     QString timestampStr = "";
     if (m_timestampCb->isChecked()) {
-        timestampStr = QString("<span style='color:#5c6370;'>[%1]</span> ")
+        timestampStr = QString("[%1] ")
                        .arg(QDateTime::currentDateTime().toString("hh:mm:ss.zzz"));
     }
 
@@ -219,10 +219,36 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
         finalDataStr = asciiStr;
     }
 
-    QString htmlLine = QString("%1<span style='background-color:%2; color:%3;'>%4 %5</span>")
-                       .arg(timestampStr, bgColor, finalColor, prefix, finalDataStr.toHtmlEscaped());
+    // Prepare QTextCursor for insertion
+    QTextCursor cursor(m_terminalOutput->document());
+    cursor.movePosition(QTextCursor::End);
 
-    m_terminalOutput->append(htmlLine);
+    // Apply Timestamp if needed
+    if (!timestampStr.isEmpty()) {
+        QTextCharFormat tsFormat;
+        tsFormat.setForeground(QColor("#5c6370"));
+        cursor.insertText(timestampStr, tsFormat);
+    }
+
+    // Apply Prefix formatting (Always keep original color for TX/RX)
+    QTextCharFormat prefixFormat;
+    prefixFormat.setForeground(QColor(color));
+    cursor.insertText(prefix + " ", prefixFormat);
+
+    // Apply Data formatting
+    QTextCharFormat dataFormat;
+    if (bgColor != "transparent") {
+        dataFormat.setBackground(QColor(bgColor));
+        dataFormat.setForeground(QColor(finalColor)); // Vurgulama rengi
+    } else {
+        dataFormat.setForeground(QColor("#abb2bf")); // Standart terminal metin rengi
+    }
+
+    // Insert data
+    cursor.insertText(finalDataStr + "\n", dataFormat);
+
+    // Ensure it scrolls down if the user was at the bottom
+    m_terminalOutput->ensureCursorVisible();
     
     return finalDataStr;
 }

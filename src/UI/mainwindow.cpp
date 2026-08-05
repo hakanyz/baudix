@@ -415,7 +415,7 @@ void MainWindow::onDataReceived(const QByteArray& data)
 {
     if (!m_terminalWidget) return;
     QString filter = m_macroWidget ? m_macroWidget->highlightFilter() : "";
-    QString formattedStr = m_terminalWidget->appendData("&lt; RX:", data, "#98c379", filter);
+    QString formattedStr = m_terminalWidget->appendData("< RX:", data, "#98c379", filter);
     
     if (m_loggingWidget) {
         m_loggingWidget->appendLog("< RX:", formattedStr);
@@ -436,7 +436,7 @@ void MainWindow::sendDataToController(const QByteArray& data)
     if (m_serialController->writeData(data)) {
         if (m_terminalWidget) {
             QString filter = m_macroWidget ? m_macroWidget->highlightFilter() : "";
-            QString formattedStr = m_terminalWidget->appendData("&gt; TX:", data, "#61afef", filter);
+            QString formattedStr = m_terminalWidget->appendData("> TX:", data, "#61afef", filter);
             
             if (m_loggingWidget) {
                 m_loggingWidget->appendLog("> TX:", formattedStr);

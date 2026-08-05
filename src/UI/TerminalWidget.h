@@ -2,7 +2,7 @@
 #define TERMINALWIDGET_H
 
 #include <QWidget>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QComboBox>
@@ -29,7 +29,7 @@ private slots:
     void onClearClicked();
 
 private:
-    QTextEdit* m_terminalOutput;
+    QPlainTextEdit* m_terminalOutput;
     QPushButton* m_timestampCb;
     QComboBox* m_viewModeCombo;
     QLineEdit* m_searchBox;
