@@ -1,7 +1,7 @@
 #include "SerialPortController.h"
 #include <QDebug>
 
-SerialPortController::SerialPortController(QObject *parent) : QObject(parent)
+SerialPortController::SerialPortController(QObject *parent) : ISerialTransport(parent)
 {
     m_serialPort = new QSerialPort(this);
     connect(m_serialPort, &QSerialPort::readyRead, this, &SerialPortController::handleReadyRead);

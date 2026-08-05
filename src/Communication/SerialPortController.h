@@ -7,24 +7,22 @@
 #include <QByteArray>
 #include <QStringList>
 
-class SerialPortController : public QObject
+#include "ISerialTransport.h"
+
+class SerialPortController : public ISerialTransport
 {
     Q_OBJECT
 public:
     explicit SerialPortController(QObject *parent = nullptr);
-    ~SerialPortController();
+    ~SerialPortController() override;
 
-    QStringList getAvailablePorts() const;
+    QStringList getAvailablePorts() const override;
     bool connectDevice(const QString& portName, int baudRate, QSerialPort::DataBits dataBits,
                        QSerialPort::Parity parity, QSerialPort::StopBits stopBits,
-                       QSerialPort::FlowControl flowControl);
-    void disconnectDevice();
-    bool writeData(const QByteArray& data);
-    bool isOpen() const;
-
-signals:
-    void dataReceived(const QByteArray& data);
-    void connectionStateChanged(bool isOpen, const QString& errorMsg = "");
+                       QSerialPort::FlowControl flowControl) override;
+    void disconnectDevice() override;
+    bool writeData(const QByteArray& data) override;
+    bool isOpen() const override;
 
 private slots:
     void handleReadyRead();

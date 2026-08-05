@@ -24,6 +24,11 @@
 #include <QLabel>
 #include <QFile>
 #include <QTextStream>
+#include "ConnectionWidget.h"
+#include "TerminalWidget.h"
+#include "SendWidget.h"
+#include "LoggingWidget.h"
+#include "MacroWidget.h"
 #include "../Communication/SerialPortController.h"
 #include "../Core/Updater.h"
 
@@ -44,21 +49,17 @@ protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
-    void onToggleConnectClicked();
+    void onConnectRequested();
+    void onDisconnectRequested();
     void onDataReceived(const QByteArray& data);
     void onConnectionStateChanged(bool isOpen, const QString& errorMsg);
-    void onSendClicked();
-    void onClearTerminalClicked();
+    void sendDataToController(const QByteArray& data);
     void onExportTerminal();
     
     // Core Feature Slots
-    void onPeriodicSendToggled(bool checked);
-    void onPeriodicTimerTimeout();
     void onMacroResetClicked();
     void onMacroBootClicked();
     void onMacroVerClicked();
-    void onSearchTextChanged(const QString &text);
-    void onToggleLogging(bool checked);
     void onSendFileClicked();
 
 private:
@@ -67,53 +68,29 @@ private:
     void setupToolBar();
     void setupCentralWidget();
     void refreshPorts();
-    void appendToTerminal(const QString& prefix, const QByteArray& data, const QString& color);
-    void performSend(const QString& text); // Helper
+    void performSend(const QString& text); // Helper for Macros
 
     // Core Controller
-    SerialPortController* m_serialController;
+    ISerialTransport* m_serialController;
     Updater* m_updater;
-    QTimer* m_periodicTimer;
     bool m_isUpdating = false;
 
     // --- UI Elements ---
-    QPushButton* m_btnConnect;
-    QPushButton* m_btnLog;
-    QPushButton* m_btnPauseLog;
-    QTextEdit* m_terminalOutput;
 
     // Connection Dock
-    QComboBox* m_portCombo;
-    QComboBox* m_baudCombo;
-    QComboBox* m_dataBitsCombo;
-    QComboBox *m_stopBitsCombo;
-    QComboBox *m_parityCombo;
-    QComboBox *m_flowControlCombo;
+    ConnectionWidget* m_connectionWidget;
 
     // Terminal View Settings
-    QPushButton* m_timestampCb;
-    QComboBox* m_viewModeCombo;
-    QLineEdit* m_searchBox;
+    TerminalWidget* m_terminalWidget;
 
     // Send Dock
-    QComboBox* m_inputCombo;
-    QCheckBox* m_cbHistoryOn;
-    QPushButton* m_sendButton;
-    QComboBox* m_sendAsCombo;
-    QComboBox* m_appendCombo;
-    QCheckBox* m_periodicSendCb;
-    QSpinBox* m_periodicMsBox;
-    QSpinBox* m_burstBox;
+    SendWidget* m_sendWidget;
 
     // Logging Dock
-    QLineEdit* m_logFilename;
-    QComboBox* m_logFormat;
-    QFile* m_logFile;
-    QTextStream* m_logStream;
+    LoggingWidget* m_loggingWidget;
 
     // Tools Dock
-    QLineEdit* m_hlFilter;
-    QListWidget* m_macrosList;
+    MacroWidget* m_macroWidget;
 
     // Tray and Updater UI
     QSystemTrayIcon* m_trayIcon;

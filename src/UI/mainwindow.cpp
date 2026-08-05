@@ -36,9 +36,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     
     m_serialController = new SerialPortController(this);
-    m_periodicTimer = new QTimer(this);
-    m_logFile = nullptr;
-    m_logStream = nullptr;
 
     // Setup Updater first so it can be connected in menus
     m_updater = new Updater(this);
@@ -193,9 +190,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if (watched == m_portCombo && (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonDblClick)) {
-        refreshPorts();
-    }
     return QMainWindow::eventFilter(watched, event);
 }
 
@@ -213,189 +207,13 @@ void MainWindow::setupCentralWidget()
     QVBoxLayout* tabLayout = new QVBoxLayout(terminalTab);
     tabLayout->setContentsMargins(5, 5, 5, 5);
     
-    // Top Bar of Terminal
-    QHBoxLayout* topBar = new QHBoxLayout();
+    m_terminalWidget = new TerminalWidget();
+    tabLayout->addWidget(m_terminalWidget);
     
-    m_timestampCb = new QPushButton("Timestamp");
-    m_timestampCb->setCheckable(true);
-    m_timestampCb->setChecked(true);
-    m_timestampCb->setObjectName("smallBtn");
-    topBar->addWidget(m_timestampCb);
-    
-    m_viewModeCombo = new QComboBox();
-    m_viewModeCombo->addItems({"ASCII", "HEX", "Both"});
-    m_viewModeCombo->setCurrentText("ASCII");
-    topBar->addWidget(m_viewModeCombo);
-
-    topBar->addSpacing(10);
-
-    // Search bar integrated into Top Bar
-    m_searchBox = new QLineEdit();
-    m_searchBox->setPlaceholderText("Search terminal...");
-    m_searchBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    connect(m_searchBox, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
-    connect(m_searchBox, &QLineEdit::returnPressed, [this](){
-        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text());
-    });
-    topBar->addWidget(m_searchBox);
-
-    QPushButton* btnFindPrev = new QPushButton("▲");
-    btnFindPrev->setObjectName("iconBtn");
-    btnFindPrev->setFixedWidth(28);
-    connect(btnFindPrev, &QPushButton::clicked, [this](){
-        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text(), QTextDocument::FindBackward);
-    });
-    topBar->addWidget(btnFindPrev);
-
-    QPushButton* btnFindNext = new QPushButton("▼");
-    btnFindNext->setObjectName("iconBtn");
-    btnFindNext->setFixedWidth(28);
-    connect(btnFindNext, &QPushButton::clicked, [this](){
-        if (!m_searchBox->text().isEmpty()) m_terminalOutput->find(m_searchBox->text());
-    });
-    topBar->addWidget(btnFindNext);
-    
-    topBar->addSpacing(20); // Separate from search controls
-    
-    QPushButton* clearBtn = new QPushButton("Clear Screen");
-    clearBtn->setObjectName("clearTerminalBtn");
-    connect(clearBtn, &QPushButton::clicked, this, &MainWindow::onClearTerminalClicked);
-    topBar->addWidget(clearBtn);
-    
-    tabLayout->addLayout(topBar);
-    
-    // Terminal Output
-    m_terminalOutput = new QTextEdit();
-    m_terminalOutput->setObjectName("terminalOutput");
-    m_terminalOutput->setReadOnly(true);
-    
-    QSettings settings("hakanyz", "Baudix");
-    int bufferLimit = settings.value("System/BufferLimit", 5000).toInt();
-    if (bufferLimit > 0) {
-        m_terminalOutput->document()->setMaximumBlockCount(bufferLimit);
-    }
-    
-    // Apply saved terminal font size
-    int termFontSize = settings.value("UI/TerminalFontSize", 11).toInt();
-    QFont termFont = m_terminalOutput->font();
-    termFont.setPointSize(termFontSize);
-    m_terminalOutput->setFont(termFont);
-    
-    tabLayout->addWidget(m_terminalOutput);
-    
-    // --- Send Area (Compact, moved from dock) ---
-    QFrame *sendFrame = new QFrame();
-    sendFrame->setObjectName("dockContent");
-    sendFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum); // Hugs contents vertically
-    QVBoxLayout *sendLayout = new QVBoxLayout(sendFrame);
-    sendLayout->setContentsMargins(4, 4, 4, 4);
-    sendLayout->setSpacing(4);
-    
-    // Top Row: Input only
-    QHBoxLayout *inputLayout = new QHBoxLayout();
-    m_inputCombo = new QComboBox();
-    m_inputCombo->setEditable(true);
-    m_inputCombo->setInsertPolicy(QComboBox::NoInsert);
-    m_inputCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes (e.g. AA BB CC)");
-    m_inputCombo->addItem(""); // Default empty
-    connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &MainWindow::onSendClicked);
-    inputLayout->addWidget(m_inputCombo, 1);
-    sendLayout->addLayout(inputLayout);
-    
-    // Middle Row: Action Tools
-    QHBoxLayout *sendActionLayout = new QHBoxLayout();
-    
-    int actionHeight = 28;
-    
-    QPushButton* btnSendFile = new QPushButton("Send File");
-    btnSendFile->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
-    btnSendFile->setObjectName("smallBtn");
-    btnSendFile->setFixedHeight(actionHeight);
-    connect(btnSendFile, &QPushButton::clicked, this, &MainWindow::onSendFileClicked);
-    sendActionLayout->addWidget(btnSendFile);
-    
-    m_cbHistoryOn = new QCheckBox("Save History");
-    m_cbHistoryOn->setChecked(true);
-    m_cbHistoryOn->setFixedHeight(actionHeight);
-    connect(m_cbHistoryOn, &QCheckBox::toggled, this, [this](bool checked) {
-        if (!checked) {
-            m_inputCombo->setStyleSheet("QComboBox::drop-down { border: none; width: 0px; }");
-            m_inputCombo->clear();
-            m_inputCombo->addItem("");
-        } else {
-            m_inputCombo->setStyleSheet("");
-        }
-    });
-    sendActionLayout->addWidget(m_cbHistoryOn);
-    
-    QPushButton* btnClearHistory = new QPushButton("Clear History");
-    btnClearHistory->setObjectName("smallBtn");
-    btnClearHistory->setFixedHeight(actionHeight);
-    connect(btnClearHistory, &QPushButton::clicked, [this](){
-        m_inputCombo->clear();
-        m_inputCombo->addItem("");
-    });
-    sendActionLayout->addWidget(btnClearHistory);
-    
-    QLabel* lblAppend = new QLabel("Append:");
-    lblAppend->setFixedHeight(actionHeight);
-    sendActionLayout->addWidget(lblAppend);
-    
-    m_appendCombo = new QComboBox();
-    m_appendCombo->addItems({"None", "CR", "LF", "CRLF"});
-    m_appendCombo->setFixedHeight(actionHeight);
-    sendActionLayout->addWidget(m_appendCombo);
-    
-    QLabel* lblFormat = new QLabel("Format:");
-    lblFormat->setFixedHeight(actionHeight);
-    sendActionLayout->addWidget(lblFormat);
-    
-    m_sendAsCombo = new QComboBox();
-    m_sendAsCombo->addItems({"ASCII", "HEX"});
-    m_sendAsCombo->setToolTip("ASCII: send as plain text\nHEX: parse as hex bytes");
-    m_sendAsCombo->setFixedHeight(actionHeight);
-    sendActionLayout->addWidget(m_sendAsCombo);
-    
-    sendActionLayout->addStretch();
-    
-    m_sendButton = new QPushButton("Send");
-    m_sendButton->setObjectName("sendButton");
-    m_sendButton->setFixedHeight(actionHeight);
-    connect(m_sendButton, &QPushButton::clicked, this, &MainWindow::onSendClicked);
-    sendActionLayout->addWidget(m_sendButton);
-    
-    sendLayout->addLayout(sendActionLayout);
-    
-    // Bottom Row: Periodic Send
-    QHBoxLayout *bottomLayout = new QHBoxLayout();
-    
-    m_periodicSendCb = new QCheckBox("Periodic Send");
-    m_periodicSendCb->setToolTip("Automatically send the input at a fixed interval");
-    connect(m_periodicSendCb, &QCheckBox::toggled, this, &MainWindow::onPeriodicSendToggled);
-    connect(m_periodicTimer, &QTimer::timeout, this, &MainWindow::onPeriodicTimerTimeout);
-    bottomLayout->addWidget(m_periodicSendCb);
-    
-    m_periodicMsBox = new QSpinBox();
-    m_periodicMsBox->setRange(1, 100000);
-    m_periodicMsBox->setValue(100);
-    m_periodicMsBox->setSuffix(" ms");
-    m_periodicMsBox->setFixedWidth(80);
-    m_periodicMsBox->setToolTip("Interval between sends");
-    bottomLayout->addWidget(m_periodicMsBox);
-    
-    bottomLayout->addWidget(new QLabel("Burst:"));
-    m_burstBox = new QSpinBox();
-    m_burstBox->setRange(1, 1000);
-    m_burstBox->setValue(1);
-    m_burstBox->setFixedWidth(60);
-    m_burstBox->setToolTip("How many times to send per interval");
-    bottomLayout->addWidget(m_burstBox);
-    
-    bottomLayout->addStretch();
-    sendLayout->addLayout(bottomLayout);
-    
-    tabLayout->addWidget(sendFrame);
+    m_sendWidget = new SendWidget();
+    connect(m_sendWidget, &SendWidget::sendDataRequested, this, &MainWindow::sendDataToController);
+    connect(m_sendWidget, &SendWidget::sendFileRequested, this, &MainWindow::onSendFileClicked);
+    tabLayout->addWidget(m_sendWidget);
     
     tabWidget->addTab(terminalTab, "Terminal");
     
@@ -415,202 +233,32 @@ void MainWindow::setupDockWidgets()
     // --- Connection Dock ---
     QDockWidget *connDock = new QDockWidget("Connection", this);
     connDock->setFeatures(dockFeatures);
-    QWidget *connWidget = new QWidget(connDock);
-    connWidget->setObjectName("dockContent");
-    QFormLayout *connLayout = new QFormLayout(connWidget);
-    
-    m_portCombo = new QComboBox();
-    m_portCombo->installEventFilter(this);
-    refreshPorts();
-    connLayout->addRow("COM Port", m_portCombo);
-    
-    m_baudCombo = new QComboBox();
-    m_baudCombo->addItems({"9600", "19200", "38400", "57600", "115200", "921600"});
-    m_baudCombo->setCurrentText("115200");
-    connLayout->addRow("Baud Rate", m_baudCombo);
-    
-    m_dataBitsCombo = new QComboBox();
-    m_dataBitsCombo->addItems({"5", "6", "7", "8"});
-    m_dataBitsCombo->setCurrentText("8");
-    connLayout->addRow("Data Bits", m_dataBitsCombo);
-    
-    m_stopBitsCombo = new QComboBox();
-    m_stopBitsCombo->addItems({"1", "1.5", "2"});
-    connLayout->addRow("Stop Bits", m_stopBitsCombo);
-    
-    m_parityCombo = new QComboBox();
-    m_parityCombo->addItems({"None", "Even", "Odd", "Space", "Mark"});
-    connLayout->addRow("Parity", m_parityCombo);
-    
-    m_flowControlCombo = new QComboBox();
-    m_flowControlCombo->addItems({"None", "Hardware", "Software"});
-    connLayout->addRow("Flow Control", m_flowControlCombo);
-    
-    connLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
-
-    // Full-width Connect / Disconnect Action Button
-    m_btnConnect = new QPushButton("Connect");
-    m_btnConnect->setObjectName("connectBtn");
-    m_btnConnect->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_btnConnect->setFixedHeight(26);
-    connect(m_btnConnect, &QPushButton::clicked, this, &MainWindow::onToggleConnectClicked);
-    connLayout->addRow(m_btnConnect);
-
-    connWidget->setLayout(connLayout);
-    connDock->setWidget(connWidget);
+    m_connectionWidget = new ConnectionWidget(connDock);
+    connect(m_connectionWidget, &ConnectionWidget::connectRequested, this, &MainWindow::onConnectRequested);
+    connect(m_connectionWidget, &ConnectionWidget::disconnectRequested, this, &MainWindow::onDisconnectRequested);
+    connect(m_connectionWidget, &ConnectionWidget::refreshPortsRequested, this, &MainWindow::refreshPorts);
+    connDock->setWidget(m_connectionWidget);
     addDockWidget(Qt::LeftDockWidgetArea, connDock);
+    refreshPorts();
 
     // --- Logging Dock ---
     QDockWidget *logDock = new QDockWidget("Logging", this);
     logDock->setFeatures(dockFeatures);
-    QWidget *logWidget = new QWidget(logDock);
-    QFormLayout *logLayout = new QFormLayout(logWidget);
-    
-    // Save to row: text field + Browse button side by side
-    QHBoxLayout* fileLayout = new QHBoxLayout();
-    fileLayout->setSpacing(4);
-    fileLayout->setContentsMargins(0,0,0,0);
-    
-    m_logFilename = new QLineEdit("baudix_log");
-    fileLayout->addWidget(m_logFilename);
-
-    QPushButton* browseBtn = new QPushButton("Browse...");
-    browseBtn->setObjectName("smallBtn");
-    browseBtn->setToolTip("Choose save location");
-    connect(browseBtn, &QPushButton::clicked, [this](){
-        QString filename = QFileDialog::getSaveFileName(this, "Save Log File", m_logFilename->text(), "Text Files (*.txt)");
-        if (!filename.isEmpty()) m_logFilename->setText(filename);
-    });
-    fileLayout->addWidget(browseBtn);
-    
-    logLayout->addRow("Save to", fileLayout);
-    
-    logLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
-
-    QHBoxLayout* liveActionLayout = new QHBoxLayout();
-    m_btnLog = new QPushButton("⏺ Record");
-    m_btnLog->setObjectName("connectBtn");
-    m_btnLog->setCheckable(true);
-    connect(m_btnLog, &QPushButton::toggled, this, &MainWindow::onToggleLogging);
-    liveActionLayout->addWidget(m_btnLog);
-
-    m_btnPauseLog = new QPushButton("⏸ Pause");
-    m_btnPauseLog->setCheckable(true);
-    m_btnPauseLog->setEnabled(false); // Only enable when recording
-    liveActionLayout->addWidget(m_btnPauseLog);
-
-    logLayout->addRow(liveActionLayout);
-
-    logLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
-
-    QPushButton* btnExportTxt = new QPushButton("📥 Save All");
-    connect(btnExportTxt, &QPushButton::clicked, this, &MainWindow::onExportTerminal);
-    logLayout->addRow(btnExportTxt);
-
-    logWidget->setLayout(logLayout);
-    logDock->setWidget(logWidget);
+    m_loggingWidget = new LoggingWidget(logDock);
+    connect(m_loggingWidget, &LoggingWidget::exportTerminalRequested, this, &MainWindow::onExportTerminal);
+    logDock->setWidget(m_loggingWidget);
     addDockWidget(Qt::LeftDockWidgetArea, logDock);
 
     // --- Tools Dock ---
     QDockWidget *toolsDock = new QDockWidget("Tools", this);
     toolsDock->setFeatures(dockFeatures);
-    QWidget *toolsWidget = new QWidget(toolsDock);
-    toolsWidget->setObjectName("dockContent");
-    toolsWidget->setMinimumWidth(220); // Make the right dock wider by default
-    QVBoxLayout *toolsLayout = new QVBoxLayout(toolsWidget);
-    toolsLayout->setSpacing(8);
-    toolsLayout->setContentsMargins(8, 8, 8, 8);
-
-    // --- Highlight Filter ---
-    QLabel* hlTitle = new QLabel("Highlight Filter");
-    hlTitle->setStyleSheet("color: #abb2bf; font-weight: bold;");
-    toolsLayout->addWidget(hlTitle);
-
-    m_hlFilter = new QLineEdit();
-    m_hlFilter->setPlaceholderText("e.g. ERROR, OK, or 0xAA");
-    m_hlFilter->setToolTip("Highlight lines matching ASCII text or HEX bytes automatically");
-    toolsLayout->addWidget(m_hlFilter);
-
-    toolsLayout->addSpacing(8);
-
-    // --- Macros ---
-    QLabel* macroTitle = new QLabel("Macros");
-    macroTitle->setStyleSheet("color: #abb2bf; font-weight: bold;");
-    toolsLayout->addWidget(macroTitle);
-
-    m_macrosList = new QListWidget();
-    m_macrosList->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_macrosList->setWordWrap(true);
-
-    connect(m_macrosList, &QListWidget::itemDoubleClicked, [this](QListWidgetItem* item){
-        if (!item->text().isEmpty()) performSend(item->text());
-    });
-    connect(m_macrosList, &QListWidget::customContextMenuRequested, [this](const QPoint& pos){
-        QListWidgetItem* sel = m_macrosList->currentItem();
-        QMenu menu(this);
-        QAction* actAdd    = menu.addAction("Add");
-        QAction* actEdit   = sel ? menu.addAction("Edit")   : nullptr;
-        QAction* actRemove = sel ? menu.addAction("Remove") : nullptr;
-        QAction* chosen = menu.exec(m_macrosList->mapToGlobal(pos));
-        if (chosen == actAdd) {
-            QListWidgetItem* newItem = new QListWidgetItem("");
-            newItem->setFlags(newItem->flags() | Qt::ItemIsEditable);
-            m_macrosList->addItem(newItem);
-            m_macrosList->editItem(newItem);
-        } else if (actEdit && chosen == actEdit) {
-            m_macrosList->editItem(sel);
-        } else if (actRemove && chosen == actRemove) {
-            delete sel;
-        }
-    });
-    toolsLayout->addWidget(m_macrosList, 1); // stretch = 1 so it grows
-    
-    // Macro Action Buttons
-    QHBoxLayout* macroOps = new QHBoxLayout();
-    macroOps->setSpacing(4);
-    
-    QPushButton* btnAddMacro = new QPushButton("+ Add");
-    btnAddMacro->setObjectName("smallBtn");
-    connect(btnAddMacro, &QPushButton::clicked, [this](){
-        QListWidgetItem* newItem = new QListWidgetItem("");
-        newItem->setFlags(newItem->flags() | Qt::ItemIsEditable);
-        m_macrosList->addItem(newItem);
-        m_macrosList->scrollToItem(newItem);
-        m_macrosList->editItem(newItem);
-    });
-    macroOps->addWidget(btnAddMacro);
-    
-    QPushButton* btnRemoveMacro = new QPushButton("- Remove");
-    btnRemoveMacro->setObjectName("smallBtn");
-    connect(btnRemoveMacro, &QPushButton::clicked, [this](){
-        QListWidgetItem* sel = m_macrosList->currentItem();
-        if (sel) delete sel;
-    });
-    macroOps->addWidget(btnRemoveMacro);
-    
-    toolsLayout->addLayout(macroOps);
-
-    // Send Selected button
-    QPushButton* macroSendBtn = new QPushButton("Send Selected");
-    macroSendBtn->setObjectName("sendButton"); // Style like the main send button
-    connect(macroSendBtn, &QPushButton::clicked, [this](){
-        QListWidgetItem* sel = m_macrosList->currentItem();
-        if (sel && !sel->text().isEmpty()) performSend(sel->text());
-    });
-    toolsLayout->addWidget(macroSendBtn);
-
-    toolsLayout->addSpacing(8);
-    toolsLayout->addStretch();
-    toolsWidget->setLayout(toolsLayout);
-    toolsDock->setWidget(toolsWidget);
+    m_macroWidget = new MacroWidget(toolsDock);
+    connect(m_macroWidget, &MacroWidget::macroSendRequested, this, &MainWindow::performSend);
+    toolsDock->setWidget(m_macroWidget);
     addDockWidget(Qt::RightDockWidgetArea, toolsDock);
 
     // --- File Menu ---
     QMenu *fileMenu = menuBar()->addMenu("File");
-    
-    QAction* toggleLogAct = fileMenu->addAction("Start/Stop Logging");
-    toggleLogAct->setShortcut(QKeySequence("Ctrl+R"));
-    connect(toggleLogAct, &QAction::triggered, m_btnLog, &QPushButton::click);
     
     QAction* exportAct = fileMenu->addAction("Export Terminal");
     exportAct->setShortcut(QKeySequence("Ctrl+S"));
@@ -677,18 +325,16 @@ void MainWindow::setupDockWidgets()
             settings.setValue("System/BufferLimit", newLimit);
             
             // Apply buffer limit immediately to the live terminal
-            if (newLimit > 0) {
-                m_terminalOutput->document()->setMaximumBlockCount(newLimit);
-            } else {
-                m_terminalOutput->document()->setMaximumBlockCount(0); // unlimited
+            if (m_terminalWidget) {
+                m_terminalWidget->setBufferLimit(newLimit);
             }
             
-            // Apply terminal font size immediately (only to terminal output)
+            // Apply terminal font size immediately
             int newFontSize = fontSizeCombo->currentData().toInt();
             settings.setValue("UI/TerminalFontSize", newFontSize);
-            QFont termFont = m_terminalOutput->font();
-            termFont.setPointSize(newFontSize);
-            m_terminalOutput->setFont(termFont);
+            if (m_terminalWidget) {
+                m_terminalWidget->setFontSize(newFontSize);
+            }
         }
     });
     
@@ -703,23 +349,16 @@ void MainWindow::setupDockWidgets()
     
     QAction* clearAct = termMenu->addAction("Clear Screen");
     clearAct->setShortcut(QKeySequence("Ctrl+L"));
-    connect(clearAct, &QAction::triggered, this, &MainWindow::onClearTerminalClicked);
+    connect(clearAct, &QAction::triggered, [this](){
+        if (m_terminalWidget) m_terminalWidget->clearTerminal();
+    });
     
     termMenu->addSeparator();
     
-    QAction* toggleTimeAct = termMenu->addAction("Toggle Timestamps");
-    toggleTimeAct->setShortcut(QKeySequence("Ctrl+T"));
-    connect(toggleTimeAct, &QAction::triggered, m_timestampCb, &QPushButton::click);
+    // Toggle Timestamps removed from here because it's inside TerminalWidget now.
+    // If you need global toggle, you can add a method to TerminalWidget.
     
-    QMenu *formatMenu = termMenu->addMenu("Format");
-    QAction* formatAsciiAct = formatMenu->addAction("ASCII");
-    connect(formatAsciiAct, &QAction::triggered, [this](){ m_viewModeCombo->setCurrentText("ASCII"); });
-    
-    QAction* formatHexAct = formatMenu->addAction("HEX");
-    connect(formatHexAct, &QAction::triggered, [this](){ m_viewModeCombo->setCurrentText("HEX"); });
-    
-    QAction* formatBothAct = formatMenu->addAction("Both");
-    connect(formatBothAct, &QAction::triggered, [this](){ m_viewModeCombo->setCurrentText("Both"); });
+    // Format menus removed from here since they are in TerminalWidget combo.
 
     // --- Help Menu ---
     QMenu *helpMenu = menuBar()->addMenu("Help");
@@ -735,218 +374,72 @@ void MainWindow::setupDockWidgets()
 
 void MainWindow::refreshPorts()
 {
-    QString current = m_portCombo->currentText();
     QStringList newPorts = m_serialController->getAvailablePorts();
-
-    QStringList existingPorts;
-    for (int i = 0; i < m_portCombo->count(); ++i) {
-        existingPorts << m_portCombo->itemText(i);
-    }
-
-    if (existingPorts != newPorts) {
-        m_portCombo->clear();
-        m_portCombo->addItems(newPorts);
-        int idx = m_portCombo->findText(current);
-        if (idx >= 0) {
-            m_portCombo->setCurrentIndex(idx);
-        }
+    if (m_connectionWidget) {
+        m_connectionWidget->setAvailablePorts(newPorts);
     }
 }
 
-void MainWindow::onToggleConnectClicked()
+void MainWindow::onConnectRequested()
+{
+    QString port = m_connectionWidget->portName();
+    if(port.isEmpty()) return;
+    
+    int baud = m_connectionWidget->baudRate();
+    QSerialPort::DataBits dataBits = static_cast<QSerialPort::DataBits>(m_connectionWidget->dataBits());
+    QSerialPort::StopBits stopBits = QSerialPort::OneStop;
+    QSerialPort::Parity parity = QSerialPort::NoParity;
+    QSerialPort::FlowControl flowControl = QSerialPort::NoFlowControl;
+    
+    m_serialController->connectDevice(port, baud, dataBits, parity, stopBits, flowControl);
+}
+
+void MainWindow::onDisconnectRequested()
 {
     if (m_serialController->isOpen()) {
         m_serialController->disconnectDevice();
-    } else {
-        QString port = m_portCombo->currentText();
-        if(port.isEmpty()) return;
-        
-        int baud = m_baudCombo->currentText().toInt();
-        QSerialPort::DataBits dataBits = static_cast<QSerialPort::DataBits>(m_dataBitsCombo->currentText().toInt());
-        QSerialPort::StopBits stopBits = QSerialPort::OneStop;
-        QSerialPort::Parity parity = QSerialPort::NoParity;
-        QSerialPort::FlowControl flowControl = QSerialPort::NoFlowControl;
-        
-        m_serialController->connectDevice(port, baud, dataBits, parity, stopBits, flowControl);
     }
 }
 
-void MainWindow::appendToTerminal(const QString& prefix, const QByteArray& data, const QString& color)
-{
-    if (!m_terminalOutput) return;
-
-    QString timestampStr = "";
-    if (m_timestampCb->isChecked()) {
-        timestampStr = QString("<span style='color:#5c6370;'>[%1]</span> ")
-                       .arg(QDateTime::currentDateTime().toString("hh:mm:ss.zzz"));
-    }
-
-    // Check Highlight Filter (Supports both ASCII text & HEX bytes)
-    QString filterRule = m_hlFilter->text().trimmed();
-    QString finalColor = color;
-    QString bgColor = "transparent";
-
-    if (!filterRule.isEmpty()) {
-        bool isMatch = false;
-
-        // 1. ASCII Match (case-insensitive search in data)
-        if (QString::fromUtf8(data).contains(filterRule, Qt::CaseInsensitive)) {
-            isMatch = true;
-        }
-
-        // 2. HEX Match (parse filter as HEX bytes e.g. "0xAA", "AA", "AA BB")
-        if (!isMatch) {
-            QString cleanHex = filterRule;
-            cleanHex.replace("0x", "", Qt::CaseInsensitive);
-            cleanHex.remove(QRegularExpression("[^0-9a-fA-F]"));
-            if (!cleanHex.isEmpty() && cleanHex.length() % 2 == 0) {
-                QByteArray hexBytes;
-                for (int i = 0; i < cleanHex.length(); i += 2) {
-                    bool ok;
-                    uint b = cleanHex.mid(i, 2).toUInt(&ok, 16);
-                    if (ok) hexBytes.append((char)b);
-                }
-                if (!hexBytes.isEmpty() && data.contains(hexBytes)) {
-                    isMatch = true;
-                }
-            }
-        }
-
-        if (isMatch) {
-            bgColor = "#3e4452";    // Highlight background
-            finalColor = "#e5c07b";  // Highlight text yellow
-        }
-    }
-
-    // Prepare HEX (Optimization: Preallocate memory to save CPU cycles)
-    QString hexStr;
-    hexStr.reserve(data.size() * 5);
-    for (char c : data) {
-        hexStr += QString("0x%1 ").arg((quint8)c, 2, 16, QChar('0')).toUpper();
-    }
-    
-    // Prepare ASCII (filter non-printables)
-    QString asciiStr;
-    asciiStr.reserve(data.size() * 4); // <CR> and <LF> take up to 4 chars
-    for (char c : data) {
-        if (c >= 32 && c <= 126) {
-            asciiStr += c;
-        } else if (c == '\r') {
-            asciiStr += "<CR>";
-        } else if (c == '\n') {
-            asciiStr += "<LF>";
-        } else {
-            asciiStr += ".";
-        }
-    }
-
-    QString finalDataStr = "";
-    QString viewMode = m_viewModeCombo->currentText();
-    if (viewMode == "Both") {
-        finalDataStr = hexStr + " [" + asciiStr + "]";
-    } else if (viewMode == "HEX") {
-        finalDataStr = hexStr;
-    } else {
-        finalDataStr = asciiStr;
-    }
-
-    QString htmlLine = QString("%1<span style='background-color:%2; color:%3;'>%4 %5</span>")
-                       .arg(timestampStr, bgColor, finalColor, prefix, finalDataStr.toHtmlEscaped());
-
-    m_terminalOutput->append(htmlLine);
-    
-    // Save to log if active and NOT paused
-    if (m_logStream && m_logFile && m_logFile->isOpen()) {
-        if (!m_btnPauseLog->isChecked()) {
-            QString rawTimestamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
-            *m_logStream << "[" << rawTimestamp << "] " << prefix << " " << finalDataStr << "\n";
-            m_logStream->flush();
-        }
-    }
-}
+// appendToTerminal removed, now using TerminalWidget
 
 void MainWindow::onDataReceived(const QByteArray& data)
 {
-    // #98c379 is hacker green for RX
-    appendToTerminal("&lt; RX:", data, "#98c379");
+    if (!m_terminalWidget) return;
+    QString filter = m_macroWidget ? m_macroWidget->highlightFilter() : "";
+    QString formattedStr = m_terminalWidget->appendData("&lt; RX:", data, "#98c379", filter);
+    
+    if (m_loggingWidget) {
+        m_loggingWidget->appendLog("< RX:", formattedStr);
+    }
 }
 
 void MainWindow::performSend(const QString& text)
 {
-    if (!m_serialController->isOpen() || text.isEmpty()) return;
+    if (!m_sendWidget) return;
+    QByteArray data = m_sendWidget->formatData(text);
+    sendDataToController(data);
+}
 
-    QByteArray data;
-    // Check if HEX mode is selected
-    bool isHex = (m_sendAsCombo->currentText() == "HEX");
-
-    if (isHex) {
-        // Parse HEX: "AA BB 0xCC" -> bytes
-        QString cleanText = text;
-        cleanText.replace("0x", "", Qt::CaseInsensitive);
-        cleanText.remove(QRegularExpression("[^0-9a-fA-F]"));
-        
-        if (cleanText.length() % 2 != 0) cleanText.prepend("0");
-        
-        for (int i = 0; i < cleanText.length(); i += 2) {
-            bool ok;
-            uint byteVal = cleanText.mid(i, 2).toUInt(&ok, 16);
-            if (ok) data.append((char)byteVal);
-        }
-    } else {
-        // ASCII mode: send as plain UTF-8
-        data = text.toUtf8();
-    }
-    QString appendMode = m_appendCombo->currentText();
-    if (appendMode == "CR") data.append('\r');
-    else if (appendMode == "LF") data.append('\n');
-    else if (appendMode == "CRLF") { data.append('\r'); data.append('\n'); }
-
-    if (data.isEmpty()) return;
+void MainWindow::sendDataToController(const QByteArray& data)
+{
+    if (!m_serialController->isOpen() || data.isEmpty()) return;
 
     if (m_serialController->writeData(data)) {
-        appendToTerminal("&gt; TX:", data, "#61afef");
-    }
-}
-
-void MainWindow::onSendClicked()
-{
-    QString text = m_inputCombo->currentText();
-    if (text.isEmpty()) return;
-
-    performSend(text);
-    
-    m_inputCombo->setEditText("");
-    
-    if (m_cbHistoryOn->isChecked()) {
-        if (m_inputCombo->findText(text) == -1) {
-            m_inputCombo->insertItem(1, text);
-        }
-    }
-}
-
-void MainWindow::onPeriodicSendToggled(bool checked)
-{
-    if (checked) {
-        m_periodicTimer->start(m_periodicMsBox->value());
-    } else {
-        m_periodicTimer->stop();
-    }
-}
-
-void MainWindow::onPeriodicTimerTimeout()
-{
-    int bursts = m_burstBox->value();
-    for(int i=0; i<bursts; i++) {
-        QString text = m_inputCombo->currentText();
-        if (!text.isEmpty()) {
-            performSend(text);
+        if (m_terminalWidget) {
+            QString filter = m_macroWidget ? m_macroWidget->highlightFilter() : "";
+            QString formattedStr = m_terminalWidget->appendData("&gt; TX:", data, "#61afef", filter);
+            
+            if (m_loggingWidget) {
+                m_loggingWidget->appendLog("> TX:", formattedStr);
+            }
         }
     }
 }
 
 void MainWindow::onMacroResetClicked()
 {
-    performSend("AT+RESET\\r\\n"); // Or whatever default the user wants later
+    performSend("AT+RESET\r\n"); // Or whatever default the user wants later
 }
 
 void MainWindow::onMacroBootClicked()
@@ -959,23 +452,7 @@ void MainWindow::onMacroVerClicked()
     performSend("AT+GMR\\r\\n"); // Version standard command
 }
 
-void MainWindow::onSearchTextChanged(const QString &text)
-{
-    if (!m_terminalOutput) return;
-    
-    // Find functionality
-    m_terminalOutput->moveCursor(QTextCursor::Start);
-    if (!text.isEmpty()) {
-        m_terminalOutput->find(text); // Basic find, moves cursor to match
-    }
-}
-
-void MainWindow::onClearTerminalClicked()
-{
-    if (m_terminalOutput) {
-        m_terminalOutput->clear();
-    }
-}
+// onSearchTextChanged and onClearTerminalClicked removed, handled by TerminalWidget
 
 void MainWindow::onExportTerminal()
 {
@@ -985,80 +462,27 @@ void MainWindow::onExportTerminal()
         QFile file(filename);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream out(&file);
-            out << m_terminalOutput->toPlainText();
+            if (m_terminalWidget) {
+                out << m_terminalWidget->getTerminalText();
+            }
             file.close();
         }
     }
 }
 
-void MainWindow::onToggleLogging(bool checked)
-{
-    if (checked) {
-        QString filename = m_logFilename->text();
-        if (filename.isEmpty()) filename = "baudix_log";
-        if (!filename.endsWith(".txt", Qt::CaseInsensitive)) filename += ".txt";
-        
-        m_logFile = new QFile(filename);
-        if (m_logFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-            m_logStream = new QTextStream(m_logFile);
-            
-            // Touch up: Change text and switch to "Stop/Destructive" red outline style
-            m_btnLog->setText("⏹ Stop");
-            m_btnLog->setObjectName("disconnectBtn");
-            m_btnLog->style()->unpolish(m_btnLog);
-            m_btnLog->style()->polish(m_btnLog);
-            
-            m_btnPauseLog->setEnabled(true);
-            m_logFilename->setEnabled(false);
-        } else {
-            QMessageBox::warning(this, "Log Error", "Could not open log file for writing.");
-            m_btnLog->setChecked(false);
-            delete m_logFile;
-            m_logFile = nullptr;
-        }
-    } else {
-        if (m_logStream) {
-            delete m_logStream;
-            m_logStream = nullptr;
-        }
-        if (m_logFile) {
-            m_logFile->close();
-            delete m_logFile;
-            m_logFile = nullptr;
-        }
-        
-        // Touch up: Revert to "Start/Primary" blue style
-        m_btnLog->setText("⏺ Record");
-        m_btnLog->setObjectName("connectBtn");
-        m_btnLog->style()->unpolish(m_btnLog);
-        m_btnLog->style()->polish(m_btnLog);
-        
-        m_btnPauseLog->setChecked(false);
-        m_btnPauseLog->setEnabled(false);
-        
-        m_logFilename->setEnabled(true);
-    }
-}
+// onToggleLogging removed, logic moved to LoggingWidget
 
 void MainWindow::onConnectionStateChanged(bool isOpen, const QString& errorMsg)
 {
     if (isOpen) {
-        if (m_btnConnect) {
-            m_btnConnect->setText("Disconnect");
-            m_btnConnect->setObjectName("disconnectBtn");
-            m_btnConnect->style()->unpolish(m_btnConnect);
-            m_btnConnect->style()->polish(m_btnConnect);
+        if (m_connectionWidget) {
+            m_connectionWidget->setConnectedState(true);
+            setWindowTitle(QString("Baudix | %1 - %2 Connected").arg(m_connectionWidget->portName().split(" - ").first(), QString::number(m_connectionWidget->baudRate())));
         }
-        m_portCombo->setEnabled(false);
-        setWindowTitle(QString("Baudix | %1 - %2 Connected").arg(m_portCombo->currentText().split(" - ").first(), m_baudCombo->currentText()));
     } else {
-        if (m_btnConnect) {
-            m_btnConnect->setText("Connect");
-            m_btnConnect->setObjectName("connectBtn");
-            m_btnConnect->style()->unpolish(m_btnConnect);
-            m_btnConnect->style()->polish(m_btnConnect);
+        if (m_connectionWidget) {
+            m_connectionWidget->setConnectedState(false);
         }
-        m_portCombo->setEnabled(true);
         setWindowTitle("Baudix | Disconnected");
         refreshPorts();
         
@@ -1088,7 +512,13 @@ void MainWindow::onSendFileClicked()
     file.close();
 
     if (m_serialController->writeData(fileData)) {
-        appendToTerminal(QString("> TX FILE: %1 (%2 bytes)").arg(QFileInfo(filename).fileName()).arg(fileData.size()), "", "#61afef");
+        if (m_terminalWidget) {
+            QString filter = m_macroWidget ? m_macroWidget->highlightFilter() : "";
+            QString formattedStr = m_terminalWidget->appendData(QString("> TX FILE: %1 (%2 bytes)").arg(QFileInfo(filename).fileName()).arg(fileData.size()), "", "#61afef", filter);
+            if (m_loggingWidget) {
+                m_loggingWidget->appendLog("> TX FILE:", formattedStr);
+            }
+        }
     } else {
         QMessageBox::critical(this, "Error", "Failed to send file data.");
     }

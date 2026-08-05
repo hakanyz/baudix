@@ -19,8 +19,19 @@ set(PROJECT_SOURCES
         src/UI/mainwindow.cpp
         src/UI/mainwindow.h
         src/UI/mainwindow.ui
+        src/UI/ConnectionWidget.cpp
+        src/UI/ConnectionWidget.h
+        src/UI/TerminalWidget.cpp
+        src/UI/TerminalWidget.h
+        src/UI/SendWidget.cpp
+        src/UI/SendWidget.h
+        src/UI/LoggingWidget.cpp
+        src/UI/LoggingWidget.h
+        src/UI/MacroWidget.cpp
+        src/UI/MacroWidget.h
         src/Core/Updater.cpp
         src/Core/Updater.h
+        src/Communication/ISerialTransport.h
         src/Communication/SerialPortController.cpp
         src/Communication/SerialPortController.h
         resources/resources.qrc
