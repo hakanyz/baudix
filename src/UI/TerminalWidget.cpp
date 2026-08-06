@@ -12,6 +12,7 @@
 #include <QClipboard>
 #include <QMenu>
 #include <QAction>
+#include <QLabel>
 
 TerminalWidget::TerminalWidget(QWidget *parent)
     : QWidget(parent)
@@ -55,6 +56,14 @@ void TerminalWidget::setupUI()
     connect(m_searchBox, &QLineEdit::textChanged, this, &TerminalWidget::onSearchTextChanged);
     connect(m_searchBox, &QLineEdit::returnPressed, this, &TerminalWidget::onFindNext);
     topBar->addWidget(m_searchBox);
+
+    // Match count label
+    m_matchCountLabel = new QLabel();
+    m_matchCountLabel->setMinimumWidth(70);
+    m_matchCountLabel->setAlignment(Qt::AlignCenter);
+    m_matchCountLabel->setStyleSheet("font-size: 11px;");
+    m_matchCountLabel->hide();
+    topBar->addWidget(m_matchCountLabel);
 
     QPushButton* btnFindPrev = new QPushButton("▲");
     btnFindPrev->setObjectName("iconBtn");
@@ -162,6 +171,7 @@ void TerminalWidget::onSearchTextChanged(const QString &text)
     if (m_model) {
         m_model->setFilter(text);
         m_currentMatchRow = -1; // Reset navigation cursor on new search
+        updateMatchCount();
     }
 }
 
@@ -325,6 +335,11 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
         m_tableView->scrollToBottom();
     }
 
+    // Update match count if search is active
+    if (m_searchBox && !m_searchBox->text().isEmpty()) {
+        updateMatchCount();
+    }
+
     // Return the legacy string format for logging
     return QString("%1 %2").arg(prefix).arg(QString::fromUtf8(data));
 }
@@ -379,4 +394,34 @@ void TerminalWidget::navigateToMatch(int fromRow, bool forward)
     QModelIndex idx = m_model->index(targetRow, 0);
     m_tableView->scrollTo(idx, QAbstractItemView::PositionAtCenter);
     m_tableView->selectionModel()->setCurrentIndex(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+}
+
+void TerminalWidget::updateMatchCount()
+{
+    if (!m_model || !m_matchCountLabel || !m_searchBox) return;
+
+    const QString searchText = m_searchBox->text();
+
+    if (searchText.isEmpty()) {
+        m_matchCountLabel->hide();
+        m_searchBox->setStyleSheet(""); // reset border
+        return;
+    }
+
+    int count = 0;
+    for (const LogEntry& entry : m_model->entries()) {
+        if (entry.isMatch) count++;
+    }
+
+    m_matchCountLabel->show();
+
+    if (count == 0) {
+        m_matchCountLabel->setText("No match");
+        m_matchCountLabel->setStyleSheet("font-size: 11px; color: #e06c75;");
+        m_searchBox->setStyleSheet("border: 1px solid #e06c75; border-radius: 3px;");
+    } else {
+        m_matchCountLabel->setText(QString("%1 match%2").arg(count).arg(count > 1 ? "es" : ""));
+        m_matchCountLabel->setStyleSheet("font-size: 11px; color: #98c379;");
+        m_searchBox->setStyleSheet("border: 1px solid #98c379; border-radius: 3px;");
+    }
 }

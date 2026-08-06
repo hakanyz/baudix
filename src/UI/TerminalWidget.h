@@ -38,10 +38,12 @@ private:
     QPushButton* m_timestampCb;
     QComboBox* m_viewModeCombo;
     QLineEdit* m_searchBox;
+    QLabel* m_matchCountLabel;
     int m_currentMatchRow = -1;
 
     void setupUI();
     void navigateToMatch(int fromRow, bool forward);
+    void updateMatchCount();
 };
 
 #endif // TERMINALWIDGET_H
