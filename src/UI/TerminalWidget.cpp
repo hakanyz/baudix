@@ -13,6 +13,7 @@
 #include <QMenu>
 #include <QAction>
 #include <QLabel>
+#include <QSplitter>
 
 TerminalWidget::TerminalWidget(QWidget *parent)
     : QWidget(parent)
