@@ -161,15 +161,18 @@ void TerminalWidget::onSearchTextChanged(const QString &text)
 {
     if (m_model) {
         m_model->setFilter(text);
+        m_currentMatchRow = -1; // Reset navigation cursor on new search
     }
 }
 
 void TerminalWidget::onFindPrev()
 {
+    navigateToMatch(m_currentMatchRow, false);
 }
 
 void TerminalWidget::onFindNext()
 {
+    navigateToMatch(m_currentMatchRow, true);
 }
 
 void TerminalWidget::onClearClicked()
@@ -228,8 +231,31 @@ void TerminalWidget::showContextMenu(const QPoint &pos)
 
 QString TerminalWidget::getTerminalText() const
 {
-    // We don't use this directly anymore, but for export we might need to serialize the model
-    return QString();
+    if (!m_model) return QString();
+
+    const QList<LogEntry>& entries = m_model->entries();
+    if (entries.isEmpty()) return QString();
+
+    QString result;
+    result.reserve(entries.count() * 80); // rough pre-alloc
+
+    for (int i = 0; i < entries.count(); ++i) {
+        const LogEntry& entry = entries.at(i);
+        QString line;
+        if (!entry.timestamp.isEmpty()) {
+            line += entry.timestamp + " ";
+        }
+        line += QString("[%1] ").arg(entry.direction);
+        line += QString("Len:%1 ").arg(entry.length);
+
+        // Export data column as displayed in the model
+        QString dataCol = m_model->data(m_model->index(i, 3), Qt::DisplayRole).toString();
+        line += dataCol;
+
+        result += line + "\n";
+    }
+
+    return result;
 }
 
 void TerminalWidget::setBufferLimit(int limit)
@@ -241,7 +267,9 @@ void TerminalWidget::setBufferLimit(int limit)
 
 void TerminalWidget::setFontSize(int size)
 {
-    // The model applies the font, but we can tell the view
+    if (m_model) {
+        m_model->setFontSize(size);
+    }
     if (m_tableView) {
         QFont f = m_tableView->font();
         f.setPointSize(size);
@@ -250,7 +278,7 @@ void TerminalWidget::setFontSize(int size)
     }
 }
 
-QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data, const QString& color, const QString& highlightFilter)
+QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data)
 {
     if (!m_model) return QString();
 
@@ -279,8 +307,6 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
     if (prefix.contains("RX")) direction = "RX";
     else if (prefix.contains("Error") || prefix.contains("E:")) direction = "E";
 
-    // Filtering logic is now handled internally by TerminalModel::addEntry
-    
     LogEntry entry;
     entry.timestamp = timestampStr;
     entry.direction = direction;
@@ -301,4 +327,56 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
 
     // Return the legacy string format for logging
     return QString("%1 %2").arg(prefix).arg(QString::fromUtf8(data));
+}
+
+void TerminalWidget::navigateToMatch(int fromRow, bool forward)
+{
+    if (!m_model || !m_tableView) return;
+
+    const QList<LogEntry>& entries = m_model->entries();
+    int count = entries.count();
+    if (count == 0) return;
+
+    // Collect all matching row indices
+    QList<int> matchRows;
+    for (int i = 0; i < count; ++i) {
+        if (entries.at(i).isMatch) {
+            matchRows.append(i);
+        }
+    }
+
+    if (matchRows.isEmpty()) return;
+
+    int targetRow = -1;
+
+    if (forward) {
+        // Find first match strictly after fromRow
+        for (int row : matchRows) {
+            if (row > fromRow) {
+                targetRow = row;
+                break;
+            }
+        }
+        // Wrap around to beginning
+        if (targetRow == -1) {
+            targetRow = matchRows.first();
+        }
+    } else {
+        // Find last match strictly before fromRow
+        for (int i = matchRows.count() - 1; i >= 0; --i) {
+            if (matchRows.at(i) < fromRow) {
+                targetRow = matchRows.at(i);
+                break;
+            }
+        }
+        // Wrap around to end
+        if (targetRow == -1) {
+            targetRow = matchRows.last();
+        }
+    }
+
+    m_currentMatchRow = targetRow;
+    QModelIndex idx = m_model->index(targetRow, 0);
+    m_tableView->scrollTo(idx, QAbstractItemView::PositionAtCenter);
+    m_tableView->selectionModel()->setCurrentIndex(idx, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }

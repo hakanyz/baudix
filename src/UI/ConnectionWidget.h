@@ -22,6 +22,8 @@ public:
 
     void setAvailablePorts(const QStringList& ports);
     void setConnectedState(bool isConnected);
+    void loadSettings();
+    void saveSettings();
 
 signals:
     void connectRequested();

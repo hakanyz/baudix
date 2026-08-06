@@ -59,7 +59,7 @@ QVariant TerminalModel::data(const QModelIndex &index, int role) const
         return static_cast<int>(Qt::AlignLeft | Qt::AlignVCenter);
     }
     else if (role == Qt::FontRole) {
-        QFont font("Consolas", 10);
+        QFont font("Consolas", m_fontSize);
         return font;
     }
 
@@ -127,6 +127,17 @@ void TerminalModel::setFilter(const QString& filterText)
     if (m_filter != filterText) {
         m_filter = filterText;
         reevaluateFilter();
+    }
+}
+
+void TerminalModel::setFontSize(int size)
+{
+    if (m_fontSize != size) {
+        m_fontSize = size;
+        if (!m_entries.isEmpty()) {
+            emit dataChanged(index(0, 0), index(m_entries.count() - 1, columnCount() - 1),
+                             {Qt::FontRole});
+        }
     }
 }
 

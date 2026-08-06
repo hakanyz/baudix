@@ -33,6 +33,7 @@ public:
 
     void setViewMode(const QString& mode);
     void setFilter(const QString& filterText);
+    void setFontSize(int size);
 
     const QList<LogEntry>& entries() const { return m_entries; }
 
@@ -44,6 +45,7 @@ private:
     int m_maxRows;
     QString m_viewMode = "Both";
     QString m_filter;
+    int m_fontSize = 10;
 };
 
 #endif // TERMINALMODEL_H

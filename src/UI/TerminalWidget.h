@@ -16,7 +16,7 @@ public:
     explicit TerminalWidget(QWidget *parent = nullptr);
     ~TerminalWidget() = default;
 
-    QString appendData(const QString& prefix, const QByteArray& data, const QString& color, const QString& highlightFilter);
+    QString appendData(const QString& prefix, const QByteArray& data);
     
     void clearTerminal();
     QString getTerminalText() const;
@@ -38,8 +38,10 @@ private:
     QPushButton* m_timestampCb;
     QComboBox* m_viewModeCombo;
     QLineEdit* m_searchBox;
+    int m_currentMatchRow = -1;
 
     void setupUI();
+    void navigateToMatch(int fromRow, bool forward);
 };
 
 #endif // TERMINALWIDGET_H

@@ -17,18 +17,6 @@ void MacroWidget::setupUI()
     toolsLayout->setSpacing(8);
     toolsLayout->setContentsMargins(8, 8, 8, 8);
 
-    // --- Highlight Filter ---
-    QLabel* hlTitle = new QLabel("Highlight Filter");
-    hlTitle->setStyleSheet("color: #abb2bf; font-weight: bold;");
-    toolsLayout->addWidget(hlTitle);
-
-    m_hlFilter = new QLineEdit();
-    m_hlFilter->setPlaceholderText("e.g. ERROR, OK, or 0xAA");
-    m_hlFilter->setToolTip("Highlight lines matching ASCII text or HEX bytes automatically");
-    toolsLayout->addWidget(m_hlFilter);
-
-    toolsLayout->addSpacing(8);
-
     // --- Macros ---
     QLabel* macroTitle = new QLabel("Macros");
     macroTitle->setStyleSheet("color: #abb2bf; font-weight: bold;");
@@ -100,16 +88,9 @@ void MacroWidget::setupUI()
     toolsLayout->addStretch();
 }
 
-QString MacroWidget::highlightFilter() const
-{
-    return m_hlFilter->text();
-}
-
 void MacroWidget::saveSettings(QSettings& settings)
 {
     settings.beginGroup("MacroWidget");
-    
-    settings.setValue("HighlightFilter", m_hlFilter->text());
     
     int count = m_macrosList->count();
     settings.setValue("MacroCount", count);
@@ -123,8 +104,6 @@ void MacroWidget::saveSettings(QSettings& settings)
 void MacroWidget::loadSettings(QSettings& settings)
 {
     settings.beginGroup("MacroWidget");
-    
-    m_hlFilter->setText(settings.value("HighlightFilter", "").toString());
     
     m_macrosList->clear();
     int count = settings.value("MacroCount", 0).toInt();

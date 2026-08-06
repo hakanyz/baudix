@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 #include <QStyledItemDelegate>
 #include <QStylePainter>
+#include <QSettings>
 
 class PortComboBoxDelegate : public QStyledItemDelegate {
 public:
@@ -221,4 +222,44 @@ bool ConnectionWidget::eventFilter(QObject *watched, QEvent *event)
         emit refreshPortsRequested();
     }
     return QWidget::eventFilter(watched, event);
+}
+
+void ConnectionWidget::loadSettings()
+{
+    QSettings settings("hakanyz", "Baudix");
+    settings.beginGroup("Connection");
+
+    QString baud = settings.value("BaudRate", "115200").toString();
+    int idx = m_baudCombo->findText(baud);
+    if (idx >= 0) m_baudCombo->setCurrentIndex(idx);
+
+    QString dataBits = settings.value("DataBits", "8").toString();
+    idx = m_dataBitsCombo->findText(dataBits);
+    if (idx >= 0) m_dataBitsCombo->setCurrentIndex(idx);
+
+    QString stopBits = settings.value("StopBits", "1").toString();
+    idx = m_stopBitsCombo->findText(stopBits);
+    if (idx >= 0) m_stopBitsCombo->setCurrentIndex(idx);
+
+    QString parity = settings.value("Parity", "None").toString();
+    idx = m_parityCombo->findText(parity);
+    if (idx >= 0) m_parityCombo->setCurrentIndex(idx);
+
+    QString flowControl = settings.value("FlowControl", "None").toString();
+    idx = m_flowControlCombo->findText(flowControl);
+    if (idx >= 0) m_flowControlCombo->setCurrentIndex(idx);
+
+    settings.endGroup();
+}
+
+void ConnectionWidget::saveSettings()
+{
+    QSettings settings("hakanyz", "Baudix");
+    settings.beginGroup("Connection");
+    settings.setValue("BaudRate", m_baudCombo->currentText());
+    settings.setValue("DataBits", m_dataBitsCombo->currentText());
+    settings.setValue("StopBits", m_stopBitsCombo->currentText());
+    settings.setValue("Parity", m_parityCombo->currentText());
+    settings.setValue("FlowControl", m_flowControlCombo->currentText());
+    settings.endGroup();
 }

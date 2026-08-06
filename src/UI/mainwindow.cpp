@@ -157,6 +157,9 @@ MainWindow::MainWindow(QWidget *parent)
     if (m_macroWidget) {
         m_macroWidget->loadSettings(settings);
     }
+    if (m_connectionWidget) {
+        m_connectionWidget->loadSettings();
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -169,6 +172,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
     QSettings settings("hakanyz", "Baudix");
     if (m_macroWidget) {
         m_macroWidget->saveSettings(settings);
+    }
+    if (m_connectionWidget) {
+        m_connectionWidget->saveSettings();
     }
     QString behavior = settings.value("System/CloseBehavior", "").toString();
 
@@ -437,8 +443,7 @@ void MainWindow::onDisconnectRequested()
 void MainWindow::onDataReceived(const QByteArray& data)
 {
     if (!m_terminalWidget) return;
-    QString filter = m_macroWidget ? m_macroWidget->highlightFilter() : "";
-    QString formattedStr = m_terminalWidget->appendData("< RX:", data, "#98c379", filter);
+    QString formattedStr = m_terminalWidget->appendData("< RX:", data);
     
     if (m_loggingWidget) {
         m_loggingWidget->appendLog("< RX:", formattedStr);
@@ -458,8 +463,7 @@ void MainWindow::sendDataToController(const QByteArray& data)
 
     if (m_serialController->writeData(data)) {
         if (m_terminalWidget) {
-            QString filter = m_macroWidget ? m_macroWidget->highlightFilter() : "";
-            QString formattedStr = m_terminalWidget->appendData("> TX:", data, "#61afef", filter);
+            QString formattedStr = m_terminalWidget->appendData("> TX:", data);
             
             if (m_loggingWidget) {
                 m_loggingWidget->appendLog("> TX:", formattedStr);
@@ -542,8 +546,9 @@ void MainWindow::onSendFileClicked()
 
     if (m_serialController->sendFile(filename)) {
         if (m_terminalWidget) {
-            QString filter = m_macroWidget ? m_macroWidget->highlightFilter() : "";
-            QString formattedStr = m_terminalWidget->appendData(QString("> TX FILE: %1").arg(QFileInfo(filename).fileName()), "", "#61afef", filter);
+            QString formattedStr = m_terminalWidget->appendData(
+                QString("> TX FILE: %1").arg(QFileInfo(filename).fileName()),
+                QByteArray());
             if (m_loggingWidget) {
                 m_loggingWidget->appendLog("> TX FILE:", formattedStr);
             }
@@ -585,7 +590,7 @@ void MainWindow::onFileTransferFinished()
     }
     
     if (m_terminalWidget) {
-        m_terminalWidget->appendData("> TX FILE:", "Transfer Complete.", "#61afef", "");
+        m_terminalWidget->appendData("> TX FILE:", QByteArray("Transfer Complete."));
     }
 }
 
@@ -600,7 +605,7 @@ void MainWindow::onFileTransferError(const QString& error)
     QMessageBox::critical(this, "Transfer Error", "File transfer failed: " + error);
     
     if (m_terminalWidget) {
-        m_terminalWidget->appendData("> TX FILE:", "Transfer Failed.", "#e06c75", "");
+        m_terminalWidget->appendData("> TX FILE:", QByteArray("Transfer Failed."));
     }
 }
 
