@@ -163,7 +163,39 @@ void TerminalWidget::setupUI()
     int termFontSize = settings.value("UI/TerminalFontSize", 10).toInt();
     setFontSize(termFontSize);
     
-    tabLayout->addWidget(m_tableView);
+    // Vertical splitter: table on top, detail panel on bottom
+    QSplitter* vSplitter = new QSplitter(Qt::Vertical);
+    vSplitter->setHandleWidth(3);
+    vSplitter->setStyleSheet("QSplitter::handle { background: #181a1f; }");
+    vSplitter->addWidget(m_tableView);
+
+    // Detail panel
+    m_detailView = new QPlainTextEdit();
+    m_detailView->setReadOnly(true);
+    m_detailView->setMaximumBlockCount(0);
+    m_detailView->setLineWrapMode(QPlainTextEdit::NoWrap);
+    m_detailView->setFont(QFont("Consolas", 9));
+    m_detailView->setPlaceholderText("Select a row to inspect full data...");
+    m_detailView->setStyleSheet(R"(
+        QPlainTextEdit {
+            background-color: #1e2127;
+            color: #abb2bf;
+            border: none;
+            border-top: 1px solid #181a1f;
+        }
+    )");
+    m_detailView->setFixedHeight(100);
+    vSplitter->addWidget(m_detailView);
+
+    // Table takes most of the space
+    vSplitter->setStretchFactor(0, 5);
+    vSplitter->setStretchFactor(1, 1);
+
+    tabLayout->addWidget(vSplitter);
+
+    // Connect row selection → detail panel (must be after setModel)
+    connect(m_tableView->selectionModel(), &QItemSelectionModel::currentRowChanged,
+            this, &TerminalWidget::onRowSelectionChanged);
 }
 
 void TerminalWidget::onSearchTextChanged(const QString &text)
@@ -323,6 +355,7 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
     entry.length = data.size();
     entry.hexData = hexStr;
     entry.asciiData = asciiStr;
+    entry.rawData = data;
 
     bool wasAtBottom = false;
     if (m_tableView->verticalScrollBar()->value() == m_tableView->verticalScrollBar()->maximum()) {
@@ -424,4 +457,71 @@ void TerminalWidget::updateMatchCount()
         m_matchCountLabel->setStyleSheet("font-size: 11px; color: #98c379;");
         m_searchBox->setStyleSheet("border: 1px solid #98c379; border-radius: 3px;");
     }
+}
+
+void TerminalWidget::onRowSelectionChanged(const QModelIndex &current, const QModelIndex &/*previous*/)
+{
+    updateDetailPanel(current);
+}
+
+void TerminalWidget::updateDetailPanel(const QModelIndex &index)
+{
+    if (!m_detailView || !m_model) return;
+
+    if (!index.isValid()) {
+        m_detailView->clear();
+        return;
+    }
+
+    const QList<LogEntry>& entries = m_model->entries();
+    int row = index.row();
+    if (row < 0 || row >= entries.count()) {
+        m_detailView->clear();
+        return;
+    }
+
+    const LogEntry& entry = entries.at(row);
+
+    if (m_viewModeCombo && m_viewModeCombo->currentText() == "ASCII") {
+        // ASCII mode: just show the full text
+        m_detailView->setPlainText(entry.asciiData);
+    } else {
+        // HEX / Both: show a classic hex dump
+        m_detailView->setPlainText(formatHexDump(entry.rawData));
+    }
+}
+
+QString TerminalWidget::formatHexDump(const QByteArray &data)
+{
+    if (data.isEmpty()) return QString();
+
+    QString result;
+    result.reserve((data.size() / 16 + 1) * 78);
+
+    for (int i = 0; i < data.size(); i += 16) {
+        // Offset
+        result += QString("%1  ").arg(i, 4, 16, QChar('0')).toUpper();
+
+        // Hex bytes (two groups of 8)
+        for (int j = 0; j < 16; ++j) {
+            if (i + j < data.size()) {
+                result += QString("%1 ").arg((unsigned char)data[i + j], 2, 16, QChar('0')).toUpper();
+            } else {
+                result += "   ";
+            }
+            if (j == 7) result += " "; // extra space between groups
+        }
+
+        result += " ";
+
+        // ASCII column
+        for (int j = 0; j < 16 && i + j < data.size(); ++j) {
+            char c = data[i + j];
+            result += (c >= 32 && c <= 126) ? c : '.';
+        }
+
+        result += '\n';
+    }
+
+    return result;
 }

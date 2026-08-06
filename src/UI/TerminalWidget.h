@@ -9,6 +9,7 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QLineEdit>
+#include <QPlainTextEdit>
 
 class TerminalWidget : public QWidget
 {
@@ -32,6 +33,7 @@ private slots:
     void onClearClicked();
     void showContextMenu(const QPoint &pos);
     void copySelection();
+    void onRowSelectionChanged(const QModelIndex &current, const QModelIndex &previous);
 
 private:
     QTableView* m_tableView;
@@ -41,11 +43,14 @@ private:
     QComboBox* m_viewModeCombo;
     QLineEdit* m_searchBox;
     QLabel* m_matchCountLabel;
+    QPlainTextEdit* m_detailView;
     int m_currentMatchRow = -1;
 
     void setupUI();
     void navigateToMatch(int fromRow, bool forward);
     void updateMatchCount();
+    void updateDetailPanel(const QModelIndex &index);
+    static QString formatHexDump(const QByteArray &data);
 };
 
 #endif // TERMINALWIDGET_H

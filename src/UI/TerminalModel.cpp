@@ -31,11 +31,24 @@ QVariant TerminalModel::data(const QModelIndex &index, int role) const
             case 0: return entry.timestamp;
             case 1: return entry.direction;
             case 2: return QString::number(entry.length);
-            case 3: 
-                if (m_viewMode == "ASCII") return entry.asciiData;
-                else if (m_viewMode == "HEX") return entry.hexData;
-                else return entry.hexData + " [" + entry.asciiData + "]";
+            case 3: {
+                QString full;
+                if (m_viewMode == "ASCII")     full = entry.asciiData;
+                else if (m_viewMode == "HEX")  full = entry.hexData;
+                else                           full = entry.hexData + " [" + entry.asciiData + "]";
+                // Truncate long data for the table cell
+                constexpr int kMaxDisplay = 120;
+                if (full.length() > kMaxDisplay)
+                    return full.left(kMaxDisplay) + QChar(0x2026); // …
+                return full;
+            }
         }
+    }
+    else if (role == Qt::ToolTipRole && index.column() == 3) {
+        // Full string on hover (no truncation)
+        if (m_viewMode == "ASCII")    return entry.asciiData;
+        if (m_viewMode == "HEX")      return entry.hexData;
+        return entry.hexData + " [" + entry.asciiData + "]";
     }
     else if (role == Qt::ForegroundRole) {
         // Highlight matches or errors

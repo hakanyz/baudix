@@ -6,6 +6,7 @@
 #include <QSerialPortInfo>
 #include <QByteArray>
 #include <QStringList>
+#include <QTimer>
 
 #include "ISerialTransport.h"
 
@@ -38,6 +39,13 @@ private:
     QSerialPort *m_serialPort;
     quint64 m_txBytes = 0;
     quint64 m_rxBytes = 0;
+    
+    // RX Framing
+    QByteArray m_rxBuffer;
+    QTimer* m_framingTimer = nullptr;
+    static constexpr int kFramingTimeoutMs = 40;  // ms of silence = end of frame
+    static constexpr int kMaxFrameSize    = 2048; // bytes before forced flush
+    void flushRxBuffer();
     
     // File Transfer State
     class QFile* m_sendFile = nullptr;

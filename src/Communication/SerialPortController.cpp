@@ -8,6 +8,10 @@ SerialPortController::SerialPortController(QObject *parent) : ISerialTransport(p
     connect(m_serialPort, &QSerialPort::readyRead, this, &SerialPortController::handleReadyRead);
     connect(m_serialPort, &QSerialPort::errorOccurred, this, &SerialPortController::handleError);
     connect(m_serialPort, &QSerialPort::bytesWritten, this, &SerialPortController::handleBytesWritten);
+
+    m_framingTimer = new QTimer(this);
+    m_framingTimer->setSingleShot(true);
+    connect(m_framingTimer, &QTimer::timeout, this, &SerialPortController::flushRxBuffer);
 }
 
 SerialPortController::~SerialPortController()
@@ -66,6 +70,9 @@ void SerialPortController::disconnectDevice()
             delete m_sendFile;
             m_sendFile = nullptr;
         }
+        // Flush any remaining buffered RX data before closing
+        flushRxBuffer();
+        m_framingTimer->stop();
         m_serialPort->close();
         emit connectionStateChanged(false);
     }
@@ -94,12 +101,40 @@ void SerialPortController::resetCounters()
 
 void SerialPortController::handleReadyRead()
 {
-    QByteArray data = m_serialPort->readAll();
-    if (!data.isEmpty()) {
-        m_rxBytes += data.size();
+    QByteArray incoming = m_serialPort->readAll();
+    if (incoming.isEmpty()) return;
+
+    m_rxBuffer.append(incoming);
+
+    // Line-based framing: flush at each '\n'
+    while (m_rxBuffer.contains('\n')) {
+        int nlIdx = m_rxBuffer.indexOf('\n');
+        QByteArray frame = m_rxBuffer.left(nlIdx + 1);
+        m_rxBuffer.remove(0, nlIdx + 1);
+        m_rxBytes += frame.size();
+        emit dataReceived(frame);
         emit countersUpdated(m_txBytes, m_rxBytes);
-        emit dataReceived(data);
     }
+
+    // Max-size protection: flush immediately if buffer too large
+    if (m_rxBuffer.size() >= kMaxFrameSize) {
+        flushRxBuffer();
+        return;
+    }
+
+    // Timeout-based framing: restart silence timer for remaining data
+    if (!m_rxBuffer.isEmpty()) {
+        m_framingTimer->start(kFramingTimeoutMs);
+    }
+}
+
+void SerialPortController::flushRxBuffer()
+{
+    if (m_rxBuffer.isEmpty()) return;
+    m_rxBytes += m_rxBuffer.size();
+    emit dataReceived(m_rxBuffer);
+    emit countersUpdated(m_txBytes, m_rxBytes);
+    m_rxBuffer.clear();
 }
 
 void SerialPortController::handleError(QSerialPort::SerialPortError error)

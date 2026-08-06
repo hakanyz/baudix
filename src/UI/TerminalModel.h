@@ -12,6 +12,7 @@ struct LogEntry {
     int length;
     QString hexData;
     QString asciiData;
+    QByteArray rawData;  // original bytes for detail panel / hex dump
     bool isMatch; // for filtering/highlighting
     QColor color; // Override background color if needed
 };
