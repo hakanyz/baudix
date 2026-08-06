@@ -3,10 +3,12 @@
 
 #include <QWidget>
 #include <QTableView>
+#include <QLabel>
 #include "TerminalModel.h"
 #include "BadgeDelegate.h"
 #include <QPushButton>
 #include <QComboBox>
+#include <QLineEdit>
 
 class TerminalWidget : public QWidget
 {
