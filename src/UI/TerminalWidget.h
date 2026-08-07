@@ -34,6 +34,7 @@ private slots:
     void showContextMenu(const QPoint &pos);
     void copySelection();
     void onRowSelectionChanged(const QModelIndex &current, const QModelIndex &previous);
+    void onRowDoubleClicked(const QModelIndex &index);
 
 private:
     QTableView* m_tableView;
@@ -43,6 +44,7 @@ private:
     QComboBox* m_viewModeCombo;
     QLineEdit* m_searchBox;
     QLabel* m_matchCountLabel;
+    QWidget* m_detailContainer;
     QPlainTextEdit* m_detailView;
     int m_currentMatchRow = -1;
 

@@ -170,23 +170,52 @@ void TerminalWidget::setupUI()
     vSplitter->setStyleSheet("QSplitter::handle { background: #181a1f; }");
     vSplitter->addWidget(m_tableView);
 
-    // Detail panel
+    // Detail panel container
+    m_detailContainer = new QWidget(this);
+    QVBoxLayout* detailLayout = new QVBoxLayout(m_detailContainer);
+    detailLayout->setContentsMargins(0, 0, 0, 0);
+    detailLayout->setSpacing(0);
+    
+    // Header for detail panel
+    QWidget* detailHeader = new QWidget(m_detailContainer);
+    detailHeader->setStyleSheet("background-color: #21252b; border-bottom: 1px solid #181a1f;");
+    QHBoxLayout* headerLayout = new QHBoxLayout(detailHeader);
+    headerLayout->setContentsMargins(5, 2, 5, 2);
+    
+    QLabel* detailTitle = new QLabel("Packet Details");
+    detailTitle->setStyleSheet("color: #abb2bf; font-weight: bold; font-size: 11px; border: none;");
+    
+    QPushButton* closeDetailBtn = new QPushButton("✖");
+    closeDetailBtn->setFixedSize(20, 20);
+    closeDetailBtn->setStyleSheet("QPushButton { color: #e06c75; font-weight: bold; border: none; background: transparent; } QPushButton:hover { color: #ffffff; background: #e06c75; border-radius: 10px; }");
+    connect(closeDetailBtn, &QPushButton::clicked, [this]() { m_detailContainer->hide(); });
+    
+    headerLayout->addWidget(detailTitle);
+    headerLayout->addStretch();
+    headerLayout->addWidget(closeDetailBtn);
+    
+    // Detail View Text Edit
     m_detailView = new QPlainTextEdit();
     m_detailView->setReadOnly(true);
     m_detailView->setMaximumBlockCount(0);
     m_detailView->setLineWrapMode(QPlainTextEdit::WidgetWidth);
     m_detailView->setFont(QFont("Consolas", 9));
-    m_detailView->setPlaceholderText("Select a row to inspect full data...");
     m_detailView->setStyleSheet(R"(
         QPlainTextEdit {
             background-color: #1e2127;
             color: #abb2bf;
             border: none;
-            border-top: 1px solid #181a1f;
         }
     )");
     m_detailView->setFixedHeight(100);
-    vSplitter->addWidget(m_detailView);
+    
+    detailLayout->addWidget(detailHeader);
+    detailLayout->addWidget(m_detailView);
+    
+    // Hide initially
+    m_detailContainer->hide();
+    
+    vSplitter->addWidget(m_detailContainer);
 
     // Table takes most of the space
     vSplitter->setStretchFactor(0, 5);
@@ -197,6 +226,15 @@ void TerminalWidget::setupUI()
     // Connect row selection → detail panel (must be after setModel)
     connect(m_tableView->selectionModel(), &QItemSelectionModel::currentRowChanged,
             this, &TerminalWidget::onRowSelectionChanged);
+            
+    // Double click shows the panel
+    connect(m_tableView, &QTableView::doubleClicked, this, &TerminalWidget::onRowDoubleClicked);
+}
+
+void TerminalWidget::onRowDoubleClicked(const QModelIndex &index)
+{
+    updateDetailPanel(index);
+    m_detailContainer->show();
 }
 
 void TerminalWidget::onSearchTextChanged(const QString &text)
@@ -221,6 +259,8 @@ void TerminalWidget::onFindNext()
 void TerminalWidget::onClearClicked()
 {
     clearTerminal();
+    m_detailView->clear();
+    m_detailContainer->hide();
 }
 
 void TerminalWidget::clearTerminal()
