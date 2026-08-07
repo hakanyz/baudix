@@ -232,15 +232,15 @@ void MainWindow::setupCentralWidget()
 {
     QWidget* centralWidget = new QWidget(this);
     QVBoxLayout* mainLayout = new QVBoxLayout(centralWidget);
-    mainLayout->setContentsMargins(4, 4, 4, 4);
-    mainLayout->setSpacing(6);
+    mainLayout->setContentsMargins(2, 2, 2, 2);
+    mainLayout->setSpacing(4);
 
     auto wrapInCard = [](QWidget* child) -> QFrame* {
         QFrame* frame = new QFrame();
         frame->setObjectName("cardFrame");
         frame->setStyleSheet("#cardFrame { background-color: #282c34; border: 1px solid #181a1f; border-radius: 4px; }");
         QVBoxLayout* layout = new QVBoxLayout(frame);
-        layout->setContentsMargins(4, 2, 4, 2);
+        layout->setContentsMargins(2, 2, 2, 2);
         layout->addWidget(child);
         return frame;
     };
@@ -252,11 +252,10 @@ void MainWindow::setupCentralWidget()
     connect(m_connectionWidget, &ConnectionWidget::refreshPortsRequested, this, &MainWindow::refreshPorts);
     mainLayout->addWidget(wrapInCard(m_connectionWidget));
 
-    // Send Bar
+    // The Send Bar will be created here but added to the layout AFTER the splitter
     m_sendWidget = new SendWidget();
     connect(m_sendWidget, &SendWidget::sendDataRequested, this, &MainWindow::sendDataToController);
     connect(m_sendWidget, &SendWidget::sendFileRequested, this, &MainWindow::onSendFileClicked);
-    mainLayout->addWidget(wrapInCard(m_sendWidget));
 
     // Splitter for Terminal and Macros/Logging
     QSplitter* splitter = new QSplitter(Qt::Horizontal);
@@ -286,7 +285,10 @@ void MainWindow::setupCentralWidget()
     splitter->setStretchFactor(0, 4);
     splitter->setStretchFactor(1, 1);
     
-    mainLayout->addWidget(splitter, 1);
+    mainLayout->addWidget(splitter, 1); // Add splitter with stretch factor 1
+    
+    // Add Send Bar at the very bottom
+    mainLayout->addWidget(wrapInCard(m_sendWidget), 0); // Stretch factor 0
     
     setCentralWidget(centralWidget);
     refreshPorts();
