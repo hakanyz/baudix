@@ -24,11 +24,12 @@ TerminalWidget::TerminalWidget(QWidget *parent)
 void TerminalWidget::setupUI()
 {
     QVBoxLayout* tabLayout = new QVBoxLayout(this);
-    tabLayout->setContentsMargins(5, 5, 5, 5);
-    tabLayout->setSpacing(12); // Add elegant breathing room instead of a crude line
+    tabLayout->setContentsMargins(0, 5, 0, 0); // 0 margin on sides so separator and table go edge-to-edge
+    tabLayout->setSpacing(5); 
     
     // Top Bar of Terminal
     QHBoxLayout* topBar = new QHBoxLayout();
+    topBar->setContentsMargins(10, 0, 10, 0); // Add margins back to top bar
     
     m_timestampCb = new QPushButton("Timestamp");
     m_timestampCb->setCheckable(true);
@@ -87,6 +88,12 @@ void TerminalWidget::setupUI()
     topBar->addWidget(clearBtn);
     
     tabLayout->addLayout(topBar);
+    
+    // Elegant full-width separator line
+    QFrame* separator = new QFrame();
+    separator->setFixedHeight(1);
+    separator->setStyleSheet("background-color: #181a1f; border: none;");
+    tabLayout->addWidget(separator);
     
     // Terminal Output as Table
     m_tableView = new QTableView();

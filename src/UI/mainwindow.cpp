@@ -289,7 +289,7 @@ void MainWindow::setupCentralWidget()
     connect(m_loggingWidget, &LoggingWidget::exportTerminalRequested, this, &MainWindow::onExportTerminal);
     rightLayout->addWidget(m_loggingWidget, 0);
 
-    splitter->addWidget(m_terminalWidget);
+    splitter->addWidget(wrapInCard(m_terminalWidget));
     splitter->addWidget(rightPanel);
     
     // Set stretch factors (Terminal gets more space)
