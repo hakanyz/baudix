@@ -139,6 +139,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Connect controller signals
     connect(m_serialController, &ISerialTransport::dataReceived, this, &MainWindow::onDataReceived);
+    connect(m_serialController, &ISerialTransport::dataSent, this, &MainWindow::onDataSent);
     connect(m_serialController, &ISerialTransport::connectionStateChanged, this, &MainWindow::onConnectionStateChanged);
     connect(m_serialController, &ISerialTransport::countersUpdated, this, &MainWindow::updateCounters);
     connect(m_serialController, &ISerialTransport::fileTransferProgress, this, &MainWindow::onFileTransferProgress);
@@ -454,6 +455,16 @@ void MainWindow::onDataReceived(const QByteArray& data)
     }
 }
 
+void MainWindow::onDataSent(const QByteArray& data)
+{
+    if (!m_terminalWidget) return;
+    QString formattedStr = m_terminalWidget->appendData("> TX:", data);
+    
+    if (m_loggingWidget) {
+        m_loggingWidget->appendLog("> TX:", formattedStr);
+    }
+}
+
 void MainWindow::performSend(const QString& text)
 {
     if (!m_sendWidget) return;
@@ -465,15 +476,9 @@ void MainWindow::sendDataToController(const QByteArray& data)
 {
     if (!m_serialController->isOpen() || data.isEmpty()) return;
 
-    if (m_serialController->writeData(data)) {
-        if (m_terminalWidget) {
-            QString formattedStr = m_terminalWidget->appendData("> TX:", data);
-            
-            if (m_loggingWidget) {
-                m_loggingWidget->appendLog("> TX:", formattedStr);
-            }
-        }
-    }
+    // We just write to the controller. The controller will emit dataSent() 
+    // when it successfully writes the data, which triggers onDataSent to update the UI.
+    m_serialController->writeData(data);
 }
 
 void MainWindow::onMacroResetClicked()

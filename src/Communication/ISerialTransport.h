@@ -30,6 +30,7 @@ public:
 
 signals:
     void dataReceived(const QByteArray& data);
+    void dataSent(const QByteArray& data);
     void connectionStateChanged(bool isOpen, const QString& errorMsg = "");
     void countersUpdated(quint64 tx, quint64 rx, quint64 err);
     void fileTransferProgress(qint64 bytesSent, qint64 bytesTotal);

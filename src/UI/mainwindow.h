@@ -53,6 +53,7 @@ private slots:
     void onConnectRequested();
     void onDisconnectRequested();
     void onDataReceived(const QByteArray& data);
+    void onDataSent(const QByteArray& data);
     void onConnectionStateChanged(bool isOpen, const QString& errorMsg);
     void sendDataToController(const QByteArray& data);
     void onExportTerminal();

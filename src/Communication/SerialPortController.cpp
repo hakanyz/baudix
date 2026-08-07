@@ -71,6 +71,7 @@ public slots:
     void writeData(const QByteArray& data) {
         if (m_serialPort->isOpen()) {
             m_serialPort->write(data);
+            emit dataSent(data);
         }
     }
 
@@ -105,6 +106,7 @@ public slots:
 
 signals:
     void dataReceived(const QByteArray& data);
+    void dataSent(const QByteArray& data);
     void connectionStateChanged(bool isOpen, const QString& errorMsg);
     void countersUpdated(quint64 tx, quint64 rx, quint64 err);
     void fileTransferProgress(qint64 bytesSent, qint64 bytesTotal);
@@ -199,6 +201,7 @@ private:
 
         m_sendFileBytesWritten += chunk.size();
         emit fileTransferProgress(m_sendFileBytesWritten, m_sendFileTotalBytes);
+        emit dataSent(chunk);
     }
 
     QSerialPort *m_serialPort;
@@ -227,6 +230,7 @@ SerialPortController::SerialPortController(QObject *parent) : ISerialTransport(p
 
     // Forward worker signals to our signals (and slots to update cache)
     connect(m_worker, &SerialWorker::dataReceived, this, &SerialPortController::dataReceived);
+    connect(m_worker, &SerialWorker::dataSent, this, &SerialPortController::dataSent);
     connect(m_worker, &SerialWorker::fileTransferProgress, this, &SerialPortController::fileTransferProgress);
     connect(m_worker, &SerialWorker::fileTransferFinished, this, &SerialPortController::fileTransferFinished);
     connect(m_worker, &SerialWorker::fileTransferError, this, &SerialPortController::fileTransferError);
