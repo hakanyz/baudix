@@ -53,7 +53,21 @@ void SendWidget::setupUI()
     m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes...");
     m_inputCombo->addItem("");
     connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &SendWidget::onSendClicked);
-    addLabelledWidget("Raw command", m_inputCombo);
+    
+    QHBoxLayout* inputLayout = new QHBoxLayout();
+    inputLayout->setContentsMargins(0,0,0,0);
+    inputLayout->setSpacing(5);
+    inputLayout->addWidget(m_inputCombo, 1);
+    
+    m_cbHistoryOn = new QCheckBox("History");
+    m_cbHistoryOn->setChecked(true);
+    m_cbHistoryOn->setToolTip("Save sent commands to history. Uncheck to clear.");
+    connect(m_cbHistoryOn, &QCheckBox::toggled, this, &SendWidget::onHistoryToggled);
+    inputLayout->addWidget(m_cbHistoryOn);
+    
+    QWidget* inputContainer = new QWidget();
+    inputContainer->setLayout(inputLayout);
+    addLabelledWidget("Raw command", inputContainer);
 
     // Periodic wrapper
     QWidget* periodicWidget = new QWidget();
@@ -114,11 +128,6 @@ void SendWidget::setupUI()
     sendLayout->addLayout(btnLayout);
 
     mainLayout->addWidget(sendFrame);
-    
-    // We omit history saving/clearing UI from this bar to save space. 
-    // They can be added to the macro bar or main menu later if needed.
-    m_cbHistoryOn = new QCheckBox();
-    m_cbHistoryOn->setChecked(true); // default to true, hidden
 }
 
 void SendWidget::setInputText(const QString& text)
