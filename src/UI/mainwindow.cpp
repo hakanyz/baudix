@@ -35,8 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     
-    // Set a taller default window size (e.g. 900x1000 instead of default 800x600)
-    resize(900, 1000);
+    // Set a taller default window size (vertical rectangle), but safe for 1080p screens with scaling
+    resize(750, 850);
     
     m_serialController = new SerialPortController(this);
 
