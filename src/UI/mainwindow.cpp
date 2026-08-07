@@ -131,6 +131,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_lblTxBytes->setStyleSheet("color: #61afef; padding: 0 10px; font-weight: bold;");
     m_lblRxBytes->setStyleSheet("color: #98c379; padding: 0 10px; font-weight: bold;");
     m_lblErrBytes->setStyleSheet("color: #e06c75; padding: 0 10px; font-weight: bold;");
+    m_lblErrBytes->setVisible(false);
     
     statusBar()->addPermanentWidget(m_lblTxBytes);
     statusBar()->addPermanentWidget(m_lblRxBytes);
@@ -589,6 +590,7 @@ void MainWindow::updateCounters(quint64 tx, quint64 rx, quint64 err)
     m_lblTxBytes->setText(QString("TX: %L1 B").arg(tx));
     m_lblRxBytes->setText(QString("RX: %L1 B").arg(rx));
     m_lblErrBytes->setText(QString("ERR: %L1").arg(err));
+    m_lblErrBytes->setVisible(err > 0);
 }
 
 void MainWindow::onFileTransferProgress(qint64 bytesSent, qint64 bytesTotal)
