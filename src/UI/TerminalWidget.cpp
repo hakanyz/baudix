@@ -399,8 +399,14 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
     asciiStr = QString::fromUtf8(data);
     for (int i = 0; i < asciiStr.length(); ++i) {
         QChar c = asciiStr[i];
-        // Replace unprintable control characters with dots, but leave valid UTF-8 symbols
-        if (c.unicode() < 32 || (c.unicode() >= 0x7F && c.unicode() <= 0x9F)) {
+        if (c == '\r') {
+            asciiStr[i] = QChar(0x240D); // ␍ Symbol for Carriage Return
+        } else if (c == '\n') {
+            asciiStr[i] = QChar(0x240A); // ␊ Symbol for Line Feed
+        } else if (c == '\t') {
+            asciiStr[i] = QChar(0x2409); // ␉ Symbol for Horizontal Tabulation
+        } else if (c.unicode() < 32 || (c.unicode() >= 0x7F && c.unicode() <= 0x9F)) {
+            // Replace other unprintable control characters with dots
             asciiStr[i] = '.';
         }
     }
