@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QDateTime>
 #include <QStyle>
+#include <QLabel>
 
 LoggingWidget::LoggingWidget(QWidget *parent)
     : QWidget(parent), m_logFile(nullptr), m_logStream(nullptr)
@@ -63,13 +64,13 @@ void LoggingWidget::setupUI()
     m_btnPauseLog->setEnabled(false); // Only enable when recording
     liveActionLayout->addWidget(m_btnPauseLog);
 
-    logLayout->addRow(liveActionLayout);
+    logLayout->addLayout(liveActionLayout);
 
-    logLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
+    logLayout->addSpacing(5);
 
     QPushButton* btnExportTxt = new QPushButton("📥 Save All");
     connect(btnExportTxt, &QPushButton::clicked, this, &LoggingWidget::exportTerminalRequested);
-    logLayout->addRow(btnExportTxt);
+    logLayout->addWidget(btnExportTxt);
 }
 
 void LoggingWidget::onBrowseClicked()
