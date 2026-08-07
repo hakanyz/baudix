@@ -193,9 +193,11 @@ void TerminalWidget::setupUI()
         QPushButton { 
             color: #e06c75; 
             font-weight: bold; 
-            font-size: 12px;
+            font-size: 13px;
             border: none; 
             background: transparent; 
+            padding: 0px;
+            margin: 0px;
         } 
         QPushButton:hover { 
             color: #ffffff; 
