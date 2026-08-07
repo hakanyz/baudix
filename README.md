@@ -1,7 +1,7 @@
 <div align="center">
   <img src="resources/baudix_icon.svg" width="120" height="120" alt="Baudix Logo">
   <h1>Baudix</h1>
-  <p><b>Professional Serial Terminal for Embedded Systems</b></p>
+  <p><b>A Modern, Developer-Friendly Serial Terminal for Embedded Systems</b></p>
   
   [![C++ Standard](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
   [![Framework](https://img.shields.io/badge/Qt-6.5+-41CD52.svg)](https://www.qt.io/)
@@ -27,7 +27,7 @@ Baudix is a modern Serial Port Terminal built with C++17 and Qt 6. It was develo
 ## Screenshots
 
 <div align="center">
-  <img src="docs/baudix_ui.png" alt="Baudix Main Interface">
+  <img src="docs/baudix_v1.3.1_ui.png" alt="Baudix Main Interface">
 </div>
 
 ## Tech Stack & Architecture
