@@ -28,23 +28,10 @@ void SendWidget::setupUI()
     sendLayout->setContentsMargins(10, 5, 10, 5);
     sendLayout->setSpacing(15);
     
-    auto addLabelledWidget = [sendLayout](const QString& labelText, QWidget* widget) {
-        QVBoxLayout* vLayout = new QVBoxLayout();
-        vLayout->setContentsMargins(0, 0, 0, 0);
-        vLayout->setSpacing(2);
-        if (!labelText.isEmpty()) {
-            QLabel* lbl = new QLabel(labelText);
-            lbl->setStyleSheet("color: #abb2bf; font-size: 11px;");
-            vLayout->addWidget(lbl);
-        }
-        vLayout->addWidget(widget);
-        sendLayout->addLayout(vLayout);
-    };
-
     // Format
     m_sendAsCombo = new QComboBox();
     m_sendAsCombo->addItems({"ASCII", "HEX"});
-    addLabelledWidget("Format", m_sendAsCombo);
+    sendLayout->addWidget(m_sendAsCombo);
 
     // Raw Command (Input)
     m_inputCombo = new QComboBox();
@@ -54,8 +41,7 @@ void SendWidget::setupUI()
     m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes...");
     m_inputCombo->addItem("");
     connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &SendWidget::onSendClicked);
-    
-    addLabelledWidget("Raw command", m_inputCombo);
+    sendLayout->addWidget(m_inputCombo, 1);
     
     // History in Popup
     m_settingsPopup = new QDialog(this, Qt::Popup | Qt::FramelessWindowHint);
@@ -182,6 +168,14 @@ QByteArray SendWidget::formatData(const QString& text) const
 
 void SendWidget::onSendClicked()
 {
+    // If repeat is active, the send button acts as a cancel button
+    if (m_periodicTimer->isActive()) {
+        m_periodicTimer->stop();
+        m_sendButton->setText("Send");
+        m_sendButton->setStyleSheet("");
+        return;
+    }
+
     QString text = m_inputCombo->currentText();
     if (text.isEmpty()) return;
 
@@ -193,6 +187,8 @@ void SendWidget::onSendClicked()
     if (m_periodicSendCb->isChecked()) {
         m_periodicText = text;
         m_periodicTimer->start(m_periodicMsBox->value());
+        m_sendButton->setText("Stop Repeat");
+        m_sendButton->setStyleSheet("background-color: #d15656; color: white; font-weight: bold; border-color: #b03a3a;");
     }
     
     m_inputCombo->setEditText("");
@@ -206,8 +202,10 @@ void SendWidget::onSendClicked()
 
 void SendWidget::onPeriodicSendToggled(bool checked)
 {
-    if (!checked) {
+    if (!checked && m_periodicTimer->isActive()) {
         m_periodicTimer->stop();
+        m_sendButton->setText("Send");
+        m_sendButton->setStyleSheet("");
     }
 }
 
