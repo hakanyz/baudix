@@ -249,7 +249,7 @@ QStringList SerialPortController::getAvailablePorts() const
     QStringList ports;
     const auto infos = QSerialPortInfo::availablePorts();
     for (const QSerialPortInfo &info : infos) {
-        ports << info.portName() + " - " + info.description();
+        ports << info.portName() + " (" + info.description() + ")";
     }
     return ports;
 }
@@ -258,7 +258,7 @@ bool SerialPortController::connectDevice(const QString& portName, int baudRate, 
                                          QSerialPort::Parity parity, QSerialPort::StopBits stopBits,
                                          QSerialPort::FlowControl flowControl)
 {
-    QString actualPortName = portName.split(" - ").first();
+    QString actualPortName = portName.split(" (").first();
     bool result = false;
     
     // Invoke the connect method synchronously in the worker thread

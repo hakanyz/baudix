@@ -8,52 +8,7 @@
 #include <QStylePainter>
 #include <QSettings>
 
-class PortComboBoxDelegate : public QStyledItemDelegate {
-public:
-    explicit PortComboBoxDelegate(QObject* parent = nullptr) : QStyledItemDelegate(parent) {}
-    
-    // We will use an editable combo box trick instead of drawing manually,
-    // so we don't strictly need this delegate for drawing the closed state,
-    // but we can use it to draw the popup if needed. Actually, standard item delegate is fine.
-};
-
-class ShortTextComboBox : public QComboBox {
-public:
-    explicit ShortTextComboBox(QWidget* parent = nullptr) : QComboBox(parent) {}
-protected:
-    void paintEvent(QPaintEvent* event) override {
-        QStylePainter painter(this);
-        painter.setPen(palette().color(QPalette::Text));
-        QStyleOptionComboBox opt;
-        initStyleOption(&opt);
-        
-        // Override the displayed text to be just the short name
-        QString fullText = opt.currentText;
-        opt.currentText = fullText.split(" - ").first();
-        
-        painter.drawComplexControl(QStyle::CC_ComboBox, opt);
-        painter.drawControl(QStyle::CE_ComboBoxLabel, opt);
-    }
-};
-
-class PortPopupDelegate : public QStyledItemDelegate {
-public:
-    explicit PortPopupDelegate(QObject* parent = nullptr) : QStyledItemDelegate(parent) {}
-    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
-        QStyleOptionViewItem opt = option;
-        // Force background and text colors to bypass Windows native styling
-        if (opt.state & QStyle::State_Selected) {
-            painter->fillRect(opt.rect, QColor("#282c34")); // Dark background for selection
-            opt.palette.setColor(QPalette::Text, QColor("#61afef")); // Blue text
-            opt.palette.setColor(QPalette::HighlightedText, QColor("#61afef")); // Blue text
-        } else {
-            painter->fillRect(opt.rect, QColor("#21252b")); // Normal background
-            opt.palette.setColor(QPalette::Text, QColor("#abb2bf")); // Gray text
-            opt.palette.setColor(QPalette::HighlightedText, QColor("#abb2bf")); // Gray text
-        }
-        QStyledItemDelegate::paint(painter, opt, index);
-    }
-};
+#include <QListView>
 
 ConnectionWidget::ConnectionWidget(QWidget *parent)
     : QWidget(parent)
@@ -80,9 +35,11 @@ void ConnectionWidget::setupUI()
         connLayout->addLayout(vLayout);
     };
 
-    m_portCombo = new ShortTextComboBox(this);
+    m_portCombo = new QComboBox(this);
     m_portCombo->installEventFilter(this);
-    m_portCombo->setMinimumWidth(100);
+    m_portCombo->setMinimumWidth(160); // Wider to fit description
+    // Increase popup font and item height
+    m_portCombo->setStyleSheet("QComboBox QAbstractItemView { font-size: 13px; outline: none; } QComboBox QAbstractItemView::item { min-height: 24px; padding: 4px; }");
     addLabelledWidget("Port", m_portCombo);
     
     m_baudCombo = new QComboBox(this);
@@ -174,7 +131,9 @@ void ConnectionWidget::setAvailablePorts(const QStringList& ports)
         for (const QString& portDesc : ports) {
             m_portCombo->addItem(portDesc);
         }
-        m_portCombo->setItemDelegate(new PortPopupDelegate(m_portCombo)); // Force the custom delegate
+        
+        // Remove explicit delegate so stylesheet can take over rendering cleanly
+        m_portCombo->setItemDelegate(new QStyledItemDelegate(m_portCombo));
         
         int idx = m_portCombo->findText(current);
         if (idx >= 0) {
