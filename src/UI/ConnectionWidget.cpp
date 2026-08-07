@@ -37,7 +37,7 @@ void ConnectionWidget::setupUI()
     connect(m_toggleBtn, &QPushButton::clicked, this, &ConnectionWidget::toggleSettings);
 
     m_statusLabel = new QLabel("Disconnected");
-    m_statusLabel->setStyleSheet("color: #e06c75; font-weight: bold; font-size: 13px;");
+    m_statusLabel->setStyleSheet("color: #e06c75; font-weight: bold; font-size: 11px;");
 
     headerLayout->addWidget(m_toggleBtn);
     headerLayout->addWidget(m_statusLabel);
@@ -46,9 +46,9 @@ void ConnectionWidget::setupUI()
     // Connect button moves to the header
     m_btnConnect = new QPushButton("Connect", this);
     m_btnConnect->setObjectName("connectBtn");
-    m_btnConnect->setMinimumWidth(90);
-    m_btnConnect->setFixedHeight(26);
-    m_btnConnect->setStyleSheet("background-color: #3b5978; color: white; font-weight: bold; border-radius: 13px;");
+    m_btnConnect->setMinimumWidth(80);
+    m_btnConnect->setFixedHeight(24);
+    m_btnConnect->setStyleSheet("background-color: #3b5978; color: white; font-weight: bold; font-size: 11px; border-radius: 12px;");
     connect(m_btnConnect, &QPushButton::clicked, this, &ConnectionWidget::onConnectButtonClicked);
     headerLayout->addWidget(m_btnConnect);
 
@@ -170,7 +170,7 @@ void ConnectionWidget::setConnectedState(bool isConnected)
     
     if (isConnected) {
         m_btnConnect->setText("Disconnect");
-        m_btnConnect->setStyleSheet("background-color: #8f3b43; color: white; font-weight: bold; border-radius: 13px;");
+        m_btnConnect->setStyleSheet("background-color: #8f3b43; color: white; font-weight: bold; font-size: 11px; border-radius: 12px;");
         m_portCombo->setEnabled(false);
         m_baudCombo->setEnabled(false);
         m_dataBitsCombo->setEnabled(false);
@@ -183,7 +183,7 @@ void ConnectionWidget::setConnectedState(bool isConnected)
         m_toggleBtn->setText("▼");
     } else {
         m_btnConnect->setText("Connect");
-        m_btnConnect->setStyleSheet("background-color: #3b5978; color: white; font-weight: bold; border-radius: 13px;");
+        m_btnConnect->setStyleSheet("background-color: #3b5978; color: white; font-weight: bold; font-size: 11px; border-radius: 12px;");
         m_portCombo->setEnabled(true);
         m_baudCombo->setEnabled(true);
         m_dataBitsCombo->setEnabled(true);
@@ -270,9 +270,9 @@ void ConnectionWidget::updateStatusLabel()
     if (m_isConnected) {
         // e.g. "COM3 (USB Serial) - 115200 Baud - Connected"
         m_statusLabel->setText(QString("%1 - %2 Baud - Connected").arg(m_portCombo->currentText()).arg(m_baudCombo->currentText()));
-        m_statusLabel->setStyleSheet("color: #98c379; font-weight: bold; font-size: 13px;"); // Green
+        m_statusLabel->setStyleSheet("color: #98c379; font-weight: bold; font-size: 11px;"); // Green
     } else {
         m_statusLabel->setText("Disconnected");
-        m_statusLabel->setStyleSheet("color: #e06c75; font-weight: bold; font-size: 13px;"); // Red
+        m_statusLabel->setStyleSheet("color: #e06c75; font-weight: bold; font-size: 11px;"); // Red
     }
 }
