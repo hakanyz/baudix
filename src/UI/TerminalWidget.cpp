@@ -151,7 +151,7 @@ void TerminalWidget::setupUI()
     header->setSectionResizeMode(3, QHeaderView::Stretch);
     header->setStretchLastSection(false); // Don't double-stretch, we set it above
 
-    m_tableView->setColumnWidth(0, 130); // Timestamp
+    m_tableView->setColumnWidth(0, 115); // Timestamp (Narrowed per user request)
     m_tableView->setColumnWidth(1, 65);  // Direction
     m_tableView->setColumnWidth(2, 55);  // Length
 
@@ -317,6 +317,11 @@ void TerminalWidget::showContextMenu(const QPoint &pos)
     for (const QModelIndex& index : selectedRows) {
         int row = index.row();
         QString data = m_model->data(m_model->index(row, 3)).toString();
+        
+        // Remove visual tags from copied text so it pastes cleanly
+        data.replace("<CR>", "");
+        data.replace("<LF>", "");
+        data.replace("<TAB>", "\t");
         
         if (selectedAction == copyFullAction) {
             QString timestamp = m_model->data(m_model->index(row, 0)).toString();

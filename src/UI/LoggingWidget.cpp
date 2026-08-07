@@ -25,8 +25,12 @@ LoggingWidget::~LoggingWidget()
 
 void LoggingWidget::setupUI()
 {
-    QFormLayout *logLayout = new QFormLayout(this);
+    QVBoxLayout *logLayout = new QVBoxLayout(this);
     logLayout->setContentsMargins(4, 4, 4, 4);
+
+    QLabel* saveLabel = new QLabel("Save to:");
+    saveLabel->setStyleSheet("color: #abb2bf; font-size: 11px;");
+    logLayout->addWidget(saveLabel);
 
     // Save to row: text field + Browse button side by side
     QHBoxLayout* fileLayout = new QHBoxLayout();
@@ -34,6 +38,7 @@ void LoggingWidget::setupUI()
     fileLayout->setContentsMargins(0,0,0,0);
     
     m_logFilename = new QLineEdit("baudix_log");
+    m_logFilename->setMinimumWidth(80); // Ensure it doesn't get completely squished
     fileLayout->addWidget(m_logFilename);
 
     QPushButton* browseBtn = new QPushButton("Browse...");
@@ -42,9 +47,9 @@ void LoggingWidget::setupUI()
     connect(browseBtn, &QPushButton::clicked, this, &LoggingWidget::onBrowseClicked);
     fileLayout->addWidget(browseBtn);
     
-    logLayout->addRow("Save to", fileLayout);
+    logLayout->addLayout(fileLayout);
     
-    logLayout->addItem(new QSpacerItem(0, 5, QSizePolicy::Minimum, QSizePolicy::Fixed));
+    logLayout->addSpacing(5);
 
     QHBoxLayout* liveActionLayout = new QHBoxLayout();
     m_btnLog = new QPushButton("⏺ Record");
