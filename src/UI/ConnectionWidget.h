@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QComboBox>
 #include <QPushButton>
+#include <QLabel>
 
 class ConnectionWidget : public QWidget
 {
