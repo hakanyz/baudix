@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <QTimer>
+#include <QSettings>
 
 class SendWidget : public QWidget
 {
