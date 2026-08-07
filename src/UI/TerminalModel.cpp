@@ -36,10 +36,11 @@ QVariant TerminalModel::data(const QModelIndex &index, int role) const
                 if (m_viewMode == "ASCII")     full = entry.asciiData;
                 else if (m_viewMode == "HEX")  full = entry.hexData;
                 else                           full = entry.hexData + " [" + entry.asciiData + "]";
-                // Truncate long data for the table cell
-                constexpr int kMaxDisplay = 120;
+                // Truncate ridiculously long data to avoid freezing Qt's text measurement,
+                // but let QTableView handle the visual ellipsis (Qt::ElideRight).
+                constexpr int kMaxDisplay = 2048;
                 if (full.length() > kMaxDisplay)
-                    return full.left(kMaxDisplay) + QChar(0x2026); // …
+                    return full.left(kMaxDisplay);
                 return full;
             }
         }

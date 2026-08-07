@@ -128,8 +128,8 @@ void TerminalWidget::setupUI()
             border: none;
             border-right: 1px solid #181a1f;
             border-bottom: 1px solid #181a1f;
-            font-weight: 800; /* Extra bold */
-            font-size: 13px; /* Slightly larger */
+            font-weight: 600; /* Bold */
+            font-size: 12px; /* Standard size */
         }
     )");
 
@@ -150,8 +150,8 @@ void TerminalWidget::setupUI()
     header->setStretchLastSection(false); // Don't double-stretch, we set it above
 
     m_tableView->setColumnWidth(0, 130); // Timestamp
-    m_tableView->setColumnWidth(1, 90);  // Direction
-    m_tableView->setColumnWidth(2, 80);  // Length
+    m_tableView->setColumnWidth(1, 65);  // Direction
+    m_tableView->setColumnWidth(2, 60);  // Length
 
     // Sync column visibility with button state at startup
     m_tableView->setColumnHidden(0, !m_timestampCb->isChecked());
@@ -174,7 +174,7 @@ void TerminalWidget::setupUI()
     m_detailView = new QPlainTextEdit();
     m_detailView->setReadOnly(true);
     m_detailView->setMaximumBlockCount(0);
-    m_detailView->setLineWrapMode(QPlainTextEdit::NoWrap);
+    m_detailView->setLineWrapMode(QPlainTextEdit::WidgetWidth);
     m_detailView->setFont(QFont("Consolas", 9));
     m_detailView->setPlaceholderText("Select a row to inspect full data...");
     m_detailView->setStyleSheet(R"(
