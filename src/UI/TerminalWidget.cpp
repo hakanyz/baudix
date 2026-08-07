@@ -145,6 +145,7 @@ void TerminalWidget::setupUI()
 
     // Column widths - Fixed mode for fixed columns, Stretch only for Data
     QHeaderView* header = m_tableView->horizontalHeader();
+    header->setVisible(false);
     header->setSectionResizeMode(0, QHeaderView::Fixed);
     header->setSectionResizeMode(1, QHeaderView::Fixed);
     header->setSectionResizeMode(2, QHeaderView::Fixed);
