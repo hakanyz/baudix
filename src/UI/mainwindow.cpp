@@ -270,15 +270,16 @@ void MainWindow::setupCentralWidget()
 
     // Splitter for Terminal and Macros/Logging
     QSplitter* splitter = new QSplitter(Qt::Horizontal);
-    splitter->setHandleWidth(2);
-    splitter->setStyleSheet("QSplitter::handle { background: #181a1f; }");
+    splitter->setHandleWidth(4);
+    splitter->setStyleSheet("QSplitter::handle { background: transparent; }");
     
     m_terminalWidget = new TerminalWidget();
     
     // Right panel (Macros & Logging)
     QWidget* rightPanel = new QWidget();
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
-    rightLayout->setContentsMargins(5, 5, 5, 5);
+    rightLayout->setContentsMargins(0, 0, 0, 0);
+    rightLayout->setSpacing(4);
     
     m_macroWidget = new MacroWidget();
     connect(m_macroWidget, &MacroWidget::macroSendRequested, this, &MainWindow::performSend);
