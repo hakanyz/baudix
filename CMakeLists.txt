@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(baudix VERSION 1.3.0 LANGUAGES CXX)
+project(baudix VERSION 1.3.1 LANGUAGES CXX)
 
 add_compile_definitions(BAUDIX_VERSION_STR="${PROJECT_VERSION}")
 
