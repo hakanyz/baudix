@@ -19,8 +19,45 @@ ConnectionWidget::ConnectionWidget(QWidget *parent)
 
 void ConnectionWidget::setupUI()
 {
-    QHBoxLayout *connLayout = new QHBoxLayout(this);
-    connLayout->setContentsMargins(10, 5, 10, 5);
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(5);
+
+    // Header Layout (Always visible)
+    QHBoxLayout *headerLayout = new QHBoxLayout();
+    headerLayout->setContentsMargins(5, 5, 5, 5);
+
+    m_toggleBtn = new QPushButton("▲");
+    m_toggleBtn->setFixedSize(24, 24);
+    m_toggleBtn->setCursor(Qt::PointingHandCursor);
+    m_toggleBtn->setStyleSheet(R"(
+        QPushButton { border: none; font-weight: bold; color: #abb2bf; background: transparent; padding: 0px; margin: 0px; } 
+        QPushButton:hover { color: #ffffff; background-color: #3b5978; border-radius: 12px; }
+    )");
+    connect(m_toggleBtn, &QPushButton::clicked, this, &ConnectionWidget::toggleSettings);
+
+    m_statusLabel = new QLabel("Disconnected");
+    m_statusLabel->setStyleSheet("color: #e06c75; font-weight: bold; font-size: 13px;");
+
+    headerLayout->addWidget(m_toggleBtn);
+    headerLayout->addWidget(m_statusLabel);
+    headerLayout->addStretch();
+
+    // Connect button moves to the header
+    m_btnConnect = new QPushButton("Connect", this);
+    m_btnConnect->setObjectName("connectBtn");
+    m_btnConnect->setMinimumWidth(90);
+    m_btnConnect->setFixedHeight(26);
+    m_btnConnect->setStyleSheet("background-color: #3b5978; color: white; font-weight: bold; border-radius: 13px;");
+    connect(m_btnConnect, &QPushButton::clicked, this, &ConnectionWidget::onConnectButtonClicked);
+    headerLayout->addWidget(m_btnConnect);
+
+    mainLayout->addLayout(headerLayout);
+
+    // Settings Container (Collapsible)
+    m_settingsContainer = new QWidget(this);
+    QHBoxLayout *connLayout = new QHBoxLayout(m_settingsContainer);
+    connLayout->setContentsMargins(10, 0, 10, 5);
     connLayout->setSpacing(15);
     
     // Helper lambda to add labelled widgets
@@ -64,26 +101,10 @@ void ConnectionWidget::setupUI()
     m_flowControlCombo->addItems({"None", "Hardware", "Software"});
     addLabelledWidget("Flow control", m_flowControlCombo);
     
-    // We will add the stretch AFTER the connect button
-
-    m_btnConnect = new QPushButton("Connect", this);
-    m_btnConnect->setObjectName("connectBtn");
-    m_btnConnect->setMinimumWidth(90);
-    m_btnConnect->setFixedHeight(26);
-    m_btnConnect->setStyleSheet("background-color: #3b5978; color: white; font-weight: bold; border-radius: 13px;");
-    connect(m_btnConnect, &QPushButton::clicked, this, &ConnectionWidget::onConnectButtonClicked);
-    
-    // Add a wrapper to perfectly align the button vertically with the combo boxes
-    QVBoxLayout* btnLayout = new QVBoxLayout();
-    btnLayout->setContentsMargins(0, 0, 0, 0);
-    btnLayout->setSpacing(2);
-    QLabel* dummyLbl = new QLabel(" ");
-    dummyLbl->setStyleSheet("font-size: 11px;");
-    btnLayout->addWidget(dummyLbl);
-    btnLayout->addWidget(m_btnConnect);
-    connLayout->addLayout(btnLayout);
-    
     connLayout->addStretch(); // Push everything to the left
+    
+    mainLayout->addWidget(m_settingsContainer);
+    updateStatusLabel();
 }
 
 QString ConnectionWidget::portName() const
@@ -145,6 +166,8 @@ void ConnectionWidget::setAvailablePorts(const QStringList& ports)
 void ConnectionWidget::setConnectedState(bool isConnected)
 {
     m_isConnected = isConnected;
+    updateStatusLabel();
+    
     if (isConnected) {
         m_btnConnect->setText("Disconnect");
         m_btnConnect->setStyleSheet("background-color: #8f3b43; color: white; font-weight: bold; border-radius: 13px;");
@@ -154,6 +177,10 @@ void ConnectionWidget::setConnectedState(bool isConnected)
         m_stopBitsCombo->setEnabled(false);
         m_parityCombo->setEnabled(false);
         m_flowControlCombo->setEnabled(false);
+        
+        // Auto-collapse when connected
+        m_settingsContainer->hide();
+        m_toggleBtn->setText("▼");
     } else {
         m_btnConnect->setText("Connect");
         m_btnConnect->setStyleSheet("background-color: #3b5978; color: white; font-weight: bold; border-radius: 13px;");
@@ -163,6 +190,10 @@ void ConnectionWidget::setConnectedState(bool isConnected)
         m_stopBitsCombo->setEnabled(true);
         m_parityCombo->setEnabled(true);
         m_flowControlCombo->setEnabled(true);
+        
+        // Auto-expand when disconnected
+        m_settingsContainer->show();
+        m_toggleBtn->setText("▲");
     }
 }
 
@@ -221,4 +252,27 @@ void ConnectionWidget::saveSettings()
     settings.setValue("Parity", m_parityCombo->currentText());
     settings.setValue("FlowControl", m_flowControlCombo->currentText());
     settings.endGroup();
+}
+
+void ConnectionWidget::toggleSettings()
+{
+    if (m_settingsContainer->isVisible()) {
+        m_settingsContainer->hide();
+        m_toggleBtn->setText("▼");
+    } else {
+        m_settingsContainer->show();
+        m_toggleBtn->setText("▲");
+    }
+}
+
+void ConnectionWidget::updateStatusLabel()
+{
+    if (m_isConnected) {
+        // e.g. "COM3 (USB Serial) - 115200 Baud - Connected"
+        m_statusLabel->setText(QString("%1 - %2 Baud - Connected").arg(m_portCombo->currentText()).arg(m_baudCombo->currentText()));
+        m_statusLabel->setStyleSheet("color: #98c379; font-weight: bold; font-size: 13px;"); // Green
+    } else {
+        m_statusLabel->setText("Disconnected");
+        m_statusLabel->setStyleSheet("color: #e06c75; font-weight: bold; font-size: 13px;"); // Red
+    }
 }

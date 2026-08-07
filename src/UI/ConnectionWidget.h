@@ -35,8 +35,13 @@ protected:
 
 private slots:
     void onConnectButtonClicked();
+    void toggleSettings();
 
 private:
+    QWidget* m_settingsContainer;
+    QPushButton* m_toggleBtn;
+    QLabel* m_statusLabel;
+    
     QComboBox* m_portCombo;
     QComboBox* m_baudCombo;
     QComboBox* m_dataBitsCombo;
@@ -48,6 +53,7 @@ private:
     bool m_isConnected = false;
 
     void setupUI();
+    void updateStatusLabel();
 };
 
 #endif // CONNECTIONWIDGET_H
