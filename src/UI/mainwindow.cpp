@@ -124,11 +124,14 @@ MainWindow::MainWindow(QWidget *parent)
     // Initialize Status Bar
     m_lblTxBytes = new QLabel("TX: 0 B", this);
     m_lblRxBytes = new QLabel("RX: 0 B", this);
+    m_lblErrBytes = new QLabel("ERR: 0", this);
     m_lblTxBytes->setStyleSheet("color: #61afef; padding: 0 10px; font-weight: bold;");
     m_lblRxBytes->setStyleSheet("color: #98c379; padding: 0 10px; font-weight: bold;");
+    m_lblErrBytes->setStyleSheet("color: #e06c75; padding: 0 10px; font-weight: bold;");
     
     statusBar()->addPermanentWidget(m_lblTxBytes);
     statusBar()->addPermanentWidget(m_lblRxBytes);
+    statusBar()->addPermanentWidget(m_lblErrBytes);
     statusBar()->setStyleSheet("background-color: #21252b; color: #abb2bf; border-top: 1px solid #181a1f;");
 
     // Connect controller signals
@@ -566,11 +569,12 @@ void MainWindow::onSendFileClicked()
     }
 }
 
-void MainWindow::updateCounters(quint64 tx, quint64 rx)
+void MainWindow::updateCounters(quint64 tx, quint64 rx, quint64 err)
 {
     // Format numbers with commas (e.g., 1,024 B)
     m_lblTxBytes->setText(QString("TX: %L1 B").arg(tx));
     m_lblRxBytes->setText(QString("RX: %L1 B").arg(rx));
+    m_lblErrBytes->setText(QString("ERR: %L1").arg(err));
 }
 
 void MainWindow::onFileTransferProgress(qint64 bytesSent, qint64 bytesTotal)

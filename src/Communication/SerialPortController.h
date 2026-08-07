@@ -6,7 +6,7 @@
 #include <QSerialPortInfo>
 #include <QByteArray>
 #include <QStringList>
-#include <QTimer>
+#include <QThread>
 
 #include "ISerialTransport.h"
 
@@ -29,29 +29,21 @@ public:
     void resetCounters() override;
     quint64 txBytes() const override { return m_txBytes; }
     quint64 rxBytes() const override { return m_rxBytes; }
+    quint64 errorCount() const override { return m_errCount; }
 
 private slots:
-    void handleReadyRead();
-    void handleError(QSerialPort::SerialPortError error);
-    void handleBytesWritten(qint64 bytes);
+    void onWorkerCountersUpdated(quint64 tx, quint64 rx, quint64 err);
+    void onWorkerConnectionStateChanged(bool isOpen, const QString& errorMsg);
 
 private:
-    QSerialPort *m_serialPort;
+    QThread* m_workerThread;
+    class SerialWorker* m_worker;
+
+    // Cached state for synchronous access
     quint64 m_txBytes = 0;
     quint64 m_rxBytes = 0;
-    
-    // RX Framing
-    QByteArray m_rxBuffer;
-    QTimer* m_framingTimer = nullptr;
-    static constexpr int kFramingTimeoutMs = 40;  // ms of silence = end of frame
-    static constexpr int kMaxFrameSize    = 2048; // bytes before forced flush
-    void flushRxBuffer();
-    
-    // File Transfer State
-    class QFile* m_sendFile = nullptr;
-    qint64 m_sendFileTotalBytes = 0;
-    qint64 m_sendFileBytesWritten = 0;
-    void sendNextFileChunk();
+    quint64 m_errCount = 0;
+    bool m_isOpen = false;
 };
 
 #endif // SERIALPORTCONTROLLER_H

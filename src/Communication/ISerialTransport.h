@@ -26,11 +26,12 @@ public:
     virtual void resetCounters() = 0;
     virtual quint64 txBytes() const = 0;
     virtual quint64 rxBytes() const = 0;
+    virtual quint64 errorCount() const = 0;
 
 signals:
     void dataReceived(const QByteArray& data);
     void connectionStateChanged(bool isOpen, const QString& errorMsg = "");
-    void countersUpdated(quint64 tx, quint64 rx);
+    void countersUpdated(quint64 tx, quint64 rx, quint64 err);
     void fileTransferProgress(qint64 bytesSent, qint64 bytesTotal);
     void fileTransferFinished();
     void fileTransferError(const QString& error);

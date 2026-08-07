@@ -101,10 +101,11 @@ private:
     // Status Bar & File Transfer UI
     class QLabel* m_lblTxBytes;
     class QLabel* m_lblRxBytes;
+    class QLabel* m_lblErrBytes;
     QProgressDialog* m_fileProgressDialog = nullptr;
     
 private slots:
-    void updateCounters(quint64 tx, quint64 rx);
+    void updateCounters(quint64 tx, quint64 rx, quint64 err);
     void onFileTransferProgress(qint64 bytesSent, qint64 bytesTotal);
     void onFileTransferFinished();
     void onFileTransferError(const QString& error);
