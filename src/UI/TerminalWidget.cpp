@@ -400,11 +400,11 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
     for (int i = 0; i < tempStr.length(); ++i) {
         QChar c = tempStr[i];
         if (c == '\r') {
-            asciiStr.append("\\r");
+            asciiStr.append("<CR>");
         } else if (c == '\n') {
-            asciiStr.append("\\n");
+            asciiStr.append("<LF>");
         } else if (c == '\t') {
-            asciiStr.append("\\t");
+            asciiStr.append("<TAB>");
         } else if (c.unicode() < 32 || (c.unicode() >= 0x7F && c.unicode() <= 0x9F)) {
             // Replace other unprintable control characters with dots
             asciiStr.append('.');
