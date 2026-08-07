@@ -35,8 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     
-    // Set default window size based on user's manual adjustment (vertical rectangle)
-    resize(800, 920);
+    // Set default window size based on the user's manual adjustment (first image)
+    resize(1024, 768);
     
     m_serialController = new SerialPortController(this);
 
