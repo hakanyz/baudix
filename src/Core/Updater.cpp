@@ -43,7 +43,19 @@ void Updater::onReplyFinished(QNetworkReply *reply)
     
     if (!jsonDoc.isNull() && jsonDoc.isObject()) {
         QJsonObject jsonObj = jsonDoc.object();
+        
+        if (jsonObj.contains("message") && jsonObj["message"].toString().contains("API rate limit")) {
+            if (!m_isSilent) emit errorOccurred("GitHub API rate limit exceeded. Please try again later.");
+            reply->deleteLater();
+            return;
+        }
+        
         QString latestVersion = jsonObj["tag_name"].toString();
+        if (latestVersion.isEmpty()) {
+            if (!m_isSilent) emit errorOccurred("Could not determine the latest version from GitHub.");
+            reply->deleteLater();
+            return;
+        }
         
         // Find the installer asset for current platform
         QString downloadUrl = jsonObj["html_url"].toString(); // fallback
