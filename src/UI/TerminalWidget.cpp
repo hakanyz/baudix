@@ -113,10 +113,7 @@ void TerminalWidget::setupUI()
             background-color: #282c34;
             alternate-background-color: #21252b;
             color: #abb2bf;
-            border-top: 1px solid #181a1f;
-            border-right: none;
-            border-bottom: none;
-            border-left: 1px solid #181a1f;
+            border: none;
             gridline-color: #181a1f;
         }
         QTableView::item {
