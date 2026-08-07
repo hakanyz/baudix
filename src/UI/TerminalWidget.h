@@ -6,6 +6,8 @@
 #include <QLabel>
 #include "TerminalModel.h"
 #include "BadgeDelegate.h"
+#include "DataColumnDelegate.h"
+#include <QMenu>
 #include <QPushButton>
 #include <QComboBox>
 #include <QLineEdit>
@@ -40,6 +42,7 @@ private:
     QTableView* m_tableView;
     TerminalModel* m_model;
     BadgeDelegate* m_delegate;
+    DataColumnDelegate* m_dataDelegate;
     QPushButton* m_timestampCb;
     QComboBox* m_viewModeCombo;
     QLineEdit* m_searchBox;

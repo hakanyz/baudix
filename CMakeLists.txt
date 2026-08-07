@@ -27,6 +27,8 @@ set(PROJECT_SOURCES
         src/UI/TerminalModel.h
         src/UI/BadgeDelegate.cpp
         src/UI/BadgeDelegate.h
+        src/UI/DataColumnDelegate.cpp
+        src/UI/DataColumnDelegate.h
         src/UI/SendWidget.cpp
         src/UI/SendWidget.h
         src/UI/LoggingWidget.cpp

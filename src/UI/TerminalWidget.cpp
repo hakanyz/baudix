@@ -135,11 +135,13 @@ void TerminalWidget::setupUI()
 
     m_model = new TerminalModel(this);
     m_delegate = new BadgeDelegate(this);
+    m_dataDelegate = new DataColumnDelegate(this);
     
     m_model->setViewMode(m_viewModeCombo->currentText()); // Sync model with combobox startup state
 
     m_tableView->setModel(m_model);
     m_tableView->setItemDelegateForColumn(1, m_delegate); // Column 1 is Direction
+    m_tableView->setItemDelegateForColumn(3, m_dataDelegate); // Column 3 is Data
 
     // Column widths - Fixed mode for fixed columns, Stretch only for Data
     QHeaderView* header = m_tableView->horizontalHeader();
