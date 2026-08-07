@@ -25,6 +25,7 @@ void TerminalWidget::setupUI()
 {
     QVBoxLayout* tabLayout = new QVBoxLayout(this);
     tabLayout->setContentsMargins(5, 5, 5, 5);
+    tabLayout->setSpacing(12); // Add elegant breathing room instead of a crude line
     
     // Top Bar of Terminal
     QHBoxLayout* topBar = new QHBoxLayout();
@@ -112,7 +113,7 @@ void TerminalWidget::setupUI()
             background-color: #282c34;
             alternate-background-color: #21252b;
             color: #abb2bf;
-            border-top: none;
+            border-top: 1px solid #181a1f;
             border-right: none;
             border-bottom: none;
             border-left: 1px solid #181a1f;
