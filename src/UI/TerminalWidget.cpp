@@ -151,7 +151,7 @@ void TerminalWidget::setupUI()
 
     m_tableView->setColumnWidth(0, 130); // Timestamp
     m_tableView->setColumnWidth(1, 65);  // Direction
-    m_tableView->setColumnWidth(2, 45);  // Length
+    m_tableView->setColumnWidth(2, 55);  // Length
 
     // Sync column visibility with button state at startup
     m_tableView->setColumnHidden(0, !m_timestampCb->isChecked());
