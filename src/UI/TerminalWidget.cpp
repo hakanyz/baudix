@@ -178,16 +178,31 @@ void TerminalWidget::setupUI()
     
     // Header for detail panel
     QWidget* detailHeader = new QWidget(m_detailContainer);
-    detailHeader->setStyleSheet("background-color: #21252b; border-bottom: 1px solid #181a1f;");
+    detailHeader->setObjectName("detailHeader");
+    detailHeader->setStyleSheet("#detailHeader { background-color: #21252b; border-bottom: 1px solid #181a1f; }");
     QHBoxLayout* headerLayout = new QHBoxLayout(detailHeader);
-    headerLayout->setContentsMargins(5, 2, 5, 2);
+    headerLayout->setContentsMargins(8, 4, 8, 4);
     
     QLabel* detailTitle = new QLabel("Packet Details");
     detailTitle->setStyleSheet("color: #abb2bf; font-weight: bold; font-size: 11px; border: none;");
     
-    QPushButton* closeDetailBtn = new QPushButton("✖");
-    closeDetailBtn->setFixedSize(20, 20);
-    closeDetailBtn->setStyleSheet("QPushButton { color: #e06c75; font-weight: bold; border: none; background: transparent; } QPushButton:hover { color: #ffffff; background: #e06c75; border-radius: 10px; }");
+    QPushButton* closeDetailBtn = new QPushButton("X");
+    closeDetailBtn->setFixedSize(24, 24);
+    closeDetailBtn->setCursor(Qt::PointingHandCursor);
+    closeDetailBtn->setStyleSheet(R"(
+        QPushButton { 
+            color: #e06c75; 
+            font-weight: bold; 
+            font-size: 12px;
+            border: none; 
+            background: transparent; 
+        } 
+        QPushButton:hover { 
+            color: #ffffff; 
+            background-color: #e06c75; 
+            border-radius: 12px; 
+        }
+    )");
     connect(closeDetailBtn, &QPushButton::clicked, [this]() { m_detailContainer->hide(); });
     
     headerLayout->addWidget(detailTitle);
