@@ -32,7 +32,13 @@ void DataColumnDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     // Elide text if it's too long
     QString elidedText = fm.elidedText(text, Qt::ElideRight, textRect.width());
     
-    QColor normalColor = opt.state & QStyle::State_Selected ? opt.palette.highlightedText().color() : opt.palette.text().color();
+    QColor normalColor = index.data(Qt::ForegroundRole).value<QColor>();
+    if (!normalColor.isValid()) {
+        normalColor = opt.palette.text().color();
+    }
+    if (opt.state & QStyle::State_Selected) {
+        normalColor = opt.palette.highlightedText().color();
+    }
     QColor tagColor = QColor("#5c6370"); // Muted grey for control tags
     if (opt.state & QStyle::State_Selected) {
         tagColor = normalColor; // Keep same color if selected so it's readable

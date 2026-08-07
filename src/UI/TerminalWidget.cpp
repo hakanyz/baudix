@@ -101,9 +101,9 @@ void TerminalWidget::setupUI()
     m_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_tableView->verticalHeader()->setVisible(false);
-    m_tableView->setShowGrid(true);
-    m_tableView->setGridStyle(Qt::SolidLine);
-    m_tableView->setAlternatingRowColors(true);
+    m_tableView->setShowGrid(false);
+    m_tableView->setGridStyle(Qt::NoPen);
+    m_tableView->setAlternatingRowColors(false);
     
     // Context Menu
     m_tableView->setContextMenuPolicy(Qt::CustomContextMenu);
