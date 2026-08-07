@@ -55,22 +55,23 @@ void SendWidget::setupUI()
     m_inputCombo->addItem("");
     connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &SendWidget::onSendClicked);
     
-    QHBoxLayout* inputLayout = new QHBoxLayout();
-    inputLayout->setContentsMargins(0,0,0,0);
-    inputLayout->setSpacing(5);
-    inputLayout->addWidget(m_inputCombo, 1);
+    addLabelledWidget("Raw command", m_inputCombo);
     
-    m_cbHistoryOn = new QCheckBox("History");
+    // History in Popup
+    m_settingsPopup = new QDialog(this, Qt::Popup | Qt::FramelessWindowHint);
+    m_settingsPopup->setObjectName("settingsPopup");
+    m_settingsPopup->setStyleSheet("#settingsPopup { background-color: #282c34; border: 1px solid #181a1f; border-radius: 4px; } QLabel { color: #abb2bf; }");
+    QVBoxLayout* popupLayout = new QVBoxLayout(m_settingsPopup);
+    popupLayout->setSpacing(10);
+    popupLayout->setContentsMargins(15, 15, 15, 15);
+    
+    m_cbHistoryOn = new QCheckBox("Save History");
     m_cbHistoryOn->setChecked(true);
     m_cbHistoryOn->setToolTip("Save sent commands to history. Uncheck to clear.");
     connect(m_cbHistoryOn, &QCheckBox::toggled, this, &SendWidget::onHistoryToggled);
-    inputLayout->addWidget(m_cbHistoryOn);
-    
-    QWidget* inputContainer = new QWidget();
-    inputContainer->setLayout(inputLayout);
-    addLabelledWidget("Raw command", inputContainer);
+    popupLayout->addWidget(m_cbHistoryOn);
 
-    // Periodic wrapper
+    // Auto-send in Popup
     QWidget* periodicWidget = new QWidget();
     QHBoxLayout* pLayout = new QHBoxLayout(periodicWidget);
     pLayout->setContentsMargins(0, 0, 0, 0);
@@ -88,18 +89,41 @@ void SendWidget::setupUI()
     
     pLayout->addWidget(m_periodicSendCb);
     pLayout->addWidget(m_periodicMsBox);
-    addLabelledWidget("Auto-send", periodicWidget);
+    pLayout->addStretch();
+    popupLayout->addWidget(periodicWidget);
     
-    m_burstBox = new QSpinBox(); // Keep this hidden or add it? Let's add it cleanly
+    // Burst in Popup
+    QHBoxLayout* burstLayout = new QHBoxLayout();
+    m_burstBox = new QSpinBox();
     m_burstBox->setRange(1, 1000);
     m_burstBox->setValue(1);
-    m_burstBox->setFixedWidth(60);
-    addLabelledWidget("Burst", m_burstBox);
+    m_burstBox->setFixedWidth(80);
+    burstLayout->addWidget(new QLabel("Burst:"));
+    burstLayout->addWidget(m_burstBox);
+    burstLayout->addStretch();
+    popupLayout->addLayout(burstLayout);
 
-    // Append
+    // Line-ending in Popup
+    QHBoxLayout* appendLayout = new QHBoxLayout();
     m_appendCombo = new QComboBox();
     m_appendCombo->addItems({"None", "CR", "LF", "CRLF"});
-    addLabelledWidget("Line-ending", m_appendCombo);
+    appendLayout->addWidget(new QLabel("Line-ending:"));
+    appendLayout->addWidget(m_appendCombo);
+    appendLayout->addStretch();
+    popupLayout->addLayout(appendLayout);
+    
+    // Settings Button for main bar
+    QToolButton* settingsBtn = new QToolButton(this);
+    settingsBtn->setText("⚙️");
+    settingsBtn->setToolTip("Transmission Settings");
+    settingsBtn->setFixedHeight(28);
+    settingsBtn->setStyleSheet("QToolButton { background-color: transparent; border: 1px solid #181a1f; border-radius: 4px; padding: 0 5px; } QToolButton:hover { background-color: #3b4048; }");
+    connect(settingsBtn, &QToolButton::clicked, this, [this, settingsBtn](){
+        QPoint pos = settingsBtn->mapToGlobal(QPoint(0, settingsBtn->height() + 2));
+        m_settingsPopup->move(pos);
+        m_settingsPopup->show();
+    });
+    sendLayout->addWidget(settingsBtn);
 
     // Send Button
     m_sendButton = new QPushButton("Send", this);
@@ -115,19 +139,8 @@ void SendWidget::setupUI()
     sendFileBtn->setFixedHeight(28);
     connect(sendFileBtn, &QPushButton::clicked, this, &SendWidget::onSendFileClicked);
     
-    QHBoxLayout* btnHLayout = new QHBoxLayout();
-    btnHLayout->setContentsMargins(0, 0, 0, 0);
-    btnHLayout->setSpacing(5);
-    btnHLayout->addWidget(sendFileBtn);
-    btnHLayout->addWidget(m_sendButton);
-    
-    QVBoxLayout* btnLayout = new QVBoxLayout();
-    btnLayout->setContentsMargins(0, 0, 0, 0);
-    btnLayout->addStretch();
-    btnLayout->addLayout(btnHLayout);
-    btnLayout->addStretch();
-    sendLayout->addLayout(btnLayout);
-
+    sendLayout->addWidget(sendFileBtn);
+    sendLayout->addWidget(m_sendButton);
     mainLayout->addWidget(sendFrame);
 }
 

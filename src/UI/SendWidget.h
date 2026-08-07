@@ -8,6 +8,8 @@
 #include <QSpinBox>
 #include <QTimer>
 #include <QSettings>
+#include <QDialog>
+#include <QToolButton>
 
 class SendWidget : public QWidget
 {
@@ -46,6 +48,7 @@ private:
     QSpinBox* m_burstBox;
     QTimer* m_periodicTimer;
     QString m_periodicText;
+    QDialog* m_settingsPopup;
 
     void setupUI();
 };
