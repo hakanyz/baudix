@@ -27,7 +27,7 @@ Baudix is a modern Serial Port Terminal built with C++17 and Qt 6. It was develo
 ## Screenshots
 
 <div align="center">
-  <img src="docs/software_img.png" alt="Baudix Main Interface">
+  <img src="docs/baudix_ui.png" alt="Baudix Main Interface">
 </div>
 
 ## Tech Stack & Architecture
