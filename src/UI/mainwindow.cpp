@@ -35,6 +35,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     
+    // Set a taller default window size (e.g. 900x1000 instead of default 800x600)
+    resize(900, 1000);
+    
     m_serialController = new SerialPortController(this);
 
     // Setup Updater first so it can be connected in menus

@@ -151,7 +151,7 @@ void TerminalWidget::setupUI()
 
     m_tableView->setColumnWidth(0, 130); // Timestamp
     m_tableView->setColumnWidth(1, 65);  // Direction
-    m_tableView->setColumnWidth(2, 60);  // Length
+    m_tableView->setColumnWidth(2, 45);  // Length
 
     // Sync column visibility with button state at startup
     m_tableView->setColumnHidden(0, !m_timestampCb->isChecked());
@@ -395,10 +395,14 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
     }
     hexStr = hexStr.trimmed();
 
-    // Parse ASCII
-    for (char b : data) {
-        if (b >= 32 && b <= 126) asciiStr.append(b);
-        else asciiStr.append('.');
+    // Parse ASCII (Treat as UTF-8 for international characters like ı, ş, ğ, etc.)
+    asciiStr = QString::fromUtf8(data);
+    for (int i = 0; i < asciiStr.length(); ++i) {
+        QChar c = asciiStr[i];
+        // Replace unprintable control characters with dots, but leave valid UTF-8 symbols
+        if (c.unicode() < 32 || (c.unicode() >= 0x7F && c.unicode() <= 0x9F)) {
+            asciiStr[i] = '.';
+        }
     }
 
     // Determine direction tag
