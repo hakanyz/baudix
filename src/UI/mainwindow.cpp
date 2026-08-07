@@ -232,15 +232,15 @@ void MainWindow::setupCentralWidget()
 {
     QWidget* centralWidget = new QWidget(this);
     QVBoxLayout* mainLayout = new QVBoxLayout(centralWidget);
-    mainLayout->setContentsMargins(8, 8, 8, 8);
-    mainLayout->setSpacing(10);
+    mainLayout->setContentsMargins(4, 4, 4, 4);
+    mainLayout->setSpacing(6);
 
     auto wrapInCard = [](QWidget* child) -> QFrame* {
         QFrame* frame = new QFrame();
         frame->setObjectName("cardFrame");
-        frame->setStyleSheet("#cardFrame { background-color: #282c34; border: 1px solid #181a1f; border-radius: 6px; }");
+        frame->setStyleSheet("#cardFrame { background-color: #282c34; border: 1px solid #181a1f; border-radius: 4px; }");
         QVBoxLayout* layout = new QVBoxLayout(frame);
-        layout->setContentsMargins(6, 6, 6, 6);
+        layout->setContentsMargins(4, 2, 4, 2);
         layout->addWidget(child);
         return frame;
     };

@@ -187,22 +187,21 @@ void TerminalWidget::setupUI()
     detailTitle->setStyleSheet("color: #abb2bf; font-weight: bold; font-size: 11px; border: none;");
     
     QPushButton* closeDetailBtn = new QPushButton("X");
-    closeDetailBtn->setFixedSize(24, 24);
+    closeDetailBtn->setFixedSize(20, 20);
     closeDetailBtn->setCursor(Qt::PointingHandCursor);
     closeDetailBtn->setStyleSheet(R"(
         QPushButton { 
-            color: #e06c75; 
+            color: #ffffff; 
             font-weight: bold; 
-            font-size: 13px;
+            font-size: 10px;
             border: none; 
-            background: transparent; 
+            background-color: #e06c75; 
+            border-radius: 10px;
             padding: 0px;
             margin: 0px;
         } 
         QPushButton:hover { 
-            color: #ffffff; 
-            background-color: #e06c75; 
-            border-radius: 12px; 
+            background-color: #be5046; 
         }
     )");
     connect(closeDetailBtn, &QPushButton::clicked, [this]() { m_detailContainer->hide(); });
