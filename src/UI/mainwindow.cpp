@@ -232,35 +232,31 @@ void MainWindow::setupCentralWidget()
 {
     QWidget* centralWidget = new QWidget(this);
     QVBoxLayout* mainLayout = new QVBoxLayout(centralWidget);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(0);
+    mainLayout->setContentsMargins(8, 8, 8, 8);
+    mainLayout->setSpacing(10);
+
+    auto wrapInCard = [](QWidget* child) -> QFrame* {
+        QFrame* frame = new QFrame();
+        frame->setObjectName("cardFrame");
+        frame->setStyleSheet("#cardFrame { background-color: #282c34; border: 1px solid #181a1f; border-radius: 6px; }");
+        QVBoxLayout* layout = new QVBoxLayout(frame);
+        layout->setContentsMargins(6, 6, 6, 6);
+        layout->addWidget(child);
+        return frame;
+    };
 
     // Top Bar (Connection)
     m_connectionWidget = new ConnectionWidget();
     connect(m_connectionWidget, &ConnectionWidget::connectRequested, this, &MainWindow::onConnectRequested);
     connect(m_connectionWidget, &ConnectionWidget::disconnectRequested, this, &MainWindow::onDisconnectRequested);
     connect(m_connectionWidget, &ConnectionWidget::refreshPortsRequested, this, &MainWindow::refreshPorts);
-    mainLayout->addWidget(m_connectionWidget);
-
-    // Divider
-    QFrame* hLine1 = new QFrame();
-    hLine1->setFrameShape(QFrame::HLine);
-    hLine1->setFrameShadow(QFrame::Sunken);
-    hLine1->setStyleSheet("background-color: #181a1f;");
-    mainLayout->addWidget(hLine1);
+    mainLayout->addWidget(wrapInCard(m_connectionWidget));
 
     // Send Bar
     m_sendWidget = new SendWidget();
     connect(m_sendWidget, &SendWidget::sendDataRequested, this, &MainWindow::sendDataToController);
     connect(m_sendWidget, &SendWidget::sendFileRequested, this, &MainWindow::onSendFileClicked);
-    mainLayout->addWidget(m_sendWidget);
-
-    // Divider
-    QFrame* hLine2 = new QFrame();
-    hLine2->setFrameShape(QFrame::HLine);
-    hLine2->setFrameShadow(QFrame::Sunken);
-    hLine2->setStyleSheet("background-color: #181a1f;");
-    mainLayout->addWidget(hLine2);
+    mainLayout->addWidget(wrapInCard(m_sendWidget));
 
     // Splitter for Terminal and Macros/Logging
     QSplitter* splitter = new QSplitter(Qt::Horizontal);
