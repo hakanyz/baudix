@@ -201,7 +201,6 @@ private:
 
         m_sendFileBytesWritten += chunk.size();
         emit fileTransferProgress(m_sendFileBytesWritten, m_sendFileTotalBytes);
-        emit dataSent(chunk);
     }
 
     QSerialPort *m_serialPort;

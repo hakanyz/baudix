@@ -76,6 +76,7 @@ private:
     ISerialTransport* m_serialController;
     Updater* m_updater;
     bool m_isUpdating = false;
+    qint64 m_lastFileTotalBytes = 0;
 
     // --- UI Elements ---
 

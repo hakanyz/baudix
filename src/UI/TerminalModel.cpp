@@ -30,7 +30,7 @@ QVariant TerminalModel::data(const QModelIndex &index, int role) const
         switch (index.column()) {
             case 0: return entry.timestamp;
             case 1: return entry.direction;
-            case 2: return QString::number(entry.length);
+            case 2: return (entry.direction == "I" || entry.direction == "E") ? QString("-") : QString::number(entry.length);
             case 3: {
                 QString full;
                 if (m_viewMode == "ASCII")     full = entry.asciiData;

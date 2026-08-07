@@ -552,6 +552,8 @@ void MainWindow::onSendFileClicked()
         QMessageBox::information(this,"Empty File", "The selected file is empty.");
         return; 
     }
+    
+    m_lastFileTotalBytes = fileInfo.size();
 
     if (m_serialController->sendFile(filename)) {
         if (m_terminalWidget) {
@@ -600,7 +602,15 @@ void MainWindow::onFileTransferFinished()
     }
     
     if (m_terminalWidget) {
-        m_terminalWidget->appendData("INFO", QByteArray("File Transfer Complete."));
+        QString sizeStr;
+        if (m_lastFileTotalBytes > 1024 * 1024) {
+            sizeStr = QString::number(m_lastFileTotalBytes / (1024.0 * 1024.0), 'f', 2) + " MB";
+        } else if (m_lastFileTotalBytes > 1024) {
+            sizeStr = QString::number(m_lastFileTotalBytes / 1024.0, 'f', 2) + " KB";
+        } else {
+            sizeStr = QString::number(m_lastFileTotalBytes) + " B";
+        }
+        m_terminalWidget->appendData("INFO", QString("File Transfer Complete. (%1)").arg(sizeStr).toUtf8());
     }
 }
 
