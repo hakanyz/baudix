@@ -6,6 +6,7 @@
 #include <QStyle>
 #include <QLineEdit>
 #include <QRegularExpression>
+#include <QSettings>
 
 SendWidget::SendWidget(QWidget *parent)
     : QWidget(parent)
@@ -230,4 +231,37 @@ void SendWidget::onClearHistoryClicked()
 void SendWidget::onSendFileClicked()
 {
     emit sendFileRequested();
+}
+
+void SendWidget::loadSettings(QSettings& settings)
+{
+    bool historyOn = settings.value("SendWidget/HistoryOn", true).toBool();
+    m_cbHistoryOn->setChecked(historyOn);
+    
+    if (historyOn) {
+        QStringList history = settings.value("SendWidget/History").toStringList();
+        m_inputCombo->clear();
+        m_inputCombo->addItem(""); // always keep an empty item
+        for (const QString& item : history) {
+            if (!item.isEmpty()) {
+                m_inputCombo->addItem(item);
+            }
+        }
+    }
+}
+
+void SendWidget::saveSettings(QSettings& settings)
+{
+    settings.setValue("SendWidget/HistoryOn", m_cbHistoryOn->isChecked());
+    
+    QStringList history;
+    // Limit history to 100 items to avoid bloating config
+    int count = qMin(m_inputCombo->count(), 100);
+    for (int i = 0; i < count; ++i) {
+        QString item = m_inputCombo->itemText(i);
+        if (!item.isEmpty()) {
+            history.append(item);
+        }
+    }
+    settings.setValue("SendWidget/History", history);
 }

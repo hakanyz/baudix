@@ -18,6 +18,9 @@ public:
 
     QByteArray formatData(const QString& text) const;
     void setInputText(const QString& text);
+    
+    void loadSettings(QSettings& settings);
+    void saveSettings(QSettings& settings);
 
 signals:
     void sendDataRequested(const QByteArray& data);

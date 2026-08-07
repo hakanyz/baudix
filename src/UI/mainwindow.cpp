@@ -167,6 +167,9 @@ MainWindow::MainWindow(QWidget *parent)
     if (m_connectionWidget) {
         m_connectionWidget->loadSettings();
     }
+    if (m_sendWidget) {
+        m_sendWidget->loadSettings(settings);
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -182,6 +185,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     if (m_connectionWidget) {
         m_connectionWidget->saveSettings();
+    }
+    if (m_sendWidget) {
+        m_sendWidget->saveSettings(settings);
     }
     QString behavior = settings.value("System/CloseBehavior", "").toString();
 
