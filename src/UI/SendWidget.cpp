@@ -93,10 +93,23 @@ void SendWidget::setupUI()
     m_sendButton->setFixedHeight(28);
     connect(m_sendButton, &QPushButton::clicked, this, &SendWidget::onSendClicked);
     
+    // Send File Button
+    QPushButton* sendFileBtn = new QPushButton("📄 File...", this);
+    sendFileBtn->setObjectName("smallBtn");
+    sendFileBtn->setToolTip("Send a file over the serial port");
+    sendFileBtn->setFixedHeight(28);
+    connect(sendFileBtn, &QPushButton::clicked, this, &SendWidget::onSendFileClicked);
+    
+    QHBoxLayout* btnHLayout = new QHBoxLayout();
+    btnHLayout->setContentsMargins(0, 0, 0, 0);
+    btnHLayout->setSpacing(5);
+    btnHLayout->addWidget(sendFileBtn);
+    btnHLayout->addWidget(m_sendButton);
+    
     QVBoxLayout* btnLayout = new QVBoxLayout();
     btnLayout->setContentsMargins(0, 0, 0, 0);
     btnLayout->addStretch();
-    btnLayout->addWidget(m_sendButton);
+    btnLayout->addLayout(btnHLayout);
     btnLayout->addStretch();
     sendLayout->addLayout(btnLayout);
 
