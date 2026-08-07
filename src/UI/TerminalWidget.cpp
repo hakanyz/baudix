@@ -396,18 +396,20 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
     hexStr = hexStr.trimmed();
 
     // Parse ASCII (Treat as UTF-8 for international characters like ı, ş, ğ, etc.)
-    asciiStr = QString::fromUtf8(data);
-    for (int i = 0; i < asciiStr.length(); ++i) {
-        QChar c = asciiStr[i];
+    QString tempStr = QString::fromUtf8(data);
+    for (int i = 0; i < tempStr.length(); ++i) {
+        QChar c = tempStr[i];
         if (c == '\r') {
-            asciiStr[i] = QChar(0x240D); // ␍ Symbol for Carriage Return
+            asciiStr.append("\\r");
         } else if (c == '\n') {
-            asciiStr[i] = QChar(0x240A); // ␊ Symbol for Line Feed
+            asciiStr.append("\\n");
         } else if (c == '\t') {
-            asciiStr[i] = QChar(0x2409); // ␉ Symbol for Horizontal Tabulation
+            asciiStr.append("\\t");
         } else if (c.unicode() < 32 || (c.unicode() >= 0x7F && c.unicode() <= 0x9F)) {
             // Replace other unprintable control characters with dots
-            asciiStr[i] = '.';
+            asciiStr.append('.');
+        } else {
+            asciiStr.append(c);
         }
     }
 
