@@ -208,7 +208,8 @@ private:
 
     QByteArray m_rxBuffer;
     QTimer* m_framingTimer = nullptr;
-    static constexpr int kFramingTimeoutMs = 40;
+    // Increased from 40 to 150 to prevent fragmented lines when sending files from slow GUI apps
+    static constexpr int kFramingTimeoutMs = 150;
     static constexpr int kMaxFrameSize = 2048;
 
     QFile* m_sendFile = nullptr;
