@@ -556,10 +556,10 @@ void MainWindow::onSendFileClicked()
     if (m_serialController->sendFile(filename)) {
         if (m_terminalWidget) {
             QString formattedStr = m_terminalWidget->appendData(
-                QString("> TX FILE: %1").arg(QFileInfo(filename).fileName()),
-                QByteArray());
+                "INFO",
+                QString("Sending File: %1").arg(QFileInfo(filename).fileName()).toUtf8());
             if (m_loggingWidget) {
-                m_loggingWidget->appendLog("> TX FILE:", formattedStr);
+                m_loggingWidget->appendLog("INFO", formattedStr);
             }
         }
         
@@ -600,7 +600,7 @@ void MainWindow::onFileTransferFinished()
     }
     
     if (m_terminalWidget) {
-        m_terminalWidget->appendData("> TX FILE:", QByteArray("Transfer Complete."));
+        m_terminalWidget->appendData("INFO", QByteArray("File Transfer Complete."));
     }
 }
 
@@ -615,7 +615,7 @@ void MainWindow::onFileTransferError(const QString& error)
     QMessageBox::critical(this, "Transfer Error", "File transfer failed: " + error);
     
     if (m_terminalWidget) {
-        m_terminalWidget->appendData("> TX FILE:", QByteArray("Transfer Failed."));
+        m_terminalWidget->appendData("ERR:", QByteArray("File Transfer Failed."));
     }
 }
 

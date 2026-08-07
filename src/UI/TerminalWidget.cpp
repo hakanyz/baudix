@@ -423,7 +423,8 @@ QString TerminalWidget::appendData(const QString& prefix, const QByteArray& data
     // Determine direction tag
     QString direction = "TX";
     if (prefix.contains("RX")) direction = "RX";
-    else if (prefix.contains("Error") || prefix.contains("E:")) direction = "E";
+    else if (prefix.contains("Error") || prefix.contains("ERR:")) direction = "E";
+    else if (prefix.contains("INFO")) direction = "I"; // For generic info messages
 
     LogEntry entry;
     entry.timestamp = timestampStr;
