@@ -49,24 +49,37 @@ void BadgeDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
         bgColor = QColor("#e06c75"); // Red
     }
 
-    // Calculate badge rectangle
-    int padding = 4;
-    int badgeWidth = 30;
-    int badgeHeight = 18;
+    // Prepare badge font
+    QFont font = option.font;
+    font.setBold(true);
+    font.setPointSize(qMax(6, font.pointSize() - 1)); // Slightly smaller for badge, min 6pt
+    
+    // Calculate dynamic badge rectangle
+    QFontMetrics fm(font);
+    int textWidth = fm.horizontalAdvance(text);
+    int textHeight = fm.height(); // Normal height for comfortable breathing room
+    
+    // Comfortable padding
+    int hPad = 8; 
+    int vPad = 2;
+    
+    int badgeWidth = textWidth + hPad * 2;  
+    int badgeHeight = textHeight + vPad * 2; 
+    
+    // Ensure absolute minimums so it stays readable at tiny fonts
+    badgeWidth = qMax(badgeWidth, 24);
+    badgeHeight = qMax(badgeHeight, 16);
     
     QRect badgeRect(0, 0, badgeWidth, badgeHeight);
     badgeRect.moveCenter(option.rect.center());
 
-    // Draw background
+    // Draw rounded background (matches overall UI style)
     QPainterPath path;
     path.addRoundedRect(badgeRect, 4, 4);
     painter->fillPath(path, bgColor);
 
     // Draw text
     painter->setPen(textColor);
-    QFont font = option.font;
-    font.setBold(true);
-    font.setPointSize(font.pointSize() - 1); // Slightly smaller for badge
     painter->setFont(font);
     painter->drawText(badgeRect, Qt::AlignCenter, text);
 

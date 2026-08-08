@@ -10,6 +10,7 @@
 #include <QSettings>
 #include <QDialog>
 #include <QToolButton>
+#include <QSplitter>
 
 class SendWidget : public QWidget
 {
@@ -24,10 +25,11 @@ public:
     
     void loadSettings(QSettings& settings);
     void saveSettings(QSettings& settings);
+    
+    void syncSplitterSizes(int mainLeftSize);
 
 signals:
     void sendDataRequested(const QByteArray& data);
-    void sendFileRequested();
 
 private slots:
     void onSendClicked();
@@ -35,7 +37,6 @@ private slots:
     void onPeriodicTimerTimeout();
     void onHistoryToggled(bool checked);
     void onClearHistoryClicked();
-    void onSendFileClicked();
 
 private:
     QComboBox* m_inputCombo;
@@ -49,6 +50,7 @@ private:
     QTimer* m_periodicTimer;
     QString m_periodicText;
     QDialog* m_settingsPopup;
+    QSplitter* m_internalSplitter;
 
     void setupUI();
 };

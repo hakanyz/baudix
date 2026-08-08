@@ -157,9 +157,9 @@ void TerminalWidget::setupUI()
     header->setSectionResizeMode(3, QHeaderView::Stretch);
     header->setStretchLastSection(false); // Don't double-stretch, we set it above
 
-    m_tableView->setColumnWidth(0, 115); // Timestamp (Narrowed per user request)
-    m_tableView->setColumnWidth(1, 65);  // Direction
-    m_tableView->setColumnWidth(2, 55);  // Length
+    m_tableView->setColumnWidth(0, 125); // Timestamp (Widened so it doesn't get elided)
+    m_tableView->setColumnWidth(1, 45);  // Direction
+    m_tableView->setColumnWidth(2, 45);  // Length
 
     // Sync column visibility with button state at startup
     m_tableView->setColumnHidden(0, !m_timestampCb->isChecked());

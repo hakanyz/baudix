@@ -20,15 +20,16 @@ public:
 
 signals:
     void exportTerminalRequested();
+    void sendFileRequested();
 
 private slots:
     void onToggleLogging(bool checked);
     void onBrowseClicked();
+    void onSendFileClicked();
 
 private:
     QLineEdit* m_logFilename;
     QPushButton* m_btnLog;
-    QPushButton* m_btnPauseLog;
 
     QFile* m_logFile;
     QTextStream* m_logStream;

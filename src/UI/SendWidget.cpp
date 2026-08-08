@@ -5,8 +5,18 @@
 #include <QLabel>
 #include <QStyle>
 #include <QLineEdit>
+#include <QLineEdit>
+#include <QSplitter>
+#include <QSplitterHandle>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QDialog>
+#include <QComboBox>
+#include <QCheckBox>
+#include <QSpinBox>
+#include <QToolButton>
+#include <QPushButton>
+#include <QTimer>
 
 SendWidget::SendWidget(QWidget *parent)
     : QWidget(parent)
@@ -25,14 +35,25 @@ void SendWidget::setupUI()
     sendFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed); 
     
     QHBoxLayout *sendLayout = new QHBoxLayout(sendFrame);
-    sendLayout->setContentsMargins(10, 5, 10, 5);
-    sendLayout->setSpacing(15);
+    sendLayout->setContentsMargins(0, 0, 0, 0); 
+    sendLayout->setSpacing(0);
     
-    // Format
-    m_sendAsCombo = new QComboBox();
-    m_sendAsCombo->addItems({"ASCII", "HEX"});
-    sendLayout->addWidget(m_sendAsCombo);
-
+    m_internalSplitter = new QSplitter(Qt::Horizontal, sendFrame);
+    m_internalSplitter->setHandleWidth(4); // Same as main splitter
+    m_internalSplitter->setStyleSheet("QSplitter::handle { background: transparent; }");
+    
+    // Left pane should not stretch automatically, right pane should take extra space
+    m_internalSplitter->setStretchFactor(0, 0);
+    m_internalSplitter->setStretchFactor(1, 1);
+    
+    sendLayout->addWidget(m_internalSplitter);
+    
+    // LEFT PANE
+    QWidget* leftWidget = new QWidget();
+    QHBoxLayout* leftLayout = new QHBoxLayout(leftWidget);
+    leftLayout->setContentsMargins(10, 5, 2, 5); // 2px right margin perfectly aligns textbox right edge with Terminal's 2px padding
+    leftLayout->setSpacing(15);
+    
     // Raw Command (Input)
     m_inputCombo = new QComboBox();
     m_inputCombo->setEditable(true);
@@ -41,15 +62,32 @@ void SendWidget::setupUI()
     m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes...");
     m_inputCombo->addItem("");
     connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &SendWidget::onSendClicked);
-    sendLayout->addWidget(m_inputCombo, 1);
+    leftLayout->addWidget(m_inputCombo, 1);
+    
+    m_internalSplitter->addWidget(leftWidget);
+    
+    // RIGHT PANE
+    QWidget* rightWidget = new QWidget();
+    QHBoxLayout* rightLayout = new QHBoxLayout(rightWidget);
+    rightLayout->setContentsMargins(4, 5, 1, 5); // Left 4 matches LoggingWidget's 4. Right 1 matches the 1px difference at the window edge.
+    rightLayout->setSpacing(5);
     
     // History in Popup
     m_settingsPopup = new QDialog(this, Qt::Popup | Qt::FramelessWindowHint);
     m_settingsPopup->setObjectName("settingsPopup");
     m_settingsPopup->setStyleSheet("#settingsPopup { background-color: #282c34; border: 1px solid #181a1f; border-radius: 4px; } QLabel { color: #abb2bf; }");
     QVBoxLayout* popupLayout = new QVBoxLayout(m_settingsPopup);
-    popupLayout->setSpacing(10);
-    popupLayout->setContentsMargins(15, 15, 15, 15);
+    popupLayout->setSpacing(4);
+    popupLayout->setContentsMargins(6, 6, 6, 6);
+    
+    // Format moved to Popup
+    QHBoxLayout* formatLayout = new QHBoxLayout();
+    m_sendAsCombo = new QComboBox();
+    m_sendAsCombo->addItems({"ASCII", "HEX"});
+    formatLayout->addWidget(new QLabel("Format:"));
+    formatLayout->addWidget(m_sendAsCombo);
+    formatLayout->addStretch();
+    popupLayout->addLayout(formatLayout);
     
     m_cbHistoryOn = new QCheckBox("Save History");
     m_cbHistoryOn->setChecked(true);
@@ -103,31 +141,55 @@ void SendWidget::setupUI()
     settingsBtn->setText("⚙️");
     settingsBtn->setToolTip("Transmission Settings");
     settingsBtn->setFixedHeight(28);
-    settingsBtn->setStyleSheet("QToolButton { background-color: transparent; border: 1px solid #181a1f; border-radius: 4px; padding: 0 5px; } QToolButton:hover { background-color: #3b4048; }");
+    settingsBtn->setFixedWidth(36); // Slightly wider to prevent "..." truncation of the emoji
+    settingsBtn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    settingsBtn->setStyleSheet("QToolButton { font-size: 16px; background-color: transparent; border: 1px solid #181a1f; border-radius: 4px; padding: 0 5px; } QToolButton:hover { background-color: #3b4048; }");
     connect(settingsBtn, &QToolButton::clicked, this, [this, settingsBtn](){
         QPoint pos = settingsBtn->mapToGlobal(QPoint(0, settingsBtn->height() + 2));
         m_settingsPopup->move(pos);
         m_settingsPopup->show();
     });
-    sendLayout->addWidget(settingsBtn);
-
     // Send Button
     m_sendButton = new QPushButton("Send", this);
     m_sendButton->setObjectName("sendButton");
-    m_sendButton->setMinimumWidth(80);
     m_sendButton->setFixedHeight(28);
+    m_sendButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     connect(m_sendButton, &QPushButton::clicked, this, &SendWidget::onSendClicked);
+    rightLayout->addWidget(m_sendButton);
     
-    // Send File Button
-    QPushButton* sendFileBtn = new QPushButton("📄 File...", this);
-    sendFileBtn->setObjectName("smallBtn");
-    sendFileBtn->setToolTip("Send a file over the serial port");
-    sendFileBtn->setFixedHeight(28);
-    connect(sendFileBtn, &QPushButton::clicked, this, &SendWidget::onSendFileClicked);
+    // Add Settings button after Send button so it sits on the far right
+    rightLayout->addWidget(settingsBtn);
     
-    sendLayout->addWidget(sendFileBtn);
-    sendLayout->addWidget(m_sendButton);
+    m_internalSplitter->addWidget(rightWidget);
+    
+    // Prevent internal splitter from being dragged by user, it strictly follows the main splitter
+    for (int i = 0; i < m_internalSplitter->count(); ++i) {
+        QSplitterHandle *handle = m_internalSplitter->handle(i);
+        if (handle) {
+            handle->setAttribute(Qt::WA_TransparentForMouseEvents);
+        }
+    }
+    
     mainLayout->addWidget(sendFrame);
+}
+
+void SendWidget::syncSplitterSizes(int mainLeftSize)
+{
+    if (m_internalSplitter) {
+        // Use singleShot to wait for the layout to finish updating (crucial for window maximize/restore)
+        QTimer::singleShot(0, m_internalSplitter, [this, mainLeftSize]() {
+            // The main splitter starts at X=2. This internal splitter is inside a cardFrame which starts at X=2,
+            // and has a 2px padding + 1px border. So this internal splitter starts at absolute X=5.
+            // To align their handles perfectly, this internal splitter's left size must be 3px smaller!
+            int leftSize = mainLeftSize - 3;
+            if (leftSize < 0) leftSize = 0;
+            
+            int rightSize = m_internalSplitter->width() - leftSize - m_internalSplitter->handleWidth();
+            if (rightSize < 0) rightSize = 0;
+            
+            m_internalSplitter->setSizes({leftSize, rightSize}); 
+        });
+    }
 }
 
 void SendWidget::setInputText(const QString& text)
@@ -187,11 +249,11 @@ void SendWidget::onSendClicked()
     if (m_periodicSendCb->isChecked()) {
         m_periodicText = text;
         m_periodicTimer->start(m_periodicMsBox->value());
-        m_sendButton->setText("Stop Repeat");
+        m_sendButton->setText("Stop"); // Just "Stop" so it doesn't stretch
         m_sendButton->setStyleSheet("background-color: #d15656; color: white; font-weight: bold; border-color: #b03a3a;");
+    } else {
+        m_inputCombo->setEditText("");
     }
-    
-    m_inputCombo->setEditText("");
     
     if (m_cbHistoryOn->isChecked()) {
         if (m_inputCombo->findText(text) == -1) {
@@ -237,11 +299,6 @@ void SendWidget::onClearHistoryClicked()
 {
     m_inputCombo->clear();
     m_inputCombo->addItem("");
-}
-
-void SendWidget::onSendFileClicked()
-{
-    emit sendFileRequested();
 }
 
 void SendWidget::loadSettings(QSettings& settings)

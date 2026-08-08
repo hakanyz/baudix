@@ -29,7 +29,7 @@ void LoggingWidget::setupUI()
     QVBoxLayout *logLayout = new QVBoxLayout(this);
     logLayout->setContentsMargins(4, 4, 4, 4);
 
-    QLabel* saveLabel = new QLabel("Save to:");
+    QLabel* saveLabel = new QLabel("File & Logging:");
     saveLabel->setStyleSheet("color: #abb2bf; font-size: 11px;");
     logLayout->addWidget(saveLabel);
 
@@ -42,8 +42,9 @@ void LoggingWidget::setupUI()
     m_logFilename->setMinimumWidth(80); // Ensure it doesn't get completely squished
     fileLayout->addWidget(m_logFilename);
 
-    QPushButton* browseBtn = new QPushButton("Browse...");
+    QPushButton* browseBtn = new QPushButton("📁");
     browseBtn->setObjectName("smallBtn");
+    browseBtn->setFixedWidth(32);
     browseBtn->setToolTip("Choose save location");
     connect(browseBtn, &QPushButton::clicked, this, &LoggingWidget::onBrowseClicked);
     fileLayout->addWidget(browseBtn);
@@ -59,18 +60,30 @@ void LoggingWidget::setupUI()
     connect(m_btnLog, &QPushButton::toggled, this, &LoggingWidget::onToggleLogging);
     liveActionLayout->addWidget(m_btnLog);
 
-    m_btnPauseLog = new QPushButton("⏸ Pause");
-    m_btnPauseLog->setCheckable(true);
-    m_btnPauseLog->setEnabled(false); // Only enable when recording
-    liveActionLayout->addWidget(m_btnPauseLog);
-
     logLayout->addLayout(liveActionLayout);
 
     logLayout->addSpacing(5);
 
+    QHBoxLayout* fileOpsLayout = new QHBoxLayout();
+    fileOpsLayout->setContentsMargins(0, 0, 0, 0);
+    fileOpsLayout->setSpacing(5);
+
+    QPushButton* btnSendFile = new QPushButton("📄 Send File");
+    btnSendFile->setToolTip("Send a file over the serial port");
+    connect(btnSendFile, &QPushButton::clicked, this, &LoggingWidget::onSendFileClicked);
+    
     QPushButton* btnExportTxt = new QPushButton("📥 Save All");
     connect(btnExportTxt, &QPushButton::clicked, this, &LoggingWidget::exportTerminalRequested);
-    logLayout->addWidget(btnExportTxt);
+
+    fileOpsLayout->addWidget(btnSendFile);
+    fileOpsLayout->addWidget(btnExportTxt);
+    
+    logLayout->addLayout(fileOpsLayout);
+}
+
+void LoggingWidget::onSendFileClicked()
+{
+    emit sendFileRequested();
 }
 
 void LoggingWidget::onBrowseClicked()
@@ -98,15 +111,16 @@ void LoggingWidget::onToggleLogging(bool checked)
             m_btnLog->style()->unpolish(m_btnLog);
             m_btnLog->style()->polish(m_btnLog);
             
-            m_btnPauseLog->setEnabled(true);
             m_logFilename->setEnabled(false);
         } else {
-            QMessageBox::warning(this, "Log Error", "Could not open log file for writing.");
+            // Uncheck if file couldn't be opened
+            m_btnLog->blockSignals(true);
             m_btnLog->setChecked(false);
-            delete m_logFile;
-            m_logFile = nullptr;
+            m_btnLog->blockSignals(false);
+            QMessageBox::warning(this, "Error", "Could not open log file for writing.");
         }
     } else {
+        // Stop Logging
         if (m_logStream) {
             delete m_logStream;
             m_logStream = nullptr;
@@ -117,14 +131,10 @@ void LoggingWidget::onToggleLogging(bool checked)
             m_logFile = nullptr;
         }
         
-        // Touch up: Revert to "Start/Primary" blue style
         m_btnLog->setText("⏺ Record");
         m_btnLog->setObjectName("connectBtn");
         m_btnLog->style()->unpolish(m_btnLog);
         m_btnLog->style()->polish(m_btnLog);
-        
-        m_btnPauseLog->setChecked(false);
-        m_btnPauseLog->setEnabled(false);
         
         m_logFilename->setEnabled(true);
     }
@@ -132,11 +142,9 @@ void LoggingWidget::onToggleLogging(bool checked)
 
 void LoggingWidget::appendLog(const QString& prefix, const QString& formattedData)
 {
-    if (!formattedData.isEmpty() && m_logStream && m_logFile && m_logFile->isOpen()) {
-        if (!m_btnPauseLog->isChecked()) {
-            QString rawTimestamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
-            *m_logStream << "[" << rawTimestamp << "] " << prefix << " " << formattedData << "\n";
-            m_logStream->flush();
-        }
+    if (m_logStream && m_btnLog->isChecked()) {
+        QString rawTimestamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+        *m_logStream << "[" << rawTimestamp << "] " << prefix << " " << formattedData << "\n";
+        m_logStream->flush();
     }
 }

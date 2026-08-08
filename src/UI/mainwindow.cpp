@@ -230,6 +230,15 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
+    if (event->type() == QEvent::Resize && m_sendWidget && m_terminalWidget) {
+        if (watched == m_terminalWidget->parentWidget()) {
+            // Find splitter and sync
+            QSplitter* splitter = centralWidget()->findChild<QSplitter*>();
+            if (splitter && !splitter->sizes().isEmpty()) {
+                m_sendWidget->syncSplitterSizes(splitter->sizes()[0]);
+            }
+        }
+    }
     return QMainWindow::eventFilter(watched, event);
 }
 
@@ -266,7 +275,6 @@ void MainWindow::setupCentralWidget()
     // The Send Bar will be created here but added to the layout AFTER the splitter
     m_sendWidget = new SendWidget();
     connect(m_sendWidget, &SendWidget::sendDataRequested, this, &MainWindow::sendDataToController);
-    connect(m_sendWidget, &SendWidget::sendFileRequested, this, &MainWindow::onSendFileClicked);
 
     // Splitter for Terminal and Macros/Logging
     QSplitter* splitter = new QSplitter(Qt::Horizontal);
@@ -274,7 +282,9 @@ void MainWindow::setupCentralWidget()
     splitter->setStyleSheet("QSplitter::handle { background: transparent; }");
     
     m_terminalWidget = new TerminalWidget();
-    
+    // Terminal goes directly in the splitter
+    QWidget* terminalCard = wrapInCard(m_terminalWidget);
+    terminalCard->installEventFilter(this);
     // Right panel (Macros & Logging)
     QWidget* rightPanel = new QWidget();
     QVBoxLayout* rightLayout = new QVBoxLayout(rightPanel);
@@ -288,19 +298,37 @@ void MainWindow::setupCentralWidget()
     // Logging can go below macros
     m_loggingWidget = new LoggingWidget();
     connect(m_loggingWidget, &LoggingWidget::exportTerminalRequested, this, &MainWindow::onExportTerminal);
+    connect(m_loggingWidget, &LoggingWidget::sendFileRequested, this, &MainWindow::onSendFileClicked);
     rightLayout->addWidget(m_loggingWidget, 0);
 
-    splitter->addWidget(wrapInCard(m_terminalWidget));
+    // SendWidget is entirely in the left panel now
+
+    splitter->addWidget(terminalCard);
     splitter->addWidget(rightPanel);
     
-    // Set stretch factors (Terminal gets more space)
-    splitter->setStretchFactor(0, 4);
-    splitter->setStretchFactor(1, 1);
+    // Set stretch factors (Terminal gets ALL extra space, Macro gets 0)
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 0);
+    // Set initial size so the Macro panel starts as small as reasonably possible (e.g., 200px)
+    splitter->setSizes({100000, 200});
     
     mainLayout->addWidget(splitter, 1); // Add splitter with stretch factor 1
     
     // Add Send Bar at the very bottom
     mainLayout->addWidget(wrapInCard(m_sendWidget), 0); // Stretch factor 0
+    
+    // Synchronize the SendWidget's internal splitter with the exact sizes of the main splitter
+    connect(splitter, &QSplitter::splitterMoved, this, [this, splitter](int /*pos*/, int /*index*/) {
+        if (!splitter->sizes().isEmpty()) {
+            m_sendWidget->syncSplitterSizes(splitter->sizes()[0]);
+        }
+    });
+    // Also sync when the application event loop is idle
+    QTimer::singleShot(100, this, [this, splitter]() {
+        if (m_sendWidget && !splitter->sizes().isEmpty()) {
+            m_sendWidget->syncSplitterSizes(splitter->sizes()[0]);
+        }
+    });
     
     setCentralWidget(centralWidget);
     refreshPorts();
