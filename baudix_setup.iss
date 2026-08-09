@@ -1,7 +1,7 @@
 [Setup]
 AppId={{8B2F3D9A-B7F1-4F9E-9D12-BaudixApp123}
 AppName=Baudix
-AppVersion=1.3.1
+AppVersion=1.3.3
 AppPublisher=hakanyz
 AppPublisherURL=https://github.com/hakanyz/baudix
 DefaultDirName={autopf}\Baudix
