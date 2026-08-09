@@ -446,7 +446,7 @@ void MainWindow::setupMenus()
     
     QAction* aboutAct = helpMenu->addAction("About Baudix");
     connect(aboutAct, &QAction::triggered, [this](){
-        QMessageBox::about(this, "About Baudix", QString("<b>Baudix</b><br>Professional Serial Terminal & Modbus Utility<br><br>Version: %1<br>Developer: hakanyz<br><br>A Qt-based modern tool for embedded engineers.").arg(BAUDIX_VERSION_STR));
+        QMessageBox::about(this, "About Baudix", QString("<b>Baudix</b><br>A Modern, Developer-Friendly Serial Terminal for Embedded Systems<br><br>Version: %1<br>Developer: hakanyz<br>GitHub: <a href=\"https://github.com/hakanyz/baudix\">https://github.com/hakanyz/baudix</a>").arg(BAUDIX_VERSION_STR));
     });
 }
 
@@ -465,9 +465,22 @@ void MainWindow::onConnectRequested()
     
     int baud = m_connectionWidget->baudRate();
     QSerialPort::DataBits dataBits = static_cast<QSerialPort::DataBits>(m_connectionWidget->dataBits());
+    QString stopStr = m_connectionWidget->stopBits();
     QSerialPort::StopBits stopBits = QSerialPort::OneStop;
+    if (stopStr == "1.5") stopBits = QSerialPort::OneAndHalfStop;
+    else if (stopStr == "2") stopBits = QSerialPort::TwoStop;
+    
+    QString parityStr = m_connectionWidget->parity();
     QSerialPort::Parity parity = QSerialPort::NoParity;
+    if (parityStr == "Even") parity = QSerialPort::EvenParity;
+    else if (parityStr == "Odd") parity = QSerialPort::OddParity;
+    else if (parityStr == "Space") parity = QSerialPort::SpaceParity;
+    else if (parityStr == "Mark") parity = QSerialPort::MarkParity;
+    
+    QString flowStr = m_connectionWidget->flowControl();
     QSerialPort::FlowControl flowControl = QSerialPort::NoFlowControl;
+    if (flowStr == "RTS/CTS") flowControl = QSerialPort::HardwareControl;
+    else if (flowStr == "XON/XOFF") flowControl = QSerialPort::SoftwareControl;
     
     m_serialController->connectDevice(port, baud, dataBits, parity, stopBits, flowControl);
 }

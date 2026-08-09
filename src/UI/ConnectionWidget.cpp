@@ -56,6 +56,7 @@ void ConnectionWidget::setupUI()
 
     // Settings Container (Collapsible)
     m_settingsContainer = new QWidget(this);
+    m_settingsContainer->setStyleSheet("QComboBox QAbstractItemView { font-size: 13px; outline: none; } QComboBox QAbstractItemView::item { min-height: 24px; padding: 4px; }");
     QHBoxLayout *connLayout = new QHBoxLayout(m_settingsContainer);
     connLayout->setContentsMargins(10, 0, 10, 5);
     connLayout->setSpacing(15);
@@ -75,12 +76,10 @@ void ConnectionWidget::setupUI()
     m_portCombo = new QComboBox(this);
     m_portCombo->installEventFilter(this);
     m_portCombo->setMinimumWidth(160); // Wider to fit description
-    // Increase popup font and item height
-    m_portCombo->setStyleSheet("QComboBox QAbstractItemView { font-size: 13px; outline: none; } QComboBox QAbstractItemView::item { min-height: 24px; padding: 4px; }");
     addLabelledWidget("Port", m_portCombo);
     
     m_baudCombo = new QComboBox(this);
-    m_baudCombo->addItems({"9600", "19200", "38400", "57600", "115200", "921600"});
+    m_baudCombo->addItems({"300", "1200", "9600", "19200", "38400", "57600", "115200", "460800", "921600"});
     m_baudCombo->setCurrentText("115200");
     addLabelledWidget("Baud", m_baudCombo);
     
@@ -98,10 +97,15 @@ void ConnectionWidget::setupUI()
     addLabelledWidget("Stop bits", m_stopBitsCombo);
     
     m_flowControlCombo = new QComboBox(this);
-    m_flowControlCombo->addItems({"None", "Hardware", "Software"});
+    m_flowControlCombo->addItems({"none", "RTS/CTS", "XON/XOFF"});
     addLabelledWidget("Flow control", m_flowControlCombo);
     
     connLayout->addStretch(); // Push everything to the left
+    
+    // Apply QStyledItemDelegate to all comboboxes to fix the hover/selection rendering
+    for (QComboBox* cb : m_settingsContainer->findChildren<QComboBox*>()) {
+        cb->setItemDelegate(new QStyledItemDelegate(cb));
+    }
     
     mainLayout->addWidget(m_settingsContainer);
     updateStatusLabel();
@@ -152,9 +156,6 @@ void ConnectionWidget::setAvailablePorts(const QStringList& ports)
         for (const QString& portDesc : ports) {
             m_portCombo->addItem(portDesc);
         }
-        
-        // Remove explicit delegate so stylesheet can take over rendering cleanly
-        m_portCombo->setItemDelegate(new QStyledItemDelegate(m_portCombo));
         
         int idx = m_portCombo->findText(current);
         if (idx >= 0) {
