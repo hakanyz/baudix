@@ -135,6 +135,9 @@ private slots:
         }
 
         if (!m_rxBuffer.isEmpty()) {
+            // Reset the timer on every incoming chunk (Idle-Line Framing).
+            // This ensures we only flush incomplete lines when the line actually goes silent,
+            // preventing the timer from chopping continuous file transfers in half.
             m_framingTimer->start(kFramingTimeoutMs);
         }
     }
@@ -210,8 +213,10 @@ private:
 
     QByteArray m_rxBuffer;
     QTimer* m_framingTimer = nullptr;
-    // Increased from 40 to 150 to prevent fragmented lines when sending files from slow GUI apps
-    static constexpr int kFramingTimeoutMs = 150;
+    // Reduced from 150 to 50 ms to prevent distinct rapid manual transmissions from merging,
+    // while providing enough buffer for USB/OS scheduling jitter (typically 10-20ms)
+    // to prevent continuous file transfers from being chopped when no newline is present.
+    static constexpr int kFramingTimeoutMs = 50;
     static constexpr int kMaxFrameSize = 2048;
 
     QFile* m_sendFile = nullptr;
