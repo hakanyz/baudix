@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    remove|deconfigure)
+        # Remove symlink if it points to baudix
+        if [ -L /usr/bin/baudix ]; then
+            rm -f /usr/bin/baudix
+        fi
+    ;;
+esac
+
+exit 0

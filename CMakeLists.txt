@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(baudix VERSION 1.3.5 LANGUAGES CXX)
+project(baudix VERSION 1.3.6 LANGUAGES CXX)
 
 add_compile_definitions(BAUDIX_VERSION_STR="${PROJECT_VERSION}")
 
@@ -86,6 +86,13 @@ set_target_properties(baudix PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    set_target_properties(baudix PROPERTIES
+        BUILD_WITH_INSTALL_RPATH TRUE
+        INSTALL_RPATH "$ORIGIN/../lib"
+    )
+endif()
+
 include(GNUInstallDirs)
 install(TARGETS baudix
     BUNDLE DESTINATION .
@@ -122,7 +129,7 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
     set(CPACK_PACKAGE_CONTACT "hakanyz")
     set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Professional Serial Terminal for Embedded Systems")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "hakanyz")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6core6, libqt6gui6, libqt6widgets6, libqt6serialport6, libqt6network6")
-    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/scripts/postinst")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.35), libgl1, libx11-6, libx11-xcb1, libxkbcommon-x11-0, libxkbcommon0, libxcb-cursor0, libxcb-keysyms1, libxcb-icccm4, libxcb-image0, libxcb-render-util0, libxcb-shape0, libxcb-randr0, libxcb-xinerama0, libxcb-sync1, libfontconfig1, libfreetype6")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/scripts/postinst;${CMAKE_CURRENT_SOURCE_DIR}/scripts/prerm;${CMAKE_CURRENT_SOURCE_DIR}/scripts/postrm")
     include(CPack)
 endif()

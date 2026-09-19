@@ -1,0 +1,29 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        # Create symlink in /usr/bin if not present
+        if [ ! -L /usr/bin/baudix ] && [ ! -f /usr/bin/baudix ]; then
+            ln -sf /opt/baudix/bin/baudix /usr/bin/baudix
+        fi
+
+        # Reload udev rules so USB-serial devices (ttyUSB*, ttyACM*) get proper permissions
+        if [ -x "$(command -v udevadm)" ]; then
+            udevadm control --reload-rules || true
+            udevadm trigger --subsystem-match=tty || true
+        fi
+
+        # Update desktop database
+        if [ -x "$(command -v update-desktop-database)" ]; then
+            update-desktop-database -q /usr/share/applications || true
+        fi
+
+        # Update icon cache
+        if [ -x "$(command -v gtk-update-icon-cache)" ]; then
+            gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+        fi
+    ;;
+esac
+
+exit 0

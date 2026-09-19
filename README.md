@@ -65,18 +65,21 @@ The core architecture relies on Qt's signal-slot mechanism to keep the main thre
 ## Linux Installation & USB Port Permissions
 
 ### 1. Installing the `.deb` package
-On Debian/Ubuntu-based distributions:
+Baudix distributes a standalone `.deb` package with bundled runtime libraries for seamless compatibility across **Debian 12+**, **Ubuntu 22.04+**, and newer distributions without external Qt dependency conflicts:
+
 ```bash
 sudo apt install ./baudix-*.deb
 ```
-This installs the binary, application launcher, and desktop icon.
+This automatically installs the binary to `/opt/baudix`, links it to `/usr/bin/baudix`, and configures the desktop launcher and application icons.
 
-### 2. USB / Serial Port Permissions (`dialout` group)
-On Linux, USB serial devices (`/dev/ttyUSB*`, `/dev/ttyACM*`) require membership in the `dialout` group:
+### 2. USB / Serial Port Permissions
+During package installation, Baudix automatically installs udev rules (`99-baudix-udev.rules`) granting standard users read/write permissions to serial devices (`/dev/ttyUSB*`, `/dev/ttyACM*`).
+
+If your device is still not accessible after hot-plugging, ensure your user is a member of the `dialout` group:
 ```bash
 sudo usermod -aG dialout $USER
 ```
-> **Note:** Log out and log back in (or restart) for the permission changes to take effect.
+> **Note:** Log out and log back in (or restart) for group permission changes to take effect.
 
 ## Contributing
 
