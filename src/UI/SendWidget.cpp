@@ -17,6 +17,7 @@
 #include <QToolButton>
 #include <QPushButton>
 #include <QTimer>
+#include <QScreen>
 
 SendWidget::SendWidget(QWidget *parent)
     : QWidget(parent)
@@ -145,8 +146,34 @@ void SendWidget::setupUI()
     settingsBtn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     settingsBtn->setStyleSheet("QToolButton { font-size: 16px; background-color: transparent; border: 1px solid #181a1f; border-radius: 4px; padding: 0 5px; } QToolButton:hover { background-color: #3b4048; }");
     connect(settingsBtn, &QToolButton::clicked, this, [this, settingsBtn](){
-        QPoint pos = settingsBtn->mapToGlobal(QPoint(0, settingsBtn->height() + 2));
-        m_settingsPopup->move(pos);
+        // Reset any width clamp from a previous open so the natural size is measured fresh.
+        m_settingsPopup->setMaximumWidth(QWIDGETSIZE_MAX);
+        m_settingsPopup->adjustSize();
+
+        const QRect btnRect(settingsBtn->mapToGlobal(QPoint(0, 0)), settingsBtn->size());
+        const QScreen* screen = settingsBtn->screen();
+        const QRect screenRect = screen ? screen->availableGeometry() : QRect(QPoint(0, 0), m_settingsPopup->sizeHint());
+        const QWidget* topLevel = settingsBtn->window();
+        const int windowRightEdge = qMin(topLevel->mapToGlobal(QPoint(topLevel->width(), 0)).x(), screenRect.right());
+
+        // Never let the popup cross the app window's right edge; shrink it instead of just moving it.
+        const int maxWidth = windowRightEdge - btnRect.left();
+        if (m_settingsPopup->sizeHint().width() > maxWidth) {
+            m_settingsPopup->setMaximumWidth(qMax(maxWidth, m_settingsPopup->minimumSizeHint().width()));
+            m_settingsPopup->adjustSize();
+        }
+        const QSize popupSize = m_settingsPopup->size();
+
+        int x = windowRightEdge - popupSize.width();
+        if (x < screenRect.left())
+            x = screenRect.left();
+
+        // Prefer opening below the button; flip above it if there's no room.
+        int y = btnRect.bottom() + 2;
+        if (y + popupSize.height() > screenRect.bottom())
+            y = btnRect.top() - popupSize.height() - 2;
+
+        m_settingsPopup->move(x, y);
         m_settingsPopup->show();
     });
     // Send Button
