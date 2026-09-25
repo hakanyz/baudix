@@ -25,11 +25,13 @@
 #include <QFile>
 #include <QTextStream>
 #include <QSplitter>
+#include <QToolButton>
 #include "ConnectionWidget.h"
 #include "TerminalWidget.h"
 #include "SendWidget.h"
 #include "LoggingWidget.h"
 #include "MacroWidget.h"
+#include "PortSession.h"
 #include "../Communication/SerialPortController.h"
 #include "../Core/Updater.h"
 
@@ -47,22 +49,11 @@ public:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
-    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
-    void onConnectRequested();
-    void onDisconnectRequested();
-    void onDataReceived(const QByteArray& data);
-    void onDataSent(const QByteArray& data);
-    void onConnectionStateChanged(bool isOpen, const QString& errorMsg);
-    void sendDataToController(const QByteArray& data);
     void onExportTerminal();
-    
-    // Core Feature Slots
-    void onMacroResetClicked();
-    void onMacroBootClicked();
-    void onMacroVerClicked();
     void onSendFileClicked();
+    void onMacroSendRequested(const QString& text);
 
 private:
     Ui::MainWindow *ui;
@@ -70,44 +61,54 @@ private:
     void setupToolBar();
     void setupCentralWidget();
     void refreshPorts();
-    void performSend(const QString& text); // Helper for Macros
+    void wireSession(PortSession* session, int index);
+    void setActiveSession(int index);
+    PortSession* activeSession() const;
+    void updateWindowTitle();
+    void onDualModeToggled(bool checked);
 
-    // Core Controller
-    ISerialTransport* m_serialController;
     Updater* m_updater;
     bool m_isUpdating = false;
     qint64 m_lastFileTotalBytes = 0;
 
     // --- UI Elements ---
 
-    // Connection Dock
-    ConnectionWidget* m_connectionWidget;
+    // Port A / Port B sessions (each bundles Connection + Terminal + Send + transport)
+    PortSession* m_sessionA;
+    PortSession* m_sessionB;
+    int m_activeSession = 0; // 0 = A, 1 = B
+    bool m_dualMode = false;
+    int m_singleModeWidth = 820; // window width to restore when leaving Dual Mode
 
-    // Terminal View Settings
-    TerminalWidget* m_terminalWidget;
+    QToolButton* m_dualModeBtn;
+    QPushButton* m_btnLaneA;
+    QPushButton* m_btnLaneB;
+    QWidget* m_laneBContainer;
+    QSplitter* m_laneSplitter;
 
-    // Send Dock
-    SendWidget* m_sendWidget;
-
-    // Logging Dock
+    // Logging Dock (shared, operates on the active session)
     LoggingWidget* m_loggingWidget;
 
-    // Tools Dock
+    // Tools Dock (shared, target selectable in Dual Mode)
     MacroWidget* m_macroWidget;
 
     // Tray and Updater UI
     QSystemTrayIcon* m_trayIcon;
     QMenu* m_trayMenu;
     QProgressDialog* m_downloadProgressDialog;
-    
+
     // Status Bar & File Transfer UI
     class QLabel* m_lblTxBytes;
     class QLabel* m_lblRxBytes;
     class QLabel* m_lblErrBytes;
+    class QLabel* m_lblTxBytesB;
+    class QLabel* m_lblRxBytesB;
+    class QLabel* m_lblErrBytesB;
     QProgressDialog* m_fileProgressDialog = nullptr;
-    
+
 private slots:
-    void updateCounters(quint64 tx, quint64 rx, quint64 err);
+    void updateCountersA(quint64 tx, quint64 rx, quint64 err);
+    void updateCountersB(quint64 tx, quint64 rx, quint64 err);
     void onFileTransferProgress(qint64 bytesSent, qint64 bytesTotal);
     void onFileTransferFinished();
     void onFileTransferError(const QString& error);

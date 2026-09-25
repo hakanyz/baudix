@@ -35,6 +35,8 @@ set(PROJECT_SOURCES
         src/UI/LoggingWidget.h
         src/UI/MacroWidget.cpp
         src/UI/MacroWidget.h
+        src/UI/PortSession.cpp
+        src/UI/PortSession.h
         src/Core/Updater.cpp
         src/Core/Updater.h
         src/Communication/ISerialTransport.h

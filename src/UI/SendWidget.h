@@ -10,14 +10,15 @@
 #include <QSettings>
 #include <QDialog>
 #include <QToolButton>
-#include <QSplitter>
 
 class SendWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit SendWidget(QWidget *parent = nullptr);
+    // settingsKey lets two SendWidget instances (e.g. Port A / Port B) persist their
+    // own settings (history on/off, etc.) independently.
+    explicit SendWidget(const QString& settingsKey = "SendWidget", QWidget *parent = nullptr);
     ~SendWidget() = default;
 
     QByteArray formatData(const QString& text) const;
@@ -25,8 +26,6 @@ public:
     
     void loadSettings(QSettings& settings);
     void saveSettings(QSettings& settings);
-    
-    void syncSplitterSizes(int mainLeftSize);
 
 signals:
     void sendDataRequested(const QByteArray& data);
@@ -50,7 +49,7 @@ private:
     QTimer* m_periodicTimer;
     QString m_periodicText;
     QDialog* m_settingsPopup;
-    QSplitter* m_internalSplitter;
+    QString m_settingsKey;
 
     void setupUI();
 };

@@ -10,8 +10,8 @@
 
 #include <QListView>
 
-ConnectionWidget::ConnectionWidget(QWidget *parent)
-    : QWidget(parent)
+ConnectionWidget::ConnectionWidget(const QString& settingsGroup, QWidget *parent)
+    : QWidget(parent), m_settingsGroup(settingsGroup)
 {
     setObjectName("dockContent");
     setupUI();
@@ -218,7 +218,7 @@ bool ConnectionWidget::eventFilter(QObject *watched, QEvent *event)
 void ConnectionWidget::loadSettings()
 {
     QSettings settings("hakanyz", "Baudix");
-    settings.beginGroup("Connection");
+    settings.beginGroup(m_settingsGroup);
 
     QString baud = settings.value("BaudRate", "115200").toString();
     int idx = m_baudCombo->findText(baud);
@@ -246,7 +246,7 @@ void ConnectionWidget::loadSettings()
 void ConnectionWidget::saveSettings()
 {
     QSettings settings("hakanyz", "Baudix");
-    settings.beginGroup("Connection");
+    settings.beginGroup(m_settingsGroup);
     settings.setValue("BaudRate", m_baudCombo->currentText());
     settings.setValue("DataBits", m_dataBitsCombo->currentText());
     settings.setValue("StopBits", m_stopBitsCombo->currentText());

@@ -11,7 +11,9 @@ class ConnectionWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit ConnectionWidget(QWidget *parent = nullptr);
+    // settingsGroup lets two ConnectionWidget instances (e.g. Port A / Port B) persist
+    // their combo selections independently under different QSettings groups.
+    explicit ConnectionWidget(const QString& settingsGroup = "Connection", QWidget *parent = nullptr);
     ~ConnectionWidget() = default;
 
     QString portName() const;
@@ -52,6 +54,7 @@ private:
     QPushButton* m_btnConnect;
 
     bool m_isConnected = false;
+    QString m_settingsGroup;
 
     void setupUI();
     void updateStatusLabel();

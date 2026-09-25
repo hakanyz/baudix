@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QMenu>
+#include <QAbstractItemView>
 
 MacroWidget::MacroWidget(QWidget *parent)
     : QWidget(parent)
@@ -22,9 +23,29 @@ void MacroWidget::setupUI()
     macroTitle->setStyleSheet("color: #abb2bf; font-weight: bold;");
     toolsLayout->addWidget(macroTitle);
 
+    // Target selector, only shown when Dual Mode is active (two ports connected).
+    m_targetRow = new QWidget();
+    QHBoxLayout* targetLayout = new QHBoxLayout(m_targetRow);
+    targetLayout->setContentsMargins(0, 0, 0, 0);
+    targetLayout->setSpacing(4);
+    QLabel* targetLabel = new QLabel("Send to:");
+    targetLabel->setStyleSheet("color: #abb2bf; font-size: 11px;");
+    m_targetCombo = new QComboBox();
+    m_targetCombo->addItem("Auto (active port)", "Auto");
+    m_targetCombo->addItem("Port A", "A");
+    m_targetCombo->addItem("Port B", "B");
+    m_targetCombo->addItem("Both", "Both");
+    targetLayout->addWidget(targetLabel);
+    targetLayout->addWidget(m_targetCombo, 1);
+    toolsLayout->addWidget(m_targetRow);
+    m_targetRow->setVisible(false);
+
     m_macrosList = new QListWidget();
     m_macrosList->setContextMenuPolicy(Qt::CustomContextMenu);
     m_macrosList->setWordWrap(true);
+    // Double-click should only send the macro, never enter inline edit.
+    // Editing is still reachable via the right-click "Edit" action below.
+    m_macrosList->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     connect(m_macrosList, &QListWidget::itemDoubleClicked, [this](QListWidgetItem* item){
         if (!item->text().isEmpty()) emit macroSendRequested(item->text());
@@ -86,6 +107,21 @@ void MacroWidget::setupUI()
 
     toolsLayout->addSpacing(8);
     toolsLayout->addStretch();
+}
+
+void MacroWidget::setDualModeVisible(bool visible)
+{
+    m_targetRow->setVisible(visible);
+}
+
+void MacroWidget::setActiveLabel(const QString& label)
+{
+    m_targetCombo->setItemText(0, QString("Auto (active: Port %1)").arg(label));
+}
+
+QString MacroWidget::targetSelection() const
+{
+    return m_targetCombo->currentData().toString();
 }
 
 void MacroWidget::saveSettings(QSettings& settings)

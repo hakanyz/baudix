@@ -6,8 +6,6 @@
 #include <QStyle>
 #include <QLineEdit>
 #include <QLineEdit>
-#include <QSplitter>
-#include <QSplitterHandle>
 #include <QRegularExpression>
 #include <QSettings>
 #include <QDialog>
@@ -19,8 +17,8 @@
 #include <QTimer>
 #include <QScreen>
 
-SendWidget::SendWidget(QWidget *parent)
-    : QWidget(parent)
+SendWidget::SendWidget(const QString& settingsKey, QWidget *parent)
+    : QWidget(parent), m_settingsKey(settingsKey)
 {
     m_periodicTimer = new QTimer(this);
     setupUI();
@@ -33,28 +31,12 @@ void SendWidget::setupUI()
 
     QFrame *sendFrame = new QFrame(this);
     sendFrame->setObjectName("dockContent");
-    sendFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed); 
-    
+    sendFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
     QHBoxLayout *sendLayout = new QHBoxLayout(sendFrame);
-    sendLayout->setContentsMargins(0, 0, 0, 0); 
-    sendLayout->setSpacing(0);
-    
-    m_internalSplitter = new QSplitter(Qt::Horizontal, sendFrame);
-    m_internalSplitter->setHandleWidth(4); // Same as main splitter
-    m_internalSplitter->setStyleSheet("QSplitter::handle { background: transparent; }");
-    
-    // Left pane should not stretch automatically, right pane should take extra space
-    m_internalSplitter->setStretchFactor(0, 0);
-    m_internalSplitter->setStretchFactor(1, 1);
-    
-    sendLayout->addWidget(m_internalSplitter);
-    
-    // LEFT PANE
-    QWidget* leftWidget = new QWidget();
-    QHBoxLayout* leftLayout = new QHBoxLayout(leftWidget);
-    leftLayout->setContentsMargins(10, 5, 2, 5); // 2px right margin perfectly aligns textbox right edge with Terminal's 2px padding
-    leftLayout->setSpacing(15);
-    
+    sendLayout->setContentsMargins(10, 5, 1, 5);
+    sendLayout->setSpacing(15);
+
     // Raw Command (Input)
     m_inputCombo = new QComboBox();
     m_inputCombo->setEditable(true);
@@ -63,14 +45,12 @@ void SendWidget::setupUI()
     m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes...");
     m_inputCombo->addItem("");
     connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &SendWidget::onSendClicked);
-    leftLayout->addWidget(m_inputCombo, 1);
-    
-    m_internalSplitter->addWidget(leftWidget);
-    
-    // RIGHT PANE
+    sendLayout->addWidget(m_inputCombo, 1);
+
+    // RIGHT PANE (Send + Settings buttons; compact, never stretches)
     QWidget* rightWidget = new QWidget();
     QHBoxLayout* rightLayout = new QHBoxLayout(rightWidget);
-    rightLayout->setContentsMargins(4, 5, 1, 5); // Left 4 matches LoggingWidget's 4. Right 1 matches the 1px difference at the window edge.
+    rightLayout->setContentsMargins(0, 0, 0, 0);
     rightLayout->setSpacing(5);
     
     // History in Popup
@@ -153,18 +133,19 @@ void SendWidget::setupUI()
         const QRect btnRect(settingsBtn->mapToGlobal(QPoint(0, 0)), settingsBtn->size());
         const QScreen* screen = settingsBtn->screen();
         const QRect screenRect = screen ? screen->availableGeometry() : QRect(QPoint(0, 0), m_settingsPopup->sizeHint());
-        const QWidget* topLevel = settingsBtn->window();
-        const int windowRightEdge = qMin(topLevel->mapToGlobal(QPoint(topLevel->width(), 0)).x(), screenRect.right());
+        // Align to THIS SendWidget's own right edge, not the top-level window's - in Dual Mode
+        // there are two SendWidgets side by side, each narrower than the window.
+        const int widgetRightEdge = qMin(this->mapToGlobal(QPoint(this->width(), 0)).x(), screenRect.right());
 
-        // Never let the popup cross the app window's right edge; shrink it instead of just moving it.
-        const int maxWidth = windowRightEdge - btnRect.left();
+        // Never let the popup cross this SendWidget's right edge; shrink it instead of just moving it.
+        const int maxWidth = widgetRightEdge - btnRect.left();
         if (m_settingsPopup->sizeHint().width() > maxWidth) {
             m_settingsPopup->setMaximumWidth(qMax(maxWidth, m_settingsPopup->minimumSizeHint().width()));
             m_settingsPopup->adjustSize();
         }
         const QSize popupSize = m_settingsPopup->size();
 
-        int x = windowRightEdge - popupSize.width();
+        int x = widgetRightEdge - popupSize.width();
         if (x < screenRect.left())
             x = screenRect.left();
 
@@ -176,47 +157,21 @@ void SendWidget::setupUI()
         m_settingsPopup->move(x, y);
         m_settingsPopup->show();
     });
-    // Send Button
+    // Send Button (fixed, compact width - it no longer needs to fill a splitter pane)
     m_sendButton = new QPushButton("Send", this);
     m_sendButton->setObjectName("sendButton");
     m_sendButton->setFixedHeight(28);
-    m_sendButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_sendButton->setFixedWidth(90);
+    m_sendButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     connect(m_sendButton, &QPushButton::clicked, this, &SendWidget::onSendClicked);
     rightLayout->addWidget(m_sendButton);
-    
+
     // Add Settings button after Send button so it sits on the far right
     rightLayout->addWidget(settingsBtn);
-    
-    m_internalSplitter->addWidget(rightWidget);
-    
-    // Prevent internal splitter from being dragged by user, it strictly follows the main splitter
-    for (int i = 0; i < m_internalSplitter->count(); ++i) {
-        QSplitterHandle *handle = m_internalSplitter->handle(i);
-        if (handle) {
-            handle->setAttribute(Qt::WA_TransparentForMouseEvents);
-        }
-    }
-    
-    mainLayout->addWidget(sendFrame);
-}
 
-void SendWidget::syncSplitterSizes(int mainLeftSize)
-{
-    if (m_internalSplitter) {
-        // Use singleShot to wait for the layout to finish updating (crucial for window maximize/restore)
-        QTimer::singleShot(0, m_internalSplitter, [this, mainLeftSize]() {
-            // The main splitter starts at X=2. This internal splitter is inside a cardFrame which starts at X=2,
-            // and has a 2px padding + 1px border. So this internal splitter starts at absolute X=5.
-            // To align their handles perfectly, this internal splitter's left size must be 3px smaller!
-            int leftSize = mainLeftSize - 3;
-            if (leftSize < 0) leftSize = 0;
-            
-            int rightSize = m_internalSplitter->width() - leftSize - m_internalSplitter->handleWidth();
-            if (rightSize < 0) rightSize = 0;
-            
-            m_internalSplitter->setSizes({leftSize, rightSize}); 
-        });
-    }
+    sendLayout->addWidget(rightWidget);
+
+    mainLayout->addWidget(sendFrame);
 }
 
 void SendWidget::setInputText(const QString& text)
@@ -330,11 +285,11 @@ void SendWidget::onClearHistoryClicked()
 
 void SendWidget::loadSettings(QSettings& settings)
 {
-    bool historyOn = settings.value("SendWidget/HistoryOn", true).toBool();
+    bool historyOn = settings.value(m_settingsKey + "/HistoryOn", true).toBool();
     m_cbHistoryOn->setChecked(historyOn);
 }
 
 void SendWidget::saveSettings(QSettings& settings)
 {
-    settings.setValue("SendWidget/HistoryOn", m_cbHistoryOn->isChecked());
+    settings.setValue(m_settingsKey + "/HistoryOn", m_cbHistoryOn->isChecked());
 }
