@@ -10,6 +10,8 @@
 #include <QSettings>
 #include <QDialog>
 #include <QToolButton>
+#include <QPlainTextEdit>
+#include <QStringList>
 
 class SendWidget : public QWidget
 {
@@ -23,22 +25,26 @@ public:
 
     QByteArray formatData(const QString& text) const;
     void setInputText(const QString& text);
-    
+
     void loadSettings(QSettings& settings);
     void saveSettings(QSettings& settings);
 
 signals:
     void sendDataRequested(const QByteArray& data);
 
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
 private slots:
     void onSendClicked();
     void onPeriodicSendToggled(bool checked);
     void onPeriodicTimerTimeout();
     void onHistoryToggled(bool checked);
-    void onClearHistoryClicked();
 
 private:
-    QComboBox* m_inputCombo;
+    QPlainTextEdit* m_inputEdit;
+    QToolButton* m_historyBtn;
+    QStringList m_history;
     QCheckBox* m_cbHistoryOn;
     QComboBox* m_appendCombo;
     QComboBox* m_sendAsCombo;
@@ -52,6 +58,9 @@ private:
     QString m_settingsKey;
 
     void setupUI();
+    void adjustInputHeight();
+    void rebuildHistoryMenu();
+    void updatePlaceholder();
 };
 
 #endif // SENDWIDGET_H

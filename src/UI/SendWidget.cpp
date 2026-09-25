@@ -4,8 +4,6 @@
 #include <QFrame>
 #include <QLabel>
 #include <QStyle>
-#include <QLineEdit>
-#include <QLineEdit>
 #include <QRegularExpression>
 #include <QSettings>
 #include <QDialog>
@@ -16,6 +14,12 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QScreen>
+#include <QMenu>
+#include <QKeyEvent>
+#include <QFontMetrics>
+#include <QTextDocument>
+#include <QTextCursor>
+#include <QScrollBar>
 
 SendWidget::SendWidget(const QString& settingsKey, QWidget *parent)
     : QWidget(parent), m_settingsKey(settingsKey)
@@ -37,15 +41,25 @@ void SendWidget::setupUI()
     sendLayout->setContentsMargins(10, 5, 1, 5);
     sendLayout->setSpacing(15);
 
-    // Raw Command (Input)
-    m_inputCombo = new QComboBox();
-    m_inputCombo->setEditable(true);
-    m_inputCombo->setInsertPolicy(QComboBox::NoInsert);
-    m_inputCombo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_inputCombo->lineEdit()->setPlaceholderText("Type text or HEX bytes...");
-    m_inputCombo->addItem("");
-    connect(m_inputCombo->lineEdit(), &QLineEdit::returnPressed, this, &SendWidget::onSendClicked);
-    sendLayout->addWidget(m_inputCombo, 1);
+    // History dropdown (recent sent commands)
+    m_historyBtn = new QToolButton();
+    m_historyBtn->setText("\U0001F553"); // 🕓
+    m_historyBtn->setToolTip("History");
+    m_historyBtn->setFixedSize(28, 28);
+    m_historyBtn->setPopupMode(QToolButton::InstantPopup);
+    m_historyBtn->setStyleSheet("QToolButton { font-size: 13px; background-color: transparent; border: 1px solid #181a1f; border-radius: 4px; } QToolButton::menu-indicator { image: none; } QToolButton:hover { background-color: #3b4048; }");
+    m_historyBtn->setMenu(new QMenu(m_historyBtn));
+    sendLayout->addWidget(m_historyBtn);
+    rebuildHistoryMenu();
+
+    // Raw Command (Input) - multi-line, grows with content (e.g. pasted JSON or HEX dumps)
+    m_inputEdit = new QPlainTextEdit();
+    m_inputEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_inputEdit->setTabChangesFocus(true);
+    m_inputEdit->installEventFilter(this);
+    connect(m_inputEdit, &QPlainTextEdit::textChanged, this, &SendWidget::adjustInputHeight);
+    sendLayout->addWidget(m_inputEdit, 1);
+    adjustInputHeight();
 
     // RIGHT PANE (Send + Settings buttons; compact, never stretches)
     QWidget* rightWidget = new QWidget();
@@ -65,6 +79,7 @@ void SendWidget::setupUI()
     QHBoxLayout* formatLayout = new QHBoxLayout();
     m_sendAsCombo = new QComboBox();
     m_sendAsCombo->addItems({"ASCII", "HEX"});
+    connect(m_sendAsCombo, &QComboBox::currentTextChanged, this, &SendWidget::updatePlaceholder);
     formatLayout->addWidget(new QLabel("Format:"));
     formatLayout->addWidget(m_sendAsCombo);
     formatLayout->addStretch();
@@ -172,11 +187,16 @@ void SendWidget::setupUI()
     sendLayout->addWidget(rightWidget);
 
     mainLayout->addWidget(sendFrame);
+
+    updatePlaceholder();
 }
 
 void SendWidget::setInputText(const QString& text)
 {
-    m_inputCombo->setEditText(text);
+    m_inputEdit->setPlainText(text);
+    QTextCursor cursor = m_inputEdit->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    m_inputEdit->setTextCursor(cursor);
 }
 
 QByteArray SendWidget::formatData(const QString& text) const
@@ -187,15 +207,23 @@ QByteArray SendWidget::formatData(const QString& text) const
     bool isHex = (m_sendAsCombo->currentText() == "HEX");
 
     if (isHex) {
-        QString cleanText = text;
-        cleanText.replace("0x", "", Qt::CaseInsensitive);
-        cleanText.remove(QRegularExpression("[^0-9a-fA-F]"));
-        
-        if (cleanText.length() % 2 != 0) cleanText.prepend("0");
-        
-        for (int i = 0; i < cleanText.length(); i += 2) {
+        // Pad each whitespace/comma-separated token to a whole byte on its own, instead of
+        // concatenating everything first and padding once at the front - otherwise a single
+        // odd-length token (e.g. one un-padded digit like "A" for 0x0A) shifts every byte
+        // boundary after it, corrupting the rest of the payload.
+        QString combined;
+        const QStringList tokens = text.split(QRegularExpression("[\\s,]+"), Qt::SkipEmptyParts);
+        for (QString token : tokens) {
+            if (token.startsWith("0x", Qt::CaseInsensitive)) token.remove(0, 2);
+            token.remove(QRegularExpression("[^0-9a-fA-F]"));
+            if (token.isEmpty()) continue;
+            if (token.length() % 2 != 0) token.prepend('0');
+            combined += token;
+        }
+
+        for (int i = 0; i < combined.length(); i += 2) {
             bool ok;
-            uint byteVal = cleanText.mid(i, 2).toUInt(&ok, 16);
+            uint byteVal = combined.mid(i, 2).toUInt(&ok, 16);
             if (ok) data.append((char)byteVal);
         }
     } else {
@@ -220,26 +248,27 @@ void SendWidget::onSendClicked()
         return;
     }
 
-    QString text = m_inputCombo->currentText();
+    QString text = m_inputEdit->toPlainText();
     if (text.isEmpty()) return;
 
     QByteArray data = formatData(text);
     if (!data.isEmpty()) {
         emit sendDataRequested(data);
     }
-    
+
     if (m_periodicSendCb->isChecked()) {
         m_periodicText = text;
         m_periodicTimer->start(m_periodicMsBox->value());
         m_sendButton->setText("Stop"); // Just "Stop" so it doesn't stretch
         m_sendButton->setStyleSheet("background-color: #d15656; color: white; font-weight: bold; border-color: #b03a3a;");
     } else {
-        m_inputCombo->setEditText("");
+        m_inputEdit->clear();
     }
-    
+
     if (m_cbHistoryOn->isChecked()) {
-        if (m_inputCombo->findText(text) == -1) {
-            m_inputCombo->insertItem(1, text);
+        if (!m_history.contains(text)) {
+            m_history.prepend(text);
+            rebuildHistoryMenu();
         }
     }
 }
@@ -268,19 +297,73 @@ void SendWidget::onPeriodicTimerTimeout()
 
 void SendWidget::onHistoryToggled(bool checked)
 {
+    m_historyBtn->setEnabled(checked);
     if (!checked) {
-        m_inputCombo->setStyleSheet("QComboBox::drop-down { border: none; width: 0px; }");
-        m_inputCombo->clear();
-        m_inputCombo->addItem("");
-    } else {
-        m_inputCombo->setStyleSheet("");
+        m_history.clear();
+        rebuildHistoryMenu();
     }
 }
 
-void SendWidget::onClearHistoryClicked()
+void SendWidget::updatePlaceholder()
 {
-    m_inputCombo->clear();
-    m_inputCombo->addItem("");
+    if (m_sendAsCombo->currentText() == "HEX") {
+        m_inputEdit->setPlaceholderText("Hex bytes, e.g. 01 02 FF or 0x01 0x02 0xFF... (Shift+Enter for new line)");
+    } else {
+        m_inputEdit->setPlaceholderText("Type text to send... (Shift+Enter for new line)");
+    }
+}
+
+void SendWidget::adjustInputHeight()
+{
+    const int maxVisibleLines = 6;
+    QFontMetrics fm(m_inputEdit->font());
+    int lineHeight = fm.lineSpacing();
+    int frame = m_inputEdit->frameWidth() * 2;
+    int padding = 10; // breathing room around the document's own top/bottom margins
+    int docHeight = static_cast<int>(m_inputEdit->document()->size().height());
+
+    int singleLineHeight = lineHeight + frame + padding;
+    int maxHeight = lineHeight * maxVisibleLines + frame + padding;
+    int target = qBound(singleLineHeight, docHeight + frame + padding, maxHeight);
+
+    m_inputEdit->setFixedHeight(target);
+    m_inputEdit->setVerticalScrollBarPolicy(target >= maxHeight ? Qt::ScrollBarAsNeeded : Qt::ScrollBarAlwaysOff);
+}
+
+void SendWidget::rebuildHistoryMenu()
+{
+    // Hidden until there's actually something to show - an always-visible button for an
+    // empty history just invites confused clicks.
+    m_historyBtn->setVisible(!m_history.isEmpty());
+
+    QMenu* menu = m_historyBtn->menu();
+    menu->clear();
+    if (m_history.isEmpty()) {
+        return;
+    }
+    for (const QString& entry : m_history) {
+        // Keep menu entries readable: collapse to one line and cap the length.
+        QString label = entry;
+        label.replace('\n', " ↵ ");
+        if (label.length() > 60) label = label.left(57) + "...";
+        QAction* act = menu->addAction(label);
+        connect(act, &QAction::triggered, this, [this, entry](){ setInputText(entry); });
+    }
+}
+
+bool SendWidget::eventFilter(QObject* watched, QEvent* event)
+{
+    if (watched == m_inputEdit && event->type() == QEvent::KeyPress) {
+        QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+        bool isEnter = keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter;
+        // Enter sends (matches the old single-line box); Shift+Enter inserts a newline
+        // for multi-line payloads instead.
+        if (isEnter && !(keyEvent->modifiers() & Qt::ShiftModifier)) {
+            onSendClicked();
+            return true;
+        }
+    }
+    return QWidget::eventFilter(watched, event);
 }
 
 void SendWidget::loadSettings(QSettings& settings)
